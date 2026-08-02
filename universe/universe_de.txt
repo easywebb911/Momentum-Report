@@ -1,32 +1,111 @@
-# Universum: HDAX
-# Herkunft: NOCH NICHT BEFUELLT
-# Stand: 1970-01-01
-# STATUS: PLACEHOLDER
+# Universum: HDAX (DAX + MDAX + TecDAX)
+# Herkunft: Taegliche Bestandslisten der iShares-ETFs EXS1 (DAX), EXS3 (MDAX) und EXS2 (TecDAX), physisch replizierend
+# Stand: 2026-08-02
+# STATUS: VERIFIED
+# Erzeugt von: .github/workflows/universum.yml (Lauf https://github.com/easywebb911/Momentum-Report/actions/runs/30766264076)
+# Jeder Ticker wurde beim Erzeugen gegen echte Kursdaten geprueft.
+# Aktualisierung ist ein bewusster manueller Vorgang.
 #
-# Diese Datei ist bewusst leer und als PLATZHALTER markiert.
-# Das Werkzeug arbeitet DEFAULT-DENY: gerechnet wird nur mit einer Datei,
-# die ausdruecklich "# STATUS: VERIFIED" traegt. Diese Zeile schreibt
-# allein der Bootstrap-Workflow, und zwar erst, nachdem jeder einzelne
-# Ticker gegen echte Kursdaten geprueft wurde. Platzhalter, halb
-# geschriebene und von Hand angelegte Dateien werden alle abgelehnt --
-# lauter Abbruch, kein stiller Rueckfall auf eine Teilliste. Damit kann
-# aus einem ungeprueften Universum niemals ein eingefrorenes Ranking
-# entstehen.
-#
-# Der HDAX umfasst DAX (40), MDAX (50) und TecDAX (30). TecDAX-Werte sind
-# seit 2018 zugleich in DAX oder MDAX, die Vereinigungsmenge ist deshalb
-# kleiner als die Summe von 120 -- und sie schwankt mit jeder
-# Index-Ueberpruefung. Der Bootstrap erwartet 95-125 Titel nach Abzug der
-# Doppelmitglieder und schreibt sonst gar nichts.
-#
-# QUELLE: die taeglichen Bestandslisten der physisch replizierenden
-# iShares-ETFs EXS1 (DAX), EXS3 (MDAX) und EXS2 (TecDAX). Was so ein Fonds
-# haelt, IST praktisch der Index. Frueher standen hier die englischen
-# Wikipedia-Artikel -- die waren jahrealt, und eine FEHLENDE Neuaufnahme
-# faellt bei keiner Kurspruefung auf. Deshalb prueft der Bootstrap jetzt
-# zusaetzlich den Bestands-Stichtag: aelter als 10 Handelstage -> Abbruch.
-#
-# Befuellen: in GitHub unter "Actions" den Workflow
-# "Universum aktualisieren" starten (workflow_dispatch).
-#
-# Format ab hier: TICKER<TAB>Firmenname   (Yahoo-Ticker, i. d. R. mit .DE)
+# Format: TICKER<TAB>Firmenname
+8TRA.DE	TRATON
+ADS.DE	ADIDAS N AG
+AFX.DE	CARL ZEISS MEDITEC AG
+AG1.DE	AUTO1 GROUP
+AIR.DE	AIRBUS
+AIXA.DE	AIXTRON
+ALV.DE	ALLIANZ
+AMV0.DE	AUMOVIO N
+AOF.DE	ATOSS SOFTWARE
+AT1.DE	AROUNDTOWN SA
+BAS.DE	BASF N
+BAYN.DE	BAYER AG
+BC8.DE	BECHTLE AG
+BEI.DE	BEIERSDORF AG
+BMW.DE	BMW AG
+BNR.DE	BRENNTAG
+BOSS.DE	HUGO BOSS N AG
+CBK.DE	COMMERZBANK AG
+COK.DE	CANCOM
+CON.DE	CONTINENTAL AG
+DB1.DE	DEUTSCHE BOERSE AG
+DBK.DE	DEUTSCHE BANK AG
+DEZ.DE	DEUTZ AG
+DHER.DE	DELIVERY HERO
+DHL.DE	DEUTSCHE POST AG
+DRW3.DE	DRAEGERWERK PREF AG
+DTE.DE	DEUTSCHE TELEKOM N AG
+DTG.DE	DAIMLER TRUCK HOLDING E AG
+DWS.DE	DWS GROUP & GMBH CO KGAA
+ELG.DE	ELMOS SEMICONDUCTOR
+ENR.DE	SIEMENS ENERGY N AG
+EOAN.DE	E.ON N
+EUZ.DE	ECKERT & ZIEGLER
+EVD.DE	CTS EVENTIM AG
+EVK.DE	EVONIK INDUSTRIES AG
+EVT.DE	EVOTEC
+FME.DE	FRESENIUS MEDICAL CARE AG
+FNTN.DE	FREENET AG
+FPE3.DE	FUCHS PREF
+FRA.DE	FRAPORT FRANKFURT AIRPORT SERVICES
+FRE.DE	FRESENIUS SE AND CO KGAA
+FTK.DE	FLATEXDEGIRO N
+G1A.DE	GEA GROUP AG
+G24.DE	SCOUT24 N
+GBF.DE	BILFINGER
+HAG.DE	HENSOLDT AG
+HEI.DE	HEIDELBERG MATERIALS AG
+HEN3.DE	HENKEL & KGAA PREF AG
+HLE.DE	HELLA GMBH & CO KGAA
+HNR1.DE	HANNOVER RUECK
+HOT.DE	HOCHTIEF AG
+IFX.DE	INFINEON TECHNOLOGIES AG
+IOS.DE	IONOS GROUP N
+JEN.DE	JENOPTIK N AG
+KBX.DE	KNORR BREMSE AG
+KGX.DE	KION GROUP AG
+KRN.DE	KRONES AG
+KTN.DE	KONTRON AG
+LEG.DE	LEG IMMOBILIEN N
+LHA.DE	DEUTSCHE LUFTHANSA AG
+LXS.DE	LANXESS AG
+MBG.DE	MERCEDES-BENZ GROUP N AG
+MRK.DE	MERCK
+MTX.DE	MTU AERO ENGINES HOLDING AG
+MUV2.DE	MUENCHENER RUECKVERSICHERUNGS-GESE
+NDA.DE	AURUBIS AG
+NDX1.DE	NORDEX
+NEM.DE	NEMETSCHEK
+OBCK.DE	OTTOBOCK
+P911.DE	DR ING HC F PORSCHE PRF AG
+PAH3.DE	PORSCHE AUTOMOBIL HOLDING PREF
+PUM.DE	PUMA
+QIA.DE	QIAGEN NV
+R3NK.DE	RENK GROUP AG
+RAA.DE	RATIONAL AG
+RHM.DE	RHEINMETALL AG
+RRTL.DE	RTL GROUP SA
+RWE.DE	RWE AG
+S92.DE	SMA SOLAR TECHNOLOGY AG
+SAP.DE	SAP
+SDF.DE	K+S N AG
+SHA0.DE	SHAEFFLER N AG
+SHL.DE	SIEMENS HEALTHINEERS AG
+SIE.DE	SIEMENS N AG
+SMHN.DE	SUSS MICROTEC N
+SRT3.DE	SARTORIUS PREF AG
+SY1.DE	SYMRISE AG
+SZG.DE	SALZGITTER AG
+TEG.DE	TAG IMMOBILIEN AG
+TKA.DE	THYSSENKRUPP AG
+TKMS.DE	TKMS AG
+TLX.DE	TALANX AG
+TMV.DE	TEAMVIEWER
+TPE.DE	PVA TEPLA AG
+TUI1.DE	TUI N AG
+UTDI.DE	UNITED INTERNET AG
+VBK.DE	VERBIO
+VNA.DE	VONOVIA SE
+VOW3.DE	VOLKSWAGEN NON-VOTING PREF AG
+WAF.DE	SILTRONIC N AG
+WCH.DE	WACKER CHEMIE AG
+ZAL.DE	ZALANDO
