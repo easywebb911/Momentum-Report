@@ -66,6 +66,40 @@ a:hover { text-decoration: underline; }
   padding-top: max(1.125rem, env(safe-area-inset-top));
 }
 
+.hdr-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.hdr--sub { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+
+/* Rueckweg fuer Unterseiten. In der installierten PWA (Standalone) gibt es
+   KEINE Zurueck-Taste des Browsers — ohne diesen Link waere jede Unterseite
+   eine Sackgasse.
+   min-height in px und nicht nur in rem: 44 px sind die absolute
+   Untergrenze fuer eine Tippflaeche (Apple HIG). Bei kleiner Textgroesse
+   waeren 2.75rem nur 41 px — deshalb greift max() den Festwert ab, nach
+   oben skaliert es mit der Textgroesse weiter. */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  align-self: flex-start;
+  min-height: max(44px, 2.75rem);
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+  margin-left: -0.5rem;
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.back:hover { text-decoration: none; background: #0f1424; }
+.back:active { background: #0b0f1a; }
+.back-arrow { font-size: 1.125rem; line-height: 1; }
+
 .hdr-main { min-width: 0; }
 
 .hdr h1 {
@@ -169,6 +203,136 @@ a.sheet-item:hover { text-decoration: none; background: #0f1424; }
   background: transparent;
   color: var(--txt-sub);
   font: inherit;
+  cursor: pointer;
+}
+
+/* Menuepunkte, die etwas TUN (Knopf statt Link). Gleiche Optik wie die
+   Link-Eintraege — der Unterschied liegt in der Wirkung, nicht im Aussehen. */
+.sheet-item--btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-height: max(44px, 2.75rem);
+}
+.sheet-item--btn:hover { background: #0f1424; }
+.sheet-item--btn:active { background: #0b0f1a; }
+.sheet-item--btn[disabled] { cursor: default; opacity: 0.5; }
+.sheet-item--btn[disabled]:hover { background: transparent; }
+
+/* ------------------------------------------- Token-Dialog + Lauf-Banner */
+
+.tok-dlg { max-width: 26rem; padding: 1rem; max-height: 88vh; overflow-y: auto; }
+.tok-title { margin: 0 0 0.5rem; font-size: 1rem; font-weight: 800; }
+.tok-text { margin: 0 0 0.625rem; font-size: 0.875rem; color: var(--txt-sub); }
+
+.tok-steps {
+  margin: 0 0 0.75rem;
+  padding-left: 1.125rem;
+  font-size: 0.8125rem;
+  color: var(--txt-sub);
+}
+.tok-steps li { margin-bottom: 0.375rem; }
+.tok-steps code {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--txt);
+}
+
+.tok-label { display: block; font-size: 0.75rem; color: var(--txt-dim); margin-bottom: 0.25rem; }
+
+.tok-input {
+  width: 100%;
+  min-height: max(44px, 2.75rem);
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--brd);
+  border-radius: 10px;
+  background: var(--bg-met);
+  color: var(--txt);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+}
+
+.tok-note { margin: 0.625rem 0 0; font-size: 0.75rem; color: var(--txt-dim); }
+.tok-note code { font-family: var(--mono); }
+
+.tok-error {
+  margin: 0.625rem 0 0;
+  padding: 0.5rem 0.625rem;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, .12);
+  color: var(--red);
+  font-size: 0.8125rem;
+}
+.tok-error[hidden] { display: none; }
+
+.tok-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+
+.tok-btn {
+  flex: 1;
+  min-height: max(44px, 2.75rem);
+  border: 1px solid var(--brd);
+  border-radius: 10px;
+  background: var(--bg-met);
+  color: var(--txt-sub);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.tok-btn--main { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.tok-btn:active { opacity: 0.85; }
+
+/* Der Lauf-Banner sitzt unten fest: der Kopf ist schon sticky, und eine
+   Meldung darf den Rueckweg nicht verdecken. */
+.runbar {
+  position: fixed;
+  z-index: 30;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  max-width: 34rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--brd);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  font-size: 0.8125rem;
+}
+.runbar[hidden] { display: none; }
+
+.runbar-dot {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: var(--txt-dim);
+}
+.runbar--laeuft .runbar-dot { background: var(--accent); }
+.runbar--fertig .runbar-dot { background: var(--grn); }
+.runbar--fehler .runbar-dot { background: var(--red); }
+.runbar--fehler { border-color: var(--red); }
+
+.runbar-text { flex: 1; min-width: 0; }
+.runbar-link { flex: none; font-weight: 600; }
+.runbar-link[hidden] { display: none; }
+
+.runbar-close {
+  flex: none;
+  width: max(44px, 2.75rem);
+  height: max(44px, 2.75rem);
+  margin: -0.5rem -0.5rem -0.5rem 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--txt-dim);
+  font: inherit;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 

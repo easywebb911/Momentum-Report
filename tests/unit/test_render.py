@@ -238,3 +238,109 @@ def test_menue_bietet_methodik_und_textgroesse():
     assert "Textgröße" in html
     assert 'data-fs="16"' in html
     assert 'id="menu-btn"' in html
+
+
+# ------------------------------------------------------------- Rueckweg
+
+
+def test_jede_unterseite_traegt_den_rueckweg():
+    """In der PWA gibt es keine Zurueck-Taste — der Weg muss auf der Seite sein.
+
+    Der Nachweis, dass er auch gross genug und sichtbar ist, steht im
+    Browser-Test; hier wird geprueft, dass er ueberhaupt gerendert wird.
+    """
+    html = render_methodik()
+    assert 'class="back" href="./index.html"' in html
+    assert "Zurück zur Übersicht" in html
+    assert 'class="hdr hdr--sub"' in html
+
+
+def test_die_uebersicht_selbst_hat_keinen_rueckweg():
+    """Sie IST das Ziel — ein Rueckweg auf sich selbst waere sinnlos."""
+    html = render_index([_view(warnung=False)], Date(2026, 8, 3))
+    assert 'class="back"' not in html
+    assert "hdr--sub" not in html
+
+
+# --------------------------------------------------- Fernsteuerung des Laufs
+
+
+@pytest.mark.parametrize("seite", ["index", "methodik"])
+def test_beide_seiten_tragen_die_bedienelemente(seite):
+    """Das Menue steht auf jeder Seite — also auch alles, was es braucht."""
+    html = (
+        render_index([_view(warnung=False)], Date(2026, 8, 3))
+        if seite == "index"
+        else render_methodik()
+    )
+    assert 'id="reload-btn"' in html and "Neu laden" in html
+    assert 'id="recalc-btn"' in html and "Neu berechnen" in html
+    assert 'id="lock-btn"' in html and "Sperren" in html
+    assert 'id="tok-overlay"' in html
+    assert 'id="runbar"' in html
+
+
+@pytest.mark.parametrize("seite", ["index", "methodik"])
+def test_das_ziel_des_dispatches_kommt_aus_der_konfiguration(seite):
+    """Eine Wahrheit: Repository und Workflow stehen in config.py."""
+    from momentum.config import REPO_SLUG, WORKFLOW_LAUF
+
+    html = (
+        render_index([_view(warnung=False)], Date(2026, 8, 3))
+        if seite == "index"
+        else render_methodik()
+    )
+    assert f'data-repo="{REPO_SLUG}"' in html
+    assert f'data-workflow="{WORKFLOW_LAUF}"' in html
+
+
+def test_der_dialog_erklaert_die_noetigen_rechte_und_verspricht_nichts_falsches():
+    html = render_index([_view(warnung=False)], Date(2026, 8, 3))
+    for satz in (
+        "Fine-grained",
+        "Only select repositories",
+        "Read and write",
+        "IndexedDB",
+        "28 Tage",
+        "api.github.com",
+    ):
+        assert satz in html, satz
+    # Das Eingabefeld darf den Token nicht offen zeigen und nicht vervollstaendigen.
+    assert 'id="tok-input" type="password"' in html
+    assert 'autocomplete="off"' in html
+
+
+def test_im_ausgelieferten_stand_liegt_kein_echter_token():
+    """Kein Token im Repo — als Muster geprueft, nicht als Vorsatz erklaert.
+
+    Gesucht wird ein Token-KOERPER, nicht das Wort: der Dialog zeigt
+    absichtlich `github_pat_…` als Platzhalter im Eingabefeld, und das ist
+    ein Hinweis, kein Geheimnis.
+    """
+    import re
+
+    echt = re.compile(r"(github_pat_|ghp_|gho_|ghs_)[A-Za-z0-9_]{20,}")
+    erzeugt = render_index([_view(warnung=False)], Date(2026, 8, 3)) + render_methodik()
+    assert echt.search(erzeugt) is None
+    for datei in ("index.html", "methodik.html", "app.js", "style.css"):
+        text = Path("docs", datei).read_text(encoding="utf-8")
+        assert echt.search(text) is None, datei
+
+
+def test_der_token_wird_nie_an_eine_adresse_gehaengt():
+    """Textueller Gegencheck zu app.js — der Token gehoert in die Kopfzeile.
+
+    Der Nachweis im laufenden Browser steht in tests/design; hier faellt
+    schon beim Lesen auf, wenn jemand ihn in eine URL schreibt.
+    """
+    quelle = Path("docs/app.js").read_text(encoding="utf-8")
+    assert '"Authorization": "Bearer " + token' in quelle
+    for zeile in quelle.splitlines():
+        gestutzt = zeile.strip()
+        if gestutzt.startswith("//") or gestutzt.startswith("*"):
+            continue
+        if "token" in gestutzt and ("?" in gestutzt or "&" in gestutzt):
+            assert "Authorization" in gestutzt, f"Token an einer Adresse: {gestutzt}"
+    # Und nirgends eine Ausgabe, die ihn mitnehmen koennte.
+    for verboten in ("console.log", "console.warn", "console.error", "alert("):
+        assert verboten not in quelle, verboten

@@ -37,6 +37,14 @@ LIQUIDITY_WINDOW_MONTHS = 3
 # --- Anzeige --------------------------------------------------------------
 TOP_N = 5
 
+# --- Fernsteuerung des Laufs aus der Seite heraus -------------------------
+# Die Seite kann den Momentum-Lauf per workflow_dispatch anstossen. Damit
+# das Frontend nicht raten muss, wohin, stehen Ziel-Repository und
+# Workflow-Datei HIER und werden als data-Attribute in die Seite gerendert
+# -- eine Wahrheit, kein zweiter Ort in JavaScript.
+REPO_SLUG = "easywebb911/Momentum-Report"
+WORKFLOW_LAUF = "lauf.yml"
+
 # --- Datenbeschaffung -----------------------------------------------------
 # Puffer: der Nenner der 12-1-Rendite liegt bis zu ~395 Tage zurueck.
 HISTORY_DAYS = 430
