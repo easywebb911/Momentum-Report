@@ -30,7 +30,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
+          # pyyaml: die Workflow-Tests lesen die YAML-Dateien selbst ein.
+          # Bewusst hier und nicht per importorskip im Test -- ein Test, der
+          # sich bei fehlender Abhaengigkeit still ueberspringt, ist genau
+          # der stille Rueckfall, den dieses Projekt nirgends duldet.
+          pip install pytest pyyaml
 
       - name: Methodik-Seite muss aktuell sein
         run: |

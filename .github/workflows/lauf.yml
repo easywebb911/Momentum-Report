@@ -107,20 +107,43 @@ jobs:
           for i in $(seq 1 $versuche); do
             # Vor JEDEM Wiederholungsversuch aufraeumen: ein haengengebliebener
             # Rebase aus dem vorigen Versuch wuerde alles Weitere blockieren.
-            git rebase --abort || true
+            # Ausgabe unterdrueckt -- "no rebase in progress" ist der
+            # Normalfall und wuerde das Protokoll nur zumuellen.
+            git rebase --abort >/dev/null 2>&1 || true
 
-            if git pull --rebase origin "${{ github.ref_name }}" \
-               && git push origin "HEAD:${{ github.ref_name }}"; then
+            if ! git pull --rebase origin "${{ github.ref_name }}"; then
+              echo "Versuch $i: pull --rebase fehlgeschlagen, warte ${wartezeit}s."
+              sleep $wartezeit
+              wartezeit=$((wartezeit * 2))
+              continue
+            fi
+
+            if ausgabe=$(git push origin "HEAD:${{ github.ref_name }}" 2>&1); then
               echo "Push erfolgreich im Versuch $i."
               exit 0
             fi
+            echo "$ausgabe"
+
+            # Eine Schutzregel des Repositories lehnt IMMER ab -- warten und
+            # wiederholen macht das nicht besser, es verbrennt nur Zeit und
+            # ueberdeckt im Protokoll den eigentlichen Befund. Also sofort raus.
+            case "$ausgabe" in
+              *GH013*|*"rule violations"*|*"protected branch"*|*"Required status check"*)
+                git rebase --abort >/dev/null 2>&1 || true
+                echo "Der Bot darf nicht nach ${{ github.ref_name }} schreiben."
+                echo "Das ist eine Schutzregel des Repositories, kein Konflikt --"
+                echo "Wiederholen aendert daran nichts. Abhilfe: Settings -> Rules"
+                echo "-> Ruleset -> Bypass list -> GitHub Actions eintragen."
+                echo "::error title=Vom Repository abgelehnt::Schutzregel auf ${{ github.ref_name }} verbietet dem Bot das Schreiben. Kein Wiederholen sinnvoll -- Bypass fuer GitHub Actions eintragen."
+                exit 1 ;;
+            esac
 
             echo "Versuch $i fehlgeschlagen, warte ${wartezeit}s."
             sleep $wartezeit
             wartezeit=$((wartezeit * 2))
           done
 
-          git rebase --abort || true
+          git rebase --abort >/dev/null 2>&1 || true
           echo "::error title=Daten-Push::Nach $versuche Versuchen nicht geschrieben."
           exit 1
 
@@ -131,8 +154,10 @@ jobs:
           import os
           from momentum.notify import push_data_conflict
           push_data_conflict(
-              "Das Zurueckschreiben nach main ist nach mehreren Versuchen "
-              "fehlgeschlagen (vermutlich ein gleichzeitiger Commit).\n"
+              "Das Zurueckschreiben nach main hat nicht geklappt. Moegliche "
+              "Gruende: ein gleichzeitiger Commit oder eine Schutzregel des "
+              "Repositories, die dem Bot das Schreiben verbietet. Welcher der "
+              "beiden Faelle vorliegt, steht im Lauf-Protokoll.\n"
               f"Lauf: {os.environ.get('GITHUB_RUN_URL', '')}"
           )
           PY
