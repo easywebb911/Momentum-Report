@@ -128,15 +128,55 @@ def test_banner_skaliert_ueber_das_viewbox_verhaeltnis(oeffne):
     assert abs(ist - soll) < 0.02, f"Seitenverhaeltnis verzogen: {ist:.3f} statt {soll:.3f}"
 
 
-def test_warnungen_stehen_ueber_dem_schmuckband(oeffne):
-    """Dekoration darf die vier Ehrlichkeits-Anzeigen nicht nach unten druecken."""
+def test_das_banner_steht_direkt_unter_der_ueberschrift(oeffne):
+    """Reihenfolge: Ueberschrift → Banner → Hinweis-Bereich → Inhalt."""
     page = oeffne("index.html")
     reihenfolge = page.evaluate(
         """() => [...document.querySelector('main').children]
              .map(el => el.className.split(' ')[0])"""
     )
-    assert reihenfolge.index("disc-box") < reihenfolge.index("banner"), reihenfolge
-    assert reihenfolge.index("banner") < reihenfolge.index("market"), reihenfolge
+    assert reihenfolge[0] == "banner", reihenfolge
+    assert reihenfolge.index("banner") < reihenfolge.index("disc-box"), reihenfolge
+    assert reihenfolge.index("disc-box") < reihenfolge.index("market"), reihenfolge
+
+    # ... und zwar UNTER dem Kopf, nicht darin.
+    lage = page.evaluate(
+        """() => {
+          const kopf = document.querySelector('.hdr');
+          const band = document.querySelector('.banner');
+          return {
+            im_kopf: kopf.contains(band),
+            kopf_unten: kopf.getBoundingClientRect().bottom,
+            band_oben: band.getBoundingClientRect().top,
+          };
+        }"""
+    )
+    assert lage["im_kopf"] is False, "das Banner steckt im sticky Kopf"
+    assert lage["band_oben"] >= lage["kopf_unten"] - 0.5, lage
+
+
+def test_das_banner_klebt_beim_scrollen_nicht(oeffne):
+    """Nur der Kopf bleibt stehen — das Band scrollt weg wie jeder Inhalt."""
+    page = oeffne("index.html")
+    vorher = page.evaluate(
+        """() => ({
+          kopf: document.querySelector('.hdr').getBoundingClientRect().top,
+          band: document.querySelector('.banner').getBoundingClientRect().top,
+        })"""
+    )
+    page.evaluate("window.scrollTo(0, 900)")
+    nachher = page.evaluate(
+        """() => ({
+          kopf: document.querySelector('.hdr').getBoundingClientRect().top,
+          band: document.querySelector('.banner').getBoundingClientRect().top,
+          gescrollt: window.scrollY,
+        })"""
+    )
+    assert nachher["gescrollt"] > 500, "die Seite hat gar nicht gescrollt"
+    # Der Kopf bleibt oben stehen — sticky-Verhalten unveraendert ...
+    assert abs(nachher["kopf"] - vorher["kopf"]) < 1, (vorher, nachher)
+    # ... das Banner ist nach oben aus dem Bild gewandert.
+    assert nachher["band"] < vorher["band"] - 500, (vorher, nachher)
 
 
 def test_das_banner_laedt_nichts_nach(oeffne):
