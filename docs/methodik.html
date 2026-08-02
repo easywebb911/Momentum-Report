@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Jede Zutat mit Primaerquelle.">
+<title>Methodik — Momentum-Report</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+<script>try{var f=localStorage.getItem("momentum-report:fs");if(f){document.documentElement.style.setProperty("--app-fs",f+"px");}}catch(e){}</script>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-main">
+    <h1>Momentum-Report</h1>
+    <p class="stand">Wie gerechnet wird — und was bewusst fehlt</p>
+  </div>
+  <button class="menu-btn" id="menu-btn" aria-label="Menü öffnen" aria-expanded="false">☰</button>
+</header>
+<div class="overlay" id="overlay" hidden>
+  <div class="overlay-backdrop" data-close></div>
+  <nav class="sheet" aria-label="Menü">
+    <a class="sheet-item" href="methodik.html">
+      <span class="sheet-icon" aria-hidden="true">▤</span>
+      <span><span class="sheet-title">Methodik</span><span class="sheet-sub">Jede Zutat mit Quelle</span></span>
+    </a>
+    <div class="sheet-item sheet-item--static">
+      <span class="sheet-icon" aria-hidden="true">A</span>
+      <span class="sheet-grow"><span class="sheet-title">Textgröße</span>
+        <span class="fs-row" role="group" aria-label="Textgröße">
+          <button type="button" class="fs-btn" data-fs="15">Klein</button>
+          <button type="button" class="fs-btn" data-fs="16">Normal</button>
+          <button type="button" class="fs-btn" data-fs="18">Groß</button>
+          <button type="button" class="fs-btn" data-fs="20">Sehr groß</button>
+        </span>
+      </span>
+    </div>
+    <button type="button" class="sheet-close" data-close>Schließen</button>
+  </nav>
+</div>
+<main>
+<p class="lead">Dieses Werkzeug erfindet nichts. Es rechnet eine
+Vorschrift nach, die in wissenschaftlichen Aufsätzen veröffentlicht und
+geprüft wurde. Unten steht jede einzelne Zutat: was gerechnet wird, in
+einfacher Sprache, und woher sie stammt. Was hier keine Quelle hat, steht
+nicht im Score.</p>
+<h2>Die zwei Zutaten des Scores</h2>
+<article class="card mcard">
+  <h3>1. 12-1-Momentum (Gewicht 70 %)</h3>
+  <p>Wir schauen, wie stark eine Aktie in einem Fenster von rund einem
+Jahr gestiegen ist — und lassen dabei den <strong>jüngsten Monat bewusst
+weg</strong>.</p>
+<p class="formula">Kurs am letzten Handelstag des <em>vorletzten</em> Monats
+÷ Kurs am letzten Handelstag des Monats vor zwölf Monaten − 1</p>
+<p>Beispiel für den Stichtag 31.07.: gerechnet wird vom 31.07. des Vorjahres
+bis zum 30.06. — der Juli fällt heraus. Dieser übersprungene Monat ist kein
+Versehen und keine Einstellung: einzelne Monate neigen zur Gegenbewegung,
+deshalb gehört das Auslassen zur belegten Rezeptur.</p>
+<p>Gerechnet wird mit <strong>bereinigten Kursen</strong> — Dividenden und
+Aktiensplits sind eingerechnet, weil die Studien Gesamtrenditen messen.</p>
+  <ul class="src-list"><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Aktien, die in den vergangenen rund zwoelf Monaten am staerksten gestiegen sind, liefen im Durchschnitt der Folgemonate weiter besser als die schwaechsten. Gemessen wird die Rendite vom Ende des Monats vor zwoelf Monaten bis zum Ende des VORLETZTEN Monats.</li><li>Jegadeesh (1990): „Evidence of Predictable Behavior of Security Returns“, <em>The Journal of Finance</em>. Auf Sicht eines einzelnen Monats kehren sich Kursbewegungen im Mittel um. Deshalb laesst die Standard-Rezeptur den juengsten Monat bewusst aus dem Messfenster heraus -- dieser uebersprungene Monat ist Teil der belegten Methode, keine Option.</li><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Gemessen wurden Gesamtrenditen inklusive Dividenden. Deshalb rechnet dieses Tool ausschliesslich mit dividenden- und split-bereinigten Kursen.</li></ul>
+</article>
+<article class="card mcard">
+  <h3>2. Nähe zum 52-Wochen-Hoch (Gewicht 30 %)</h3>
+  <p>Wie nah notiert die Aktie heute an ihrem höchsten Stand des
+letzten Jahres?</p>
+<p class="formula">Kurs am Stichtag ÷ höchster Tages-Schlusskurs der letzten
+52 Wochen</p>
+<p>Das Ergebnis liegt zwischen 0 und 1; 100 % heißt: die Aktie steht genau
+auf ihrem Jahreshoch. Das Hoch wird aus <strong>Tages-Schlusskursen</strong>
+gebildet, nicht aus Intraday-Hochs — das ist die übliche Konvention beim
+Nachbilden dieser Arbeit.</p>
+  <ul class="src-list"><li>George &amp; Hwang (2004): „The 52-Week High and Momentum Investing“, <em>The Journal of Finance</em>. Wie nah eine Aktie an ihrem hoechsten Kurs der letzten 52 Wochen notiert, trug in der Untersuchung eigene Erklaerungskraft fuer die kuenftige Entwicklung -- zusaetzlich zur reinen Zwoelf-Monats-Rendite.</li><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Gemessen wurden Gesamtrenditen inklusive Dividenden. Deshalb rechnet dieses Tool ausschliesslich mit dividenden- und split-bereinigten Kursen.</li></ul>
+</article>
+<article class="card mcard">
+  <h3>So entsteht der Score von 0 bis 100</h3>
+  <p>Beide Zutaten werden je Markt in eine Rangreihe gebracht. Der
+schwächste Titel bekommt 0, der stärkste 1, alle anderen liegen gleichmäßig
+dazwischen (Perzentil-Rang).</p>
+<p class="formula">Score = 70 × Perzentil(12-1-Momentum)
++ 30 × Perzentil(52-Wochen-Hoch-Nähe)</p>
+<p>Wichtig: Die Ränge werden <strong>immer nur innerhalb eines Marktes</strong>
+gebildet — US-Titel gegen US-Titel, deutsche gegen deutsche. Nie gemischt.
+Bei exakt gleichem Wert entscheidet die alphabetische Reihenfolge des Tickers;
+dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar.</p>
+  <ul class="src-list"><li>Rouwenhorst (1998): „International Momentum Strategies“, <em>The Journal of Finance</em>. Der Effekt wurde je Markt gegen die Titel DESSELBEN Marktes gemessen. Deshalb werden Perzentil-Raenge hier ausschliesslich innerhalb eines Marktes gebildet und nie ueber Maerkte gemischt.</li></ul>
+</article>
+<h2>Der monatliche Stichtag</h2>
+<article class="card mcard">
+  <h3>Einmal im Monat — und dann eingefroren</h3>
+  <p>Die Rangliste entsteht <strong>einmal pro Monat</strong>, am letzten
+Handelstag. Bis zum nächsten Stichtag ändern sich Score, Rang und Top-5
+<strong>nicht mehr</strong>. Werktags werden nur die angezeigten Kurse
+aktualisiert.</p>
+<p>Grund: Die Evidenz in den Aufsätzen ist monatlich gemessen. Eine
+Rangliste, die sich täglich dreht, wäre eine andere — ungeprüfte — Methode.
+Deshalb kann ein Lauf mitten im Monat die Rangfolge technisch gar nicht
+verändern.</p>
+<p>Fällt der letzte Werktag auf einen Feiertag, ist der Stichtag der letzte
+Tag mit Handel; das angezeigte Datum sagt immer, welcher Tag es wirklich
+war.</p>
+  <ul class="src-list"><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Aktien, die in den vergangenen rund zwoelf Monaten am staerksten gestiegen sind, liefen im Durchschnitt der Folgemonate weiter besser als die schwaechsten. Gemessen wird die Rendite vom Ende des Monats vor zwoelf Monaten bis zum Ende des VORLETZTEN Monats.</li></ul>
+</article>
+<h2>Die Trend-Ampel</h2>
+<article class="card mcard" id="trend-ampel">
+  <h3>Warnanzeige je Markt</h3>
+  <p>Steht der Marktindex über die letzten zwölf Monate im Minus,
+erscheint eine deutliche Warnung. In genau solchen Phasen häuften sich
+historisch die schweren Momentum-Einbrüche.</p>
+<p>Die Ampel ist <strong>reine Anzeige</strong>. Sie greift nicht in die
+Rangliste ein, filtert nichts heraus und verändert keinen Score. Gemessen
+wird der S&amp;P 500 für die USA und der DAX für Deutschland.</p>
+  <ul class="src-list"><li>Moskowitz, Ooi &amp; Pedersen (2012): „Time Series Momentum“, <em>Journal of Financial Economics</em>. Die Vorzeichen-Richtung eines Marktes ueber die vergangenen zwoelf Monate trug Information ueber die naechste Phase. Daraus speist sich hier ausschliesslich eine Warnanzeige je Markt.</li><li>Daniel &amp; Moskowitz (2016): „Momentum Crashes“, <em>Journal of Financial Economics</em>. Die schweren Einbrueche von Momentum-Strategien haeuften sich in Phasen, in denen der Gesamtmarkt zuvor gefallen war und die Schwankung hoch lag. Genau davor warnt die Trend-Ampel.</li></ul>
+</article>
+<h2>Das Universum und der Handelbarkeits-Filter</h2>
+<article class="card mcard">
+  <h3>Wer überhaupt in die Wertung kommt</h3>
+  <p>USA: die Mitglieder des S&amp;P 500. Deutschland: der HDAX
+(rund 100 Titel aus DAX, MDAX und TecDAX). Beide Listen liegen als feste
+Dateien im Projekt, mit Herkunft und Stand-Datum — sie werden nur durch
+einen bewusst angestoßenen Vorgang geändert, nie automatisch im Hintergrund.</p>
+<p>Einziger Vorfilter: <strong>Handelbarkeit</strong>. Ein Titel muss in den
+letzten 3 Monaten einen Median-Tagesumsatz von
+mindestens 5 Mio. in
+Heimatwährung erreicht haben. Das ist <strong>kein Signal</strong> und keine
+Qualitätsaussage — es sorgt nur dafür, dass die Liste keine Titel zeigt, die
+praktisch kaum handelbar sind.</p>
+  <ul class="src-list"><li>Rouwenhorst (1998): „International Momentum Strategies“, <em>The Journal of Finance</em>. Der Effekt wurde je Markt gegen die Titel DESSELBEN Marktes gemessen. Deshalb werden Perzentil-Raenge hier ausschliesslich innerhalb eines Marktes gebildet und nie ueber Maerkte gemischt.</li></ul>
+</article>
+<h2>Was dieses Werkzeug bewusst NICHT tut</h2>
+<article class="card mcard">
+  <h3>Klare Grenzen</h3>
+  <ul class="nolist">
+<li>Keine Rückrechnung (Backtest), keine Trefferquote, keine Erfolgsbilanz —
+das wäre eine eigene Wissenschaft und würde hier nur Sicherheit vortäuschen.</li>
+<li>Keine Kursziele, keine Kauf- oder Verkaufssignale, keine Ausstiegsregeln.</li>
+<li>Keine Verlierer-Seite: Die Studien messen Gewinner <em>minus</em> Verlierer.
+Hier steht nur die Gewinner-Seite — die Studienrenditen gelten für das
+Gezeigte also nicht.</li>
+<li>Keine Zutat ohne Quelle. Nichts wird „weil es plausibel klingt“ ergänzt.</li>
+<li>Keine risikogesteuerten Varianten in dieser Fassung — dokumentiert, aber
+nicht gebaut.</li>
+<li>Der Effekt ist im US-Markt nach 2000 deutlich geschrumpft. Das steht auf
+der Startseite, weil es dorthin gehört.</li>
+</ul>
+  <ul class="src-list"><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Die gemessene Rendite ist die Differenz Gewinner MINUS Verlierer. Dieses Tool zeigt nur die Gewinner-Seite; die Studienrenditen sind deshalb nicht auf das hier Gezeigte uebertragbar.</li><li>Jegadeesh &amp; Titman (2023): „Momentum: Evidence and Insights 30 Years Later“, <em>Financial Analysts Journal</em>. Im US-Markt fiel der gemessene Effekt nach dem Jahr 2000 im Mittel auf rund 0,3 % pro Monat -- deutlich weniger als im urspruenglich untersuchten Zeitraum.</li><li>Fama &amp; French (2012): „Size, Value, and Momentum in International Stock Returns“, <em>Journal of Financial Economics</em>. Alle Belege sind Durchschnitte ueber breite Portfolios und lange Zeitraeume. Ueber eine einzelne Aktie sagt der Befund nichts.</li></ul>
+</article>
+<h2>Warum Japan, Taiwan und Südkorea fehlen</h2>
+<article class="card mcard">
+  <h3>Eine dokumentierte Ausnahme</h3>
+  <p>Momentum ist in sehr vielen Märkten gefunden worden — aber in
+Ostasien nicht verlässlich. In Japan ließ sich der Effekt nicht belastbar
+nachweisen, und in internationalen Vergleichen war er in ostasiatischen
+Märkten am schwächsten.</p>
+<p>Ein Werkzeug, das sich auf Belege stützt, darf dort nicht so tun, als
+gälte dieselbe Regel. Deshalb: keine Abdeckung von Japan, Taiwan und
+Südkorea — lieber eine Lücke als eine unbelegte Aussage.</p>
+  <ul class="src-list"><li>Asness (2011): „Momentum in Japan: The Exception That Proves the Rule“, <em>The Journal of Portfolio Management</em>. In Japan liess sich der Momentum-Effekt nicht verlaesslich nachweisen -- eine dokumentierte Ausnahme.</li><li>Chui, Titman &amp; Wei (2010): „Individualism and Momentum around the World“, <em>The Journal of Finance</em>. Die Staerke des Effekts hing systematisch von der Kultur des Marktes ab; in ostasiatischen Maerkten war er am schwaechsten.</li><li>Fama &amp; French (2012): „Size, Value, and Momentum in International Stock Returns“, <em>Journal of Financial Economics</em>. In der internationalen Auswertung war Japan der Markt ohne belastbaren Momentum-Befund. Deshalb deckt dieses Tool Japan, Taiwan und Suedkorea bewusst NICHT ab.</li></ul>
+</article>
+<h2>Datenherkunft</h2>
+<article class="card mcard">
+  <h3>Kurse</h3>
+  <p>Tages-Schlusskurse von Yahoo Finance, dividenden- und
+splitbereinigt. Zeilen ohne belastbare Zahl werden verworfen und gezählt;
+die Zahl steht im Lauf-Protokoll. Liefert die Quelle zu wenige Titel, wird
+bewusst <strong>kein</strong> Ranking gebildet, statt eines auf Lückenbasis.</p>
+  <ul class="src-list"><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Gemessen wurden Gesamtrenditen inklusive Dividenden. Deshalb rechnet dieses Tool ausschliesslich mit dividenden- und split-bereinigten Kursen.</li></ul>
+</article>
+</main>
+<footer class="foot">
+  <p>Momentum-Report — Anwendungs-Werkzeug auf belegter Wissenschaft.
+     Keine Anlageberatung, keine Kauf- oder Verkaufsempfehlung.</p>
+  <p class="foot-dim">Kurse: Yahoo Finance, dividenden- und splitbereinigt.
+     Ohne Gewähr auf Richtigkeit oder Vollständigkeit.</p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

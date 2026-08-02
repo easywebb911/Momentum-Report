@@ -1,0 +1,165 @@
+name: Momentum-Lauf
+
+# Werktags 21:45 UTC — nach Schluss beider Maerkte (Xetra 17:30 MEZ/MESZ,
+# NYSE 22:00 MEZ / 21:00 MESZ ... deshalb bewusst spaet). Der Lauf erkennt
+# selbst, ob heute der letzte Handelstag des Monats war, und bildet dann
+# das neue Ranking; an allen anderen Tagen werden nur Kurse aktualisiert.
+on:
+  schedule:
+    - cron: "45 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      datum:
+        description: "Laufdatum JJJJ-MM-TT (leer = heute)"
+        required: false
+        type: string
+      ohne_push:
+        description: "Keinen ntfy-Push verschicken"
+        required: false
+        default: false
+        type: boolean
+
+# Laeufe nie parallel und nie abwuergen: ein halb geschriebenes Ranking
+# waere schlimmer als ein spaeter Lauf.
+concurrency:
+  group: daily-momentum
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  lauf:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    steps:
+      # Bewusst der ZWEIGNAME, nicht der beim Dispatch eingefrorene SHA:
+      # sonst arbeitet ein manuell gestarteter Lauf auf altem Stand und
+      # sein Push kollidiert garantiert.
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Abhaengigkeiten
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Fehlendes Secret ist NIE ein stiller Rueckfall.
+      - name: Push-Einstellung pruefen
+        run: |
+          if [ -z "${NTFY_TOPIC}" ]; then
+            echo "========================================================================"
+            echo "NTFY_TOPIC IST NICHT GESETZT."
+            echo "Die Analyse laeuft trotzdem vollstaendig durch, ABER es gibt keine"
+            echo "Benachrichtigungen - weder fuer ein neues Monats-Ranking noch fuer"
+            echo "einen Fehlschlag. Setzen unter:"
+            echo "Settings -> Secrets and variables -> Actions -> New repository secret"
+            echo "Name: NTFY_TOPIC   Wert: der ntfy-Themenname"
+            echo "========================================================================"
+            echo "::warning title=NTFY_TOPIC fehlt::Keine Push-Benachrichtigungen moeglich. Die Analyse ist davon unberuehrt."
+          else
+            echo "NTFY_TOPIC ist gesetzt."
+          fi
+
+      - name: Analyse
+        id: analyse
+        run: |
+          python -m momentum.run \
+            ${{ inputs.datum && format('--today {0}', inputs.datum) || '' }} \
+            ${{ inputs.ohne_push && '--no-push' || '' }}
+
+      # --------------------------------------------------------------
+      # Ergebnisse zurueckschreiben. Nur auf main, und mit
+      # continue-on-error: ein Push-Konflikt ist KEIN Analyse-Fehler und
+      # darf deshalb nicht die Sirene ausloesen.
+      # --------------------------------------------------------------
+      - name: Ergebnisse zurueckschreiben
+        id: push
+        if: success() && github.ref_name == 'main'
+        continue-on-error: true
+        run: |
+          set -u
+          git config user.name  "momentum-report[bot]"
+          git config user.email "momentum-report@users.noreply.github.com"
+
+          git add -A data docs
+          if git diff --cached --quiet; then
+            echo "Keine Aenderungen zu schreiben."
+            exit 0
+          fi
+          git commit -m "Lauf ${{ github.run_number }}: Kurse und Seiten aktualisiert"
+
+          versuche=5
+          wartezeit=5
+          for i in $(seq 1 $versuche); do
+            # Vor JEDEM Wiederholungsversuch aufraeumen: ein haengengebliebener
+            # Rebase aus dem vorigen Versuch wuerde alles Weitere blockieren.
+            git rebase --abort || true
+
+            if git pull --rebase origin "${{ github.ref_name }}" \
+               && git push origin "HEAD:${{ github.ref_name }}"; then
+              echo "Push erfolgreich im Versuch $i."
+              exit 0
+            fi
+
+            echo "Versuch $i fehlgeschlagen, warte ${wartezeit}s."
+            sleep $wartezeit
+            wartezeit=$((wartezeit * 2))
+          done
+
+          git rebase --abort || true
+          echo "::error title=Daten-Push::Nach $versuche Versuchen nicht geschrieben."
+          exit 1
+
+      - name: Daten-Push-Konflikt melden (ohne Sirene)
+        if: steps.push.outcome == 'failure'
+        run: |
+          python - <<'PY'
+          import os
+          from momentum.notify import push_data_conflict
+          push_data_conflict(
+              "Das Zurueckschreiben nach main ist nach mehreren Versuchen "
+              "fehlgeschlagen (vermutlich ein gleichzeitiger Commit).\n"
+              f"Lauf: {os.environ.get('GITHUB_RUN_URL', '')}"
+          )
+          PY
+
+      - name: Lauf-Fehlschlag melden (mit Sirene)
+        if: failure()
+        run: |
+          python - <<'PY'
+          import os
+          from momentum.notify import push_run_failed
+          push_run_failed(
+              "Die Analyse selbst ist durchgefallen. Die Seite zeigt weiter "
+              "den letzten guten Stand.\n"
+              f"Lauf: {os.environ.get('GITHUB_RUN_URL', '')}"
+          )
+          PY
+
+      - name: Lauf-Status ins Protokoll
+        if: always()
+        run: |
+          echo "### Momentum-Lauf ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Analyse: ${{ steps.analyse.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Zurueckschreiben: ${{ steps.push.outcome || 'uebersprungen' }}" >> $GITHUB_STEP_SUMMARY
+          if [ -f data/status.json ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat data/status.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Momentum-Report">
+  <title>Momentum-Report</title>
+  <defs>
+    <linearGradient id="bar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#3b82f6" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0d1117"/>
+  <!-- Aufwaerts-Staffel: drei Balken, steigend -->
+  <rect x="96"  y="300" width="64" height="116" rx="18" fill="url(#bar)"/>
+  <rect x="192" y="240" width="64" height="176" rx="18" fill="url(#bar)"/>
+  <rect x="288" y="168" width="64" height="248" rx="18" fill="url(#bar)"/>
+  <!-- Pfeilspitze als Fortsetzung der Staffel -->
+  <path d="M352 152 L416 152 L416 216" fill="none" stroke="#3b82f6" stroke-width="34"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M416 152 L300 268" fill="none" stroke="#3b82f6" stroke-width="34"
+        stroke-linecap="round"/>
+</svg>

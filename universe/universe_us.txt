@@ -1,0 +1,19 @@
+# Universum: S&P 500
+# Herkunft: NOCH NICHT BEFUELLT
+# Stand: 1970-01-01
+# STATUS: PLACEHOLDER
+#
+# Diese Datei ist bewusst leer und als PLATZHALTER markiert.
+# Solange die Zeile "# STATUS: PLACEHOLDER" hier steht, verweigert das
+# Werkzeug jeden Lauf mit einem lauten Abbruch. Es gibt KEINEN stillen
+# Rueckfall auf eine Teilliste -- lieber gar kein Ranking als ein Ranking
+# auf einem erfundenen Universum.
+#
+# Befuellen: in GitHub unter "Actions" den Workflow
+# "Universum aktualisieren" starten (workflow_dispatch). Der Workflow
+# zieht die Mitgliederliste aus der dokumentierten Quelle, prueft JEDEN
+# Ticker gegen die Kursquelle, schreibt Herkunft und Stand-Datum in diesen
+# Dateikopf und committet. Das Aktualisieren bleibt damit ein bewusster
+# manueller Vorgang.
+#
+# Format ab hier: TICKER<TAB>Firmenname

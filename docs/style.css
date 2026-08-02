@@ -1,0 +1,463 @@
+/* Momentum-Report — Familien-Design.
+   Farben sind Semantik, nie Dekoration:
+   --grn nur positiv, --red nur negativ, --ora nur Warnlage,
+   --disc ausschliesslich Ehrlichkeits-Labels. */
+
+:root {
+  --bg: #0a0c12;
+  --bg-card: #141929;
+  --bg-hdr: #0d1117;
+  --bg-met: #1a2035;
+  --txt: #e2e8f0;
+  --txt-sub: #94a3b8;
+  --txt-dim: #8b97a8; /* WCAG AA >= 4,5:1 auf --bg — nicht dunkler waehlen */
+  --brd: #1e2d4a;
+  --shadow: 0 2px 12px rgba(0, 0, 0, .35);
+  --accent: #3b82f6;
+  --radius: 14px;
+  --red: #ef4444;
+  --ora: #f59e0b;
+  --grn: #22c55e;
+  --disc: #ca8a04;
+  --mono: 'SF Mono', 'SFMono-Regular', ui-monospace, 'Courier New', monospace;
+}
+
+/* Textgroessen-Einstellung im Menue skaliert die GESAMTE UI:
+   alle Masse unten sind rem-basiert. */
+html {
+  font-size: var(--app-fs, 16px);
+  -webkit-text-size-adjust: 100%;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------------------------------------------------------------- Kopf */
+
+.hdr {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: var(--bg-hdr);
+  border-bottom: 1px solid var(--brd);
+  padding: 1.125rem 1rem 0.75rem;
+  padding-top: max(1.125rem, env(safe-area-inset-top));
+}
+
+.hdr-main { min-width: 0; }
+
+.hdr h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+
+.stand {
+  margin: 0.25rem 0 0;
+  color: var(--txt-sub);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.menu-btn {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--brd);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--txt);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.menu-btn:active { background: #0b0f1a; }
+
+/* -------------------------------------------------------------- Menue */
+
+.overlay { position: fixed; inset: 0; z-index: 40; }
+.overlay[hidden] { display: none; }
+.overlay-backdrop { position: absolute; inset: 0; background: rgba(4, 6, 12, .6); }
+
+.sheet {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  left: 0.75rem;
+  max-width: 22rem;
+  margin-left: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.5rem;
+}
+
+.sheet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  color: var(--txt);
+}
+a.sheet-item:active, .sheet-close:active { background: #0f1424; }
+a.sheet-item:hover { text-decoration: none; background: #0f1424; }
+.sheet-item--static { cursor: default; }
+.sheet-grow { flex: 1; min-width: 0; }
+
+.sheet-icon {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--bg-met);
+  color: var(--accent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.sheet-title { display: block; font-weight: 600; }
+.sheet-sub { display: block; color: var(--txt-dim); font-size: 0.75rem; }
+
+.fs-row { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.5rem; }
+
+.fs-btn {
+  border: 1px solid var(--brd);
+  border-radius: 8px;
+  background: var(--bg-met);
+  color: var(--txt-sub);
+  padding: 0.375rem 0.625rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+.fs-btn[aria-pressed="true"] { color: var(--txt); border-color: var(--accent); }
+
+.sheet-close {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.75rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--txt-sub);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------- Ehrlichkeits-Block */
+
+.disc-box {
+  background: var(--bg-card);
+  border: 1px solid var(--brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.875rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.disc-list { list-style: none; margin: 0; padding: 0; }
+
+.disc-item {
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--brd);
+}
+.disc-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.disc-item:first-child { padding-top: 0; }
+
+.disc-title {
+  display: block;
+  color: var(--disc);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+.disc-text { display: block; color: var(--txt-sub); font-size: 0.8125rem; }
+.disc-src {
+  display: block;
+  color: var(--txt-dim);
+  font-size: 0.6875rem;
+  margin-top: 0.125rem;
+}
+.disc-link { white-space: nowrap; }
+
+/* ----------------------------------------------------------- Sektion */
+
+.market { margin-bottom: 1.75rem; }
+
+.market h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+.market h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--brd), transparent);
+}
+main > h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.75rem 0 0.75rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+main > h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--brd), transparent);
+}
+
+.flag { font-size: 1.125rem; }
+
+.market-meta {
+  margin: 0 0 0.625rem;
+  color: var(--txt-dim);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ampel {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+}
+.ampel--warn {
+  background: rgba(245, 158, 11, .12);
+  border: 1px solid var(--ora);
+  color: var(--ora);
+}
+.ampel--warn a { color: var(--ora); text-decoration: underline; }
+.ampel--ok {
+  background: var(--bg-card);
+  border: 1px solid var(--brd);
+  color: var(--txt-sub);
+}
+.ampel-dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.4375rem;
+  border-radius: 50%;
+  background: var(--ora);
+}
+.ampel-body { min-width: 0; }
+.ampel-src { display: block; color: var(--txt-dim); font-size: 0.6875rem; margin-top: 0.25rem; }
+
+/* ------------------------------------------------------------ Karten */
+
+.cards {
+  display: grid;
+  /* minmax(0, 1fr) statt der impliziten max-content-Spalte: sonst zieht
+     ein langer Firmenname die Karte ueber den Bildschirmrand hinaus. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.625rem;
+}
+
+.card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05) 0%, rgba(0, 0, 0, .10) 100%),
+    var(--bg-card);
+  border: 1px solid var(--brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.875rem;
+}
+
+.card-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.card-id { display: flex; align-items: baseline; gap: 0.625rem; min-width: 0; }
+
+.rank {
+  flex: none;
+  color: var(--txt-dim);
+  font-size: 1.375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.id-text { min-width: 0; }
+
+.ticker {
+  display: block;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  letter-spacing: .2px;
+}
+
+.cname {
+  display: block;
+  color: var(--txt-sub);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-score { flex: none; text-align: right; }
+
+.score-val {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-lbl {
+  display: block;
+  color: var(--txt-dim);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+}
+
+.metric-box {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, .08), rgba(0, 0, 0, .02)),
+    var(--bg-met);
+  border-radius: 9px;
+  padding: 0.5rem 0.5rem 0.4375rem;
+  min-width: 0;
+}
+
+.m-val {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.m-val.pos { color: var(--grn); }
+.m-val.neg { color: var(--red); }
+
+.m-lbl {
+  display: block;
+  margin-top: 0.125rem;
+  color: var(--txt-dim);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-ft {
+  margin: 0.625rem 0 0;
+  color: var(--disc);
+  font-size: 0.6875rem;
+}
+
+.cov {
+  margin: 0.625rem 0 0;
+  color: var(--txt-dim);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------- Methodik */
+
+.lead { color: var(--txt-sub); margin: 0 0 0.5rem; }
+
+.mcard { margin-bottom: 0.75rem; }
+.mcard h3 { margin: 0 0 0.5rem; font-size: 0.9375rem; font-weight: 700; }
+.mcard p { margin: 0 0 0.625rem; font-size: 0.875rem; }
+.mcard p:last-of-type { margin-bottom: 0.5rem; }
+
+.formula {
+  background: var(--bg-met);
+  border-radius: 9px;
+  padding: 0.625rem 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--txt);
+  overflow-x: auto;
+}
+
+.src-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0.625rem 0 0;
+  border-top: 1px solid var(--brd);
+  color: var(--txt-dim);
+  font-size: 0.6875rem;
+}
+.src-list li { margin-bottom: 0.375rem; }
+.src-list li:last-child { margin-bottom: 0; }
+
+.nolist { margin: 0; padding-left: 1.125rem; font-size: 0.875rem; color: var(--txt-sub); }
+.nolist li { margin-bottom: 0.375rem; }
+
+/* ------------------------------------------------------------- Fuss */
+
+.foot {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem calc(1.5rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--brd);
+  color: var(--txt-sub);
+  font-size: 0.75rem;
+}
+.foot p { margin: 0 0 0.375rem; }
+.foot-dim { color: var(--txt-dim); }
+
+/* Ab 560px passen drei Karten-Spalten nebeneinander; darunter (iPhone)
+   bleibt es einspaltig — bei 390px ist die Karte 358px breit, die drei
+   Kacheln je ~113px. */
+@media (min-width: 560px) {
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
