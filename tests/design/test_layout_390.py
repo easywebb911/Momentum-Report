@@ -227,6 +227,75 @@ def test_karte_und_kacheln_haben_sinnvolle_breiten(browser, seite):
         kontext.close()
 
 
+def test_banner_skaliert_ueber_das_viewbox_verhaeltnis(browser, seite):
+    """Volle Inhaltsbreite, Hoehe rein aus dem viewBox — kein festes Mass."""
+    kontext, page = _oeffne(browser, seite, "index.html")
+    try:
+        masse = page.evaluate(
+            """() => {
+              const svg = document.querySelector('.banner > svg');
+              const r = svg.getBoundingClientRect();
+              const karte = document.querySelector('.card').getBoundingClientRect();
+              return {
+                breite: r.width, hoehe: r.height,
+                inhaltsbreite: karte.width,
+                links: r.left, rechts: r.right,
+                hat_width: svg.hasAttribute('width'),
+                hat_height: svg.hasAttribute('height'),
+                anzeige: getComputedStyle(svg).display,
+              };
+            }"""
+        )
+        # Ohne width/height-Attribute traegt allein das viewBox die Hoehe.
+        assert masse["hat_width"] is False and masse["hat_height"] is False
+        assert masse["anzeige"] == "block"
+        assert abs(masse["breite"] - masse["inhaltsbreite"]) < 1, masse
+        assert masse["links"] >= -0.5 and masse["rechts"] <= BREITE + 0.5, masse
+        soll = 1170 / 190
+        ist = masse["breite"] / masse["hoehe"]
+        assert abs(ist - soll) < 0.02, f"Seitenverhaeltnis verzogen: {ist:.3f} statt {soll:.3f}"
+    finally:
+        kontext.close()
+
+
+def test_warnungen_stehen_ueber_dem_schmuckband(browser, seite):
+    """Dekoration darf die vier Ehrlichkeits-Anzeigen nicht nach unten druecken."""
+    kontext, page = _oeffne(browser, seite, "index.html")
+    try:
+        reihenfolge = page.evaluate(
+            """() => [...document.querySelector('main').children]
+                 .map(el => el.className.split(' ')[0])"""
+        )
+        assert reihenfolge.index("disc-box") < reihenfolge.index("banner"), reihenfolge
+        assert reihenfolge.index("banner") < reihenfolge.index("market"), reihenfolge
+    finally:
+        kontext.close()
+
+
+def test_das_banner_laedt_nichts_nach(browser, seite):
+    """Inline und autark: kein Bild, kein Fetch, keine Schriftdatei."""
+    kontext, page = _oeffne(browser, seite, "index.html")
+    try:
+        befund = page.evaluate(
+            """() => {
+              const svg = document.querySelector('.banner > svg');
+              return {
+                fremdverweise: [...svg.querySelectorAll('image, use, [href], [xlink\\\\:href]')].length,
+                versteckt: svg.getAttribute('aria-hidden'),
+                schriften: [...svg.querySelectorAll('[font-family]')]
+                  .map(el => el.getAttribute('font-family')),
+              };
+            }"""
+        )
+        assert befund["fremdverweise"] == 0, "das Banner verweist nach draussen"
+        assert befund["versteckt"] == "true", "dekoratives SVG muss aria-hidden sein"
+        # Nur systemeigene Schriften — nichts, was nachgeladen werden muesste.
+        for familie in befund["schriften"]:
+            assert "Helvetica, Arial, sans-serif" == familie, familie
+    finally:
+        kontext.close()
+
+
 def test_menue_laesst_sich_oeffnen_und_schliessen(browser, seite):
     kontext, page = _oeffne(browser, seite, "index.html")
     try:

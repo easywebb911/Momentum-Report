@@ -166,6 +166,108 @@ def _header(subline: str) -> str:
 </div>"""
 
 
+# --------------------------------------------------------------------------
+# Kopf-Banner — REIN DEKORATIV.
+#
+# Von Easy freigegebenes SVG, unveraendert uebernommen (nur eingerueckt).
+# Inline und ohne jeden Nachladevorgang: kein Bild, kein Fetch, keine
+# Schriftdatei. aria-hidden, weil es nichts aussagt, was nicht daneben in
+# Worten steht -- der Bildschirmleser ueberspringt es.
+#
+# Die ids tragen alle das Praefix "mmb-". Im ganzen Projekt gibt es sonst
+# nur zwei SVG-defs, "bar" und "barm", und die stehen in eigenen Dateien
+# (docs/icon.svg, docs/icon-maskable.svg), also ohnehin in einem anderen
+# Dokument. Eine Kollision ist damit doppelt ausgeschlossen -- auch wenn
+# spaeter Sparklines inline dazukommen, ist das Praefix frei.
+#
+# Breite/Hoehe stehen bewusst NICHT im SVG: die Skalierung macht das
+# viewBox-Verhaeltnis zusammen mit `.banner > svg` in style.css.
+_BANNER_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1170 190" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="mmb-bg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0d1524"/>
+        <stop offset="1" stop-color="#0a0f1a"/>
+      </linearGradient>
+      <linearGradient id="mmb-curve" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#fb923c"/>
+        <stop offset="0.5" stop-color="#38bdf8"/>
+        <stop offset="1" stop-color="#4ade80"/>
+      </linearGradient>
+      <linearGradient id="mmb-fill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#22c55e" stop-opacity="0.26"/>
+        <stop offset="1" stop-color="#22c55e" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="mmb-glow" x="-20%" y="-60%" width="140%" height="220%">
+        <feGaussianBlur stdDeviation="5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <radialGradient id="mmb-burst" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stop-color="#a7f3d0" stop-opacity="0.9"/>
+        <stop offset="0.4" stop-color="#4ade80" stop-opacity="0.35"/>
+        <stop offset="1" stop-color="#4ade80" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="mmb-fadeL" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#0a0f1a"/>
+        <stop offset="1" stop-color="#0a0f1a" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="mmb-fadeR" x1="1" y1="0" x2="0" y2="0">
+        <stop offset="0" stop-color="#0a0f1a"/>
+        <stop offset="1" stop-color="#0a0f1a" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <rect width="1170" height="190" rx="16" fill="url(#mmb-bg)"/>
+    <g stroke="#1e2a3f" stroke-width="1" opacity="0.55">
+      <line x1="0" y1="48" x2="1170" y2="48"/>
+      <line x1="0" y1="95" x2="1170" y2="95"/>
+      <line x1="0" y1="143" x2="1170" y2="143"/>
+      <line x1="66" y1="0" x2="66" y2="190"/><line x1="153" y1="0" x2="153" y2="190"/>
+      <line x1="240" y1="0" x2="240" y2="190"/><line x1="327" y1="0" x2="327" y2="190"/>
+      <line x1="414" y1="0" x2="414" y2="190"/><line x1="501" y1="0" x2="501" y2="190"/>
+      <line x1="588" y1="0" x2="588" y2="190"/><line x1="675" y1="0" x2="675" y2="190"/>
+      <line x1="762" y1="0" x2="762" y2="190"/><line x1="849" y1="0" x2="849" y2="190"/>
+      <line x1="936" y1="0" x2="936" y2="190"/><line x1="1023" y1="0" x2="1023" y2="190"/>
+    </g>
+    <g>
+      <rect x="1023" y="0" width="87" height="190" fill="#38bdf8" opacity="0.05"/>
+      <line x1="1023" y1="0" x2="1023" y2="190" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 5" opacity="0.5"/>
+      <text x="1066" y="176" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#7dd3fc" text-anchor="middle" opacity="0.9">Skip</text>
+    </g>
+    <line x1="0" y1="58" x2="1170" y2="58" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="8 7" opacity="0.55"/>
+    <text x="74" y="50" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#7dd3fc" opacity="0.85">52W-Hoch</text>
+    <path d="M60,170 C320,162 620,140 830,96 C920,76 985,52 1030,32"
+          fill="none" stroke="#fb923c" stroke-width="2.5" opacity="0.14"
+          transform="translate(-26,14)" stroke-linecap="round"/>
+    <path d="M60,170 C320,162 620,140 830,96 C920,76 985,52 1030,32"
+          fill="none" stroke="#fb923c" stroke-width="2" opacity="0.07"
+          transform="translate(-52,28)" stroke-linecap="round"/>
+    <path d="M60,170 C320,162 620,140 830,96 C920,76 985,52 1030,32 L1030,190 L60,190 Z"
+          fill="url(#mmb-fill)"/>
+    <path d="M60,170 C320,162 620,140 830,96 C920,76 985,52 1030,32"
+          fill="none" stroke="url(#mmb-curve)" stroke-width="4.5"
+          stroke-linecap="round" filter="url(#mmb-glow)"/>
+    <circle cx="967" cy="58" r="26" fill="url(#mmb-burst)"/>
+    <circle cx="967" cy="58" r="6" fill="#0a0f1a" stroke="#4ade80" stroke-width="2.5"/>
+    <path d="M1030,32 L1013,33 M1030,32 L1021,47" stroke="#4ade80" stroke-width="4.5"
+          stroke-linecap="round" filter="url(#mmb-glow)"/>
+    <path d="M1030,32 C1060,20 1090,14 1118,12" fill="none" stroke="#4ade80"
+          stroke-width="3.5" stroke-dasharray="6 7" stroke-linecap="round" opacity="0.45"/>
+    <text x="78" y="126" font-family="Helvetica, Arial, sans-serif" font-size="47"
+          font-weight="800" font-style="italic" letter-spacing="1.5"
+          fill="url(#mmb-curve)" filter="url(#mmb-glow)">Momentum</text>
+    <rect x="0" y="0" width="46" height="190" fill="url(#mmb-fadeL)"/>
+    <rect x="1124" y="0" width="46" height="190" fill="url(#mmb-fadeR)"/>
+  </svg>"""
+
+
+def _banner() -> str:
+    """Das Banner in seinem Traeger.
+
+    Der Traeger-<div> existiert, damit das SVG selbst unangetastet bleibt:
+    die Layout-Regeln haengen an `.banner`, nicht am SVG-Element.
+    """
+    return f'<div class="banner">\n  {_BANNER_SVG}\n</div>'
+
+
 def _honesty_block() -> str:
     items = []
     for key, title, text, link in HONESTY:
@@ -319,7 +421,11 @@ def render_index(views: list[MarketView], run_date: Date) -> str:
         ),
         _header(subline),
         "<main>",
+        # Reihenfolge mit Absicht: erst die Ehrlichkeits-Anzeigen, dann die
+        # Dekoration, dann der Inhalt. Warnendes steht zuoberst -- ein
+        # Schmuckband darf die vier Hinweise nicht nach unten druecken.
         _honesty_block(),
+        _banner(),
     ]
     for view in views:
         if view.ranking:
