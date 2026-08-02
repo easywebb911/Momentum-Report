@@ -99,15 +99,36 @@ jobs:
           git commit -m "Universum aktualisiert (${{ inputs.markt }}, Lauf ${{ github.run_number }})"
 
           for i in 1 2 3 4 5; do
-            git rebase --abort || true
-            if git pull --rebase origin "${{ github.ref_name }}" \
-               && git push origin "HEAD:${{ github.ref_name }}"; then
+            # Ausgabe unterdrueckt: "no rebase in progress" ist der Normalfall.
+            git rebase --abort >/dev/null 2>&1 || true
+
+            if ! git pull --rebase origin "${{ github.ref_name }}"; then
+              sleep $((5 * i))
+              continue
+            fi
+
+            if ausgabe=$(git push origin "HEAD:${{ github.ref_name }}" 2>&1); then
               echo "Geschrieben im Versuch $i."
               exit 0
             fi
+            echo "$ausgabe"
+
+            # Eine Schutzregel lehnt IMMER ab -- Wiederholen verbrennt nur Zeit
+            # und ueberdeckt im Protokoll den eigentlichen Befund.
+            case "$ausgabe" in
+              *GH013*|*"rule violations"*|*"protected branch"*|*"Required status check"*)
+                git rebase --abort >/dev/null 2>&1 || true
+                echo "Der Bot darf nicht nach ${{ github.ref_name }} schreiben."
+                echo "Das ist eine Schutzregel des Repositories, kein Konflikt --"
+                echo "Wiederholen aendert daran nichts. Abhilfe: Settings -> Rules"
+                echo "-> Ruleset -> Bypass list -> GitHub Actions eintragen."
+                echo "::error title=Vom Repository abgelehnt::Schutzregel auf ${{ github.ref_name }} verbietet dem Bot das Schreiben. Die geprueften Listen liegen fertig im Lauf, konnten aber nicht abgelegt werden."
+                exit 1 ;;
+            esac
+
             sleep $((5 * i))
           done
-          git rebase --abort || true
+          git rebase --abort >/dev/null 2>&1 || true
           echo "::error title=Universum-Push::nicht geschrieben"
           exit 1
 
