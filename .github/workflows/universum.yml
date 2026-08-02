@@ -12,6 +12,18 @@ on:
         default: beide
         type: choice
         options: [beide, us, de]
+      url_dax:
+        description: "Nur falls noetig: CSV-Link der iShares-DAX-Bestandsliste (EXS1)"
+        required: false
+        type: string
+      url_mdax:
+        description: "Nur falls noetig: CSV-Link der iShares-MDAX-Bestandsliste (EXS3)"
+        required: false
+        type: string
+      url_tecdax:
+        description: "Nur falls noetig: CSV-Link der iShares-TecDAX-Bestandsliste (EXS2)"
+        required: false
+        type: string
 
 concurrency:
   group: universum
@@ -26,6 +38,10 @@ jobs:
     env:
       PYTHONPATH: src
       GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # Leer gelassen greifen die Konstanten aus tools/build_universe.py.
+      MOMENTUM_URL_DAX: ${{ inputs.url_dax }}
+      MOMENTUM_URL_MDAX: ${{ inputs.url_mdax }}
+      MOMENTUM_URL_TECDAX: ${{ inputs.url_tecdax }}
 
     steps:
       - name: Quelltext holen
@@ -51,6 +67,7 @@ jobs:
         run: python tools/build_universe.py ${{ inputs.markt }}
 
       - name: Ergebnis pruefen (Platzhalter muss weg sein)
+        if: always()
         run: |
           python - <<'PY'
           from momentum.universe import load_universe
@@ -62,8 +79,14 @@ jobs:
                   print(f"{pfad}: noch nicht befuellt ({exc})")
           PY
 
+      # ABSICHTLICH always(): schlaegt EIN Markt fehl, ist der Schritt oben
+      # rot -- die Liste des anderen Marktes ist aber fertig geprueft und
+      # muss trotzdem ins Repo. Im ersten Lauf ging genau so ein fertiges
+      # US-Universum verloren. Geschrieben wird nur, was Plausibilitaets-
+      # und Kurspruefung bestanden hat; build_universe.py legt niemals ein
+      # Halbergebnis ab.
       - name: Zurueckschreiben
-        if: github.ref_name == 'main'
+        if: always() && github.ref_name == 'main'
         run: |
           set -u
           git config user.name  "momentum-report[bot]"

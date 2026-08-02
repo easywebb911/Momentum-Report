@@ -19,6 +19,13 @@
 # Index-Ueberpruefung. Der Bootstrap erwartet 95-125 Titel nach Abzug der
 # Doppelmitglieder und schreibt sonst gar nichts.
 #
+# QUELLE: die taeglichen Bestandslisten der physisch replizierenden
+# iShares-ETFs EXS1 (DAX), EXS3 (MDAX) und EXS2 (TecDAX). Was so ein Fonds
+# haelt, IST praktisch der Index. Frueher standen hier die englischen
+# Wikipedia-Artikel -- die waren jahrealt, und eine FEHLENDE Neuaufnahme
+# faellt bei keiner Kurspruefung auf. Deshalb prueft der Bootstrap jetzt
+# zusaetzlich den Bestands-Stichtag: aelter als 10 Handelstage -> Abbruch.
+#
 # Befuellen: in GitHub unter "Actions" den Workflow
 # "Universum aktualisieren" starten (workflow_dispatch).
 #
