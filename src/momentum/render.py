@@ -504,11 +504,16 @@ def render_index(views: list[MarketView], run_date: Date) -> str:
         ),
         _header(subline),
         "<main>",
-        # Reihenfolge mit Absicht: erst die Ehrlichkeits-Anzeigen, dann die
-        # Dekoration, dann der Inhalt. Warnendes steht zuoberst -- ein
-        # Schmuckband darf die vier Hinweise nicht nach unten druecken.
-        _honesty_block(),
+        # Das Banner steht als ERSTES im Inhalt, direkt unter der Ueberschrift
+        # -- Easys ausdrueckliche Platzierung. Sie ersetzt die urspruengliche
+        # Vorgabe, es hinter den Hinweis-Bereich zu setzen.
+        #
+        # Bewusst NICHT in den <header>: der ist sticky. Dort wuerde das Band
+        # beim Scrollen kleben und dauerhaft Bildschirmplatz kosten. Als
+        # erstes Element in <main> scrollt es weg wie jeder andere Inhalt und
+        # nimmt zugleich Innenabstand und Maximalbreite des Inhalts mit.
         _banner(),
+        _honesty_block(),
     ]
     for view in views:
         if view.ranking:
