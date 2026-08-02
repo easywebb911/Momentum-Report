@@ -2,7 +2,7 @@
 # Herkunft: Wikipedia (englisch) „List of S&P 500 companies“ (https://en.wikipedia.org/wiki/List_of_S%26P_500_companies)
 # Stand: 2026-08-02
 # STATUS: VERIFIED
-# Erzeugt von: .github/workflows/universum.yml (Lauf https://github.com/easywebb911/Momentum-Report/actions/runs/30756787479)
+# Erzeugt von: .github/workflows/universum.yml (Lauf https://github.com/easywebb911/Momentum-Report/actions/runs/30757976706)
 # Jeder Ticker wurde beim Erzeugen gegen echte Kursdaten geprueft.
 # Aktualisierung ist ein bewusster manueller Vorgang.
 #
