@@ -1,0 +1,23 @@
+# Universum: S&P 500
+# Herkunft: NOCH NICHT BEFUELLT
+# Stand: 1970-01-01
+# STATUS: PLACEHOLDER
+#
+# Diese Datei ist bewusst leer und als PLATZHALTER markiert.
+# Das Werkzeug arbeitet DEFAULT-DENY: gerechnet wird nur mit einer Datei,
+# die ausdruecklich "# STATUS: VERIFIED" traegt. Diese Zeile schreibt
+# allein der Bootstrap-Workflow, und zwar erst, nachdem jeder einzelne
+# Ticker gegen echte Kursdaten geprueft wurde. Platzhalter, halb
+# geschriebene und von Hand angelegte Dateien werden alle abgelehnt --
+# lauter Abbruch, kein stiller Rueckfall auf eine Teilliste. Damit kann
+# aus einem ungeprueften Universum niemals ein eingefrorenes Ranking
+# entstehen.
+#
+# Befuellen: in GitHub unter "Actions" den Workflow
+# "Universum aktualisieren" starten (workflow_dispatch). Der Workflow
+# zieht die Mitgliederliste aus der dokumentierten Quelle, prueft JEDEN
+# Ticker gegen die Kursquelle, schreibt Herkunft und Stand-Datum in diesen
+# Dateikopf und committet. Das Aktualisieren bleibt damit ein bewusster
+# manueller Vorgang.
+#
+# Format ab hier: TICKER<TAB>Firmenname

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Staerkstes Momentum in USA und Deutschland nach belegter Methode.">
+<title>Momentum-Report</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+<script>try{var f=localStorage.getItem("momentum-report:fs");if(f){document.documentElement.style.setProperty("--app-fs",f+"px");}}catch(e){}</script>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-main">
+    <h1>Momentum-Report</h1>
+    <p class="stand">Noch kein Ranking gebildet · Stand 02.08.2026</p>
+  </div>
+  <button class="menu-btn" id="menu-btn" aria-label="Menü öffnen" aria-expanded="false">☰</button>
+</header>
+<div class="overlay" id="overlay" hidden>
+  <div class="overlay-backdrop" data-close></div>
+  <nav class="sheet" aria-label="Menü">
+    <a class="sheet-item" href="methodik.html">
+      <span class="sheet-icon" aria-hidden="true">▤</span>
+      <span><span class="sheet-title">Methodik</span><span class="sheet-sub">Jede Zutat mit Quelle</span></span>
+    </a>
+    <div class="sheet-item sheet-item--static">
+      <span class="sheet-icon" aria-hidden="true">A</span>
+      <span class="sheet-grow"><span class="sheet-title">Textgröße</span>
+        <span class="fs-row" role="group" aria-label="Textgröße">
+          <button type="button" class="fs-btn" data-fs="15">Klein</button>
+          <button type="button" class="fs-btn" data-fs="16">Normal</button>
+          <button type="button" class="fs-btn" data-fs="18">Groß</button>
+          <button type="button" class="fs-btn" data-fs="20">Sehr groß</button>
+        </span>
+      </span>
+    </div>
+    <button type="button" class="sheet-close" data-close>Schließen</button>
+  </nav>
+</div>
+<main>
+<section class="disc-box" aria-label="Was dieses Werkzeug nicht kann">
+  <ul class="disc-list">
+    <li class="disc-item">
+      <span class="disc-title">Staerkstes Momentum nach belegter Methode</span>
+      <span class="disc-text">Keine Einzelaktien-Prognose — die Evidenz ist Portfolio-Statistik.</span>
+      <span class="disc-src">Fama &amp; French (2012), Journal of Financial Economics</span>
+    </li>
+    <li class="disc-item">
+      <span class="disc-title">Momentum kann abrupt einbrechen</span>
+      <span class="disc-text">Die schweren Einbrueche haeuften sich nach fallenden Maerkten. Was die Trend-Ampel oben je Markt bedeutet: <a class="disc-link" href="methodik.html#trend-ampel">Trend-Ampel erklärt →</a></span>
+      <span class="disc-src">Daniel &amp; Moskowitz (2016), Journal of Financial Economics</span>
+    </li>
+    <li class="disc-item">
+      <span class="disc-title">Der Effekt ist geschrumpft</span>
+      <span class="disc-text">US-Effekt nach 2000 im Schnitt nur noch rund 0,3 % pro Monat.</span>
+      <span class="disc-src">Jegadeesh &amp; Titman (2023), Financial Analysts Journal</span>
+    </li>
+    <li class="disc-item">
+      <span class="disc-title">Hier fehlt die halbe Studie</span>
+      <span class="disc-text">Die Studien messen Gewinner MINUS Verlierer; hier steht nur die Long-Seite — Studien-Renditen sind nicht uebertragbar.</span>
+      <span class="disc-src">Jegadeesh &amp; Titman (1993), The Journal of Finance</span>
+    </li>
+  </ul>
+</section>
+</main>
+
+<footer class="foot">
+  <p>Momentum-Report — Anwendungs-Werkzeug auf belegter Wissenschaft.
+     Keine Anlageberatung, keine Kauf- oder Verkaufsempfehlung.</p>
+  <p class="foot-dim">Kurse: Yahoo Finance, dividenden- und splitbereinigt.
+     Ohne Gewähr auf Richtigkeit oder Vollständigkeit.</p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

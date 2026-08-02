@@ -1,0 +1,42 @@
+name: Datenquelle pruefen
+
+# Die Netz-Nachweise laufen bewusst NICHT im taeglichen Lauf: eine kurze
+# Stoerung bei Yahoo wuerde sonst als "Lauf fehlgeschlagen" mit Sirene
+# ankommen, obwohl nichts kaputt ist. Hier laufen sie woechentlich und auf
+# Zuruf — und sie schlagen an, wenn sich die Annahmen ueber die Quelle
+# aendern (z. B. wenn 'Adj Close' verschwindet).
+on:
+  schedule:
+    - cron: "15 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: datenquelle
+  cancel-in-progress: false
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Abhaengigkeiten
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Netz-Nachweise
+        run: python -m pytest tests/network -v -m network
