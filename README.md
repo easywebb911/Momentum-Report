@@ -67,9 +67,14 @@ Ticker, den es in der Liste nicht gibt, kann in keiner Kursprüfung
 durchfallen. Nur ein Stichtag deckt so etwas auf, und genau den führen die
 ETF-Bestandslisten mit.
 
-Vor dem Schreiben prüft der Bootstrap zusätzlich den **Fondsnamen** aus der
-Datei gegen den erwarteten Index — eine vertauschte URL fällt damit auf,
-statt still ein falsches Universum zu erzeugen.
+Gegen eine **vertauschte URL** prüft der Bootstrap die Zahl der
+Aktien-Zeilen gegen den erwarteten Bereich des Index: DAX 38–42, MDAX
+48–52, TecDAX 28–32. Diese Bereiche überlappen nicht — landet die
+MDAX-Datei unter der DAX-Adresse, kommen 50 Zeilen an, wo 38–42 erwartet
+werden, und der Lauf bricht ab, statt still ein falsches Universum zu
+bauen. (Der Fondsname taugte dafür nicht: die echten deutschen
+Bestandslisten führen gar keinen, ihr ganzer Vorspann ist eine Zeile mit
+dem Stichtag.)
 
 ## Das Universum ist default-deny
 
