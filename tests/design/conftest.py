@@ -67,6 +67,8 @@ def ranking(name: str, warnung: bool) -> dict:
                 "momentum_12_1": 1.2345 if i % 2 == 0 else -0.4321,
                 "high_52w": 0.9876,
                 "kurs_stichtag": 1234.56,
+                "rank_12_1": i + 1,
+                "rank_52w": 470 - i,
                 "rang": i + 1,
             }
             for i in range(5)

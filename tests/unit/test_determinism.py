@@ -61,7 +61,9 @@ def test_gleichstand_wird_in_beiden_kennzahlen_deterministisch_gebrochen(tmp_pat
 
 def test_top5_entspricht_der_handrechnung(tmp_path):
     ranking = _aufbau(tmp_path, ["AAA", "BBB", "CCC", "DDD", "EEE"])
-    assert ranking["top"] == ["EEE", "AAA", "DDD", "BBB", "CCC"]
+    # Bei 50/50: DDD 75,0 | AAA 62,5 | EEE 62,5 | BBB 50,0 | CCC 0,0
+    # AAA und EEE liegen punktgleich, das Alphabet entscheidet.
+    assert ranking["top"] == ["DDD", "AAA", "EEE", "BBB", "CCC"]
     assert [r["rang"] for r in ranking["rangliste"]] == [1, 2, 3, 4, 5]
 
 

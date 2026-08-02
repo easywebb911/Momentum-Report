@@ -43,15 +43,30 @@ Gleichstand alphabetisch nach Ticker gebrochen)
           (BBB vor DDD, weil "BBB" < "DDD")
 
 --------------------------------------------------------------------------
-HANDRECHNUNG ENDSCORE  = 70 x Perzentil(12-1) + 30 x Perzentil(52W)
+HANDRECHNUNG PLATZZIFFERN  (1 = bester, gleiche Ordnung wie die Perzentile)
 
-  AAA = 70 x 0,75 + 30 x 0,50 = 52,5 + 15,0 = 67,5
-  BBB = 70 x 0,25 + 30 x 0,75 = 17,5 + 22,5 = 40,0
-  CCC = 70 x 0,00 + 30 x 0,00 =  0,0 +  0,0 =  0,0
-  DDD = 70 x 0,50 + 30 x 1,00 = 35,0 + 30,0 = 65,0
-  EEE = 70 x 1,00 + 30 x 0,25 = 70,0 +  7,5 = 77,5
+  12-1:   EEE 1. | AAA 2. | DDD 3. | BBB 4. | CCC 5.
+  52W:    DDD 1. | BBB 2. | AAA 3. | EEE 4. | CCC 5.
 
-RANGFOLGE (Score absteigend): EEE 77,5 | AAA 67,5 | DDD 65,0 | BBB 40,0 | CCC 0,0
+--------------------------------------------------------------------------
+HANDRECHNUNG ENDSCORE  = 50 x Perzentil(12-1) + 50 x Perzentil(52W)
+
+  AAA = 50 x 0,75 + 50 x 0,50 = 37,5 + 25,0 = 62,5
+  BBB = 50 x 0,25 + 50 x 0,75 = 12,5 + 37,5 = 50,0
+  CCC = 50 x 0,00 + 50 x 0,00 =  0,0 +  0,0 =  0,0
+  DDD = 50 x 0,50 + 50 x 1,00 = 25,0 + 50,0 = 75,0
+  EEE = 50 x 1,00 + 50 x 0,25 = 50,0 + 12,5 = 62,5
+
+RANGFOLGE (Score absteigend): DDD 75,0 | AAA 62,5 | EEE 62,5 | BBB 50,0 | CCC 0,0
+
+AAA und EEE liegen EXAKT gleichauf -- und das ist kein Zufall des
+Beispiels, sondern die Eigenschaft der Gleichgewichtung: AAA steht (2., 3.),
+EEE steht (1., 4.), die Summe der Perzentile ist beide Male 1,25. Wer vorn
+steht, entscheidet dann allein das Alphabet: AAA vor EEE.
+
+Unter den frueheren 70/30 waeren die beiden weit auseinandergelegen
+(AAA 67,5 gegen EEE 77,5). Der Gleichstand ist also ein echter Nachweis,
+dass hier 50/50 gerechnet wird -- und nicht bloss irgendetwas.
 --------------------------------------------------------------------------
 """
 
@@ -59,11 +74,13 @@ from __future__ import annotations
 
 import pytest
 
+from momentum.config import WEIGHT_HIGH_52W, WEIGHT_MOMENTUM_12_1
 from momentum.scoring import (
     InsufficientHistory,
     combined_score,
     high_52w_ratio,
     momentum_12_1,
+    ordinal_ranks,
     percentile_ranks,
 )
 from tests.conftest import ASOF, sample_series
@@ -72,8 +89,10 @@ SOLL_MOMENTUM = {"AAA": 0.50, "BBB": 0.20, "CCC": -0.10, "DDD": 0.20, "EEE": 0.6
 SOLL_HIGH_52W = {"AAA": 0.80, "BBB": 1.00, "CCC": 0.50, "DDD": 1.00, "EEE": 0.75}
 SOLL_PCT_MOM = {"CCC": 0.00, "BBB": 0.25, "DDD": 0.50, "AAA": 0.75, "EEE": 1.00}
 SOLL_PCT_HIGH = {"CCC": 0.00, "EEE": 0.25, "AAA": 0.50, "BBB": 0.75, "DDD": 1.00}
-SOLL_SCORE = {"AAA": 67.5, "BBB": 40.0, "CCC": 0.0, "DDD": 65.0, "EEE": 77.5}
-SOLL_RANGFOLGE = ["EEE", "AAA", "DDD", "BBB", "CCC"]
+SOLL_RANG_MOM = {"EEE": 1, "AAA": 2, "DDD": 3, "BBB": 4, "CCC": 5}
+SOLL_RANG_HIGH = {"DDD": 1, "BBB": 2, "AAA": 3, "EEE": 4, "CCC": 5}
+SOLL_SCORE = {"AAA": 62.5, "BBB": 50.0, "CCC": 0.0, "DDD": 75.0, "EEE": 62.5}
+SOLL_RANGFOLGE = ["DDD", "AAA", "EEE", "BBB", "CCC"]
 
 
 @pytest.mark.parametrize("ticker,soll", sorted(SOLL_MOMENTUM.items()))
@@ -142,6 +161,81 @@ def test_rangfolge_trifft_handrechnung():
     scores = {t: combined_score(pct_mom[t], pct_high[t]) for t in serien}
     rangfolge = sorted(scores, key=lambda t: (-scores[t], t))
     assert rangfolge == SOLL_RANGFOLGE
+
+
+# ------------------------------------------------------- Gleichgewichtung
+
+
+def test_die_gewichte_sind_gleich_und_summieren_auf_eins():
+    """50/50 -- Konvention der Komposit-Literatur, kein belegtes Optimum."""
+    assert WEIGHT_MOMENTUM_12_1 == 0.50
+    assert WEIGHT_HIGH_52W == 0.50
+    assert WEIGHT_MOMENTUM_12_1 + WEIGHT_HIGH_52W == 1.0
+
+
+def test_50_50_rechnet_wirklich_50_50():
+    """Spiegelbildliche Teil-Raenge muessen punktgleich landen.
+
+    Bei fuenf Titeln: Platz 1 -> Perzentil 1,00 | Platz 3 -> 0,50.
+    Ein Titel auf (1., 3.) und einer auf (3., 1.) haben denselben Score --
+    das gilt GENAU DANN, wenn beide Zutaten gleich wiegen. Der Gegencheck
+    mit 70/30 zeigt, dass der Test wirklich die Gewichtung misst.
+    """
+    eins_drei = combined_score(1.00, 0.50)
+    drei_eins = combined_score(0.50, 1.00)
+    assert eins_drei == pytest.approx(drei_eins, abs=1e-12)
+    assert eins_drei == pytest.approx(75.0, abs=1e-12)
+
+    # Gegenprobe: unter 70/30 waeren es 85 gegen 65 -- weit auseinander.
+    assert 100 * (0.70 * 1.00 + 0.30 * 0.50) != pytest.approx(
+        100 * (0.70 * 0.50 + 0.30 * 1.00)
+    )
+
+
+def test_bei_punktgleichheit_entscheidet_das_alphabet():
+    """Der Gleichstands-Bruch gilt unveraendert auch fuer 50/50-Gleichstand."""
+    serien = sample_series()
+    pct_mom = percentile_ranks({t: momentum_12_1(p, ASOF) for t, p in serien.items()})
+    pct_high = percentile_ranks({t: high_52w_ratio(p, ASOF) for t, p in serien.items()})
+    scores = {t: combined_score(pct_mom[t], pct_high[t]) for t in serien}
+
+    # AAA steht (2., 3.), EEE steht (1., 4.) -- exakt gleicher Score.
+    assert scores["AAA"] == pytest.approx(scores["EEE"], abs=1e-12)
+    rangfolge = sorted(scores, key=lambda t: (-scores[t], t))
+    assert rangfolge.index("AAA") < rangfolge.index("EEE"), "AAA < EEE im Alphabet"
+
+
+@pytest.mark.parametrize(
+    "werte,soll",
+    [
+        (SOLL_MOMENTUM, SOLL_RANG_MOM),
+        (SOLL_HIGH_52W, SOLL_RANG_HIGH),
+    ],
+)
+def test_platzziffern_treffen_die_handrechnung(werte, soll):
+    assert ordinal_ranks(werte) == soll
+
+
+def test_platzziffer_und_perzentil_laufen_nie_auseinander():
+    """Platz 1 muss immer Perzentil 1,0 sein -- sonst luegt die Anzeige."""
+    werte = {t: momentum_12_1(p, ASOF) for t, p in sample_series().items()}
+    plaetze = ordinal_ranks(werte)
+    perzentile = percentile_ranks(werte)
+    n = len(werte)
+    for ticker in werte:
+        # Platz p (1..n) entspricht Perzentil (n - p) / (n - 1).
+        assert perzentile[ticker] == pytest.approx(
+            (n - plaetze[ticker]) / (n - 1), abs=1e-12
+        ), ticker
+    bester = min(plaetze, key=plaetze.get)
+    assert plaetze[bester] == 1 and perzentile[bester] == pytest.approx(1.0)
+
+
+def test_platzziffern_randfaelle():
+    assert ordinal_ranks({}) == {}
+    assert ordinal_ranks({"X": 1.23}) == {"X": 1}
+    # Gleichstand: alphabetisch gebrochen, der spaetere Ticker ist "besser"
+    assert ordinal_ranks({"B": 1.0, "A": 1.0, "C": 1.0}) == {"C": 1, "B": 2, "A": 3}
 
 
 def test_perzentil_randfaelle():

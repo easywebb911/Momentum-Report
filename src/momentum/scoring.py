@@ -131,8 +131,30 @@ def percentile_ranks(values: Mapping[str, float]) -> dict[str, float]:
     return {ticker: i / (n - 1) for i, (ticker, _) in enumerate(ordered)}
 
 
+def ordinal_ranks(values: Mapping[str, float]) -> dict[str, int]:
+    """Platzziffern 1..n innerhalb EINES Marktes -- 1 ist der beste Titel.
+
+    Bewusst aus DERSELBEN Sortierung wie percentile_ranks abgeleitet: beide
+    ordnen nach (Wert, Ticker) aufsteigend. Damit koennen die angezeigte
+    Platzziffer und das gerechnete Perzentil nicht auseinanderlaufen -- der
+    beste Titel hat immer zugleich Perzentil 1.0 und Platz 1.
+
+    Gleichstaende werden wie dort alphabetisch gebrochen, nicht gemittelt.
+    """
+    ordered = sorted(values.items(), key=lambda kv: (kv[1], kv[0]))
+    n = len(ordered)
+    return {ticker: n - i for i, (ticker, _) in enumerate(ordered)}
+
+
 def combined_score(pct_momentum: float, pct_high_52w: float) -> float:
-    """Endscore 0..100 = 70 x Perzentil(12-1) + 30 x Perzentil(52W-Naehe).
+    """Endscore 0..100 = 50 x Perzentil(12-1) + 50 x Perzentil(52W-Naehe).
+
+    GLEICHGEWICHTET, und das ist eine Aussage: Die Literatur liefert KEIN
+    Mischverhaeltnis fuer diese beiden Zutaten -- sie vergleicht sie als
+    getrennte Strategien. Gleichgewichtung ist die Konvention der
+    Komposit-Arbeiten und zugleich die einzige Wahl, die nichts behauptet,
+    was nicht belegt ist. Die Gewichte stehen als benannte Konstanten an
+    genau einer Stelle (config.WEIGHT_*), samt Begruendung.
 
     Belege: momentum_12_1, high_52w, within_market.
     """

@@ -65,7 +65,7 @@ def test_kompletter_lauf_erzeugt_alles(welt, monkeypatch):
 
     us = json.loads((tmp_path / "data/rankings/us_2026-07.json").read_text(encoding="utf-8"))
     assert us["stichtag"] == "2026-07-31"
-    assert us["top"] == ["EEE", "AAA", "DDD", "BBB", "CCC"]
+    assert us["top"] == ["DDD", "AAA", "EEE", "BBB", "CCC"]
     assert us["trend_ampel"]["warnung"] is False
 
     de = json.loads((tmp_path / "data/rankings/de_2026-07.json").read_text(encoding="utf-8"))
@@ -91,7 +91,7 @@ def test_kompletter_lauf_erzeugt_alles(welt, monkeypatch):
     assert len(verschickt) == 1
     eintraege = verschickt[0]
     assert {e["markt"] for e in eintraege} == {"USA", "Deutschland"}
-    assert all(e["top"] == "EEE" for e in eintraege)
+    assert all(e["top"] == "DDD" for e in eintraege)
 
 
 def test_zweiter_lauf_am_selben_tag_aendert_nichts(welt, monkeypatch):

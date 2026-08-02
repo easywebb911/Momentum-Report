@@ -402,6 +402,11 @@ def _card(row: dict, view: MarketView) -> str:
     )
     mom = row["momentum_12_1"]
     mom_class = "pos" if mom > 0 else ("neg" if mom < 0 else "")
+    # Die beiden Teil-Raenge. Sie stehen hier, damit die Mischung SICHTBAR
+    # ist: bei Gleichgewichtung kann ein Titel vorn liegen, weil er in einer
+    # Zutat sehr stark und in der anderen nur mittelmaessig ist. Das gehoert
+    # auf die Karte, nicht in eine Fussnote.
+    bewertet = view.ranking["abdeckung"]["bewertet"]
     return f"""      <article class="card">
         <div class="card-hd">
           <div class="card-id">
@@ -428,6 +433,16 @@ def _card(row: dict, view: MarketView) -> str:
           <div class="metric-box">
             <span class="m-val">{price_text}</span>
             <span class="m-lbl">Kurs ({e(market.currency)})</span>
+          </div>
+        </div>
+        <div class="metrics metrics--rang">
+          <div class="metric-box">
+            <span class="m-val">{row["rank_12_1"]}.{NBSP}von{NBSP}{bewertet}</span>
+            <span class="m-lbl">Rang 12-1-Momentum</span>
+          </div>
+          <div class="metric-box">
+            <span class="m-val">{row["rank_52w"]}.{NBSP}von{NBSP}{bewertet}</span>
+            <span class="m-lbl">Rang 52W-Hoch-Nähe</span>
           </div>
         </div>
         <p class="card-ft">Rang aus belegter Rechenvorschrift — keine Prognose für diese Aktie.</p>
@@ -558,7 +573,7 @@ einfacher Sprache, und woher sie stammt. Was hier keine Quelle hat, steht
 nicht im Score.</p>""",
         "<h2>Die zwei Zutaten des Scores</h2>",
         _method_card(
-            "1. 12-1-Momentum (Gewicht 70 %)",
+            f"1. 12-1-Momentum (Gewicht {int(WEIGHT_MOMENTUM_12_1 * 100)} %)",
             SCORE_COMPONENT_SOURCES["momentum_12_1"],
             """<p>Wir schauen, wie stark eine Aktie in einem Fenster von rund einem
 Jahr gestiegen ist — und lassen dabei den <strong>jüngsten Monat bewusst
@@ -573,7 +588,7 @@ deshalb gehört das Auslassen zur belegten Rezeptur.</p>
 Aktiensplits sind eingerechnet, weil die Studien Gesamtrenditen messen.</p>""",
         ),
         _method_card(
-            "2. Nähe zum 52-Wochen-Hoch (Gewicht 30 %)",
+            f"2. Nähe zum 52-Wochen-Hoch (Gewicht {int(WEIGHT_HIGH_52W * 100)} %)",
             SCORE_COMPONENT_SOURCES["high_52w"],
             """<p>Wie nah notiert die Aktie heute an ihrem höchsten Stand des
 letzten Jahres?</p>
@@ -592,10 +607,26 @@ schwächste Titel bekommt 0, der stärkste 1, alle anderen liegen gleichmäßig
 dazwischen (Perzentil-Rang).</p>
 <p class="formula">Score = {int(WEIGHT_MOMENTUM_12_1 * 100)} × Perzentil(12-1-Momentum)
 + {int(WEIGHT_HIGH_52W * 100)} × Perzentil(52-Wochen-Hoch-Nähe)</p>
+<p><strong>Beide Zutaten zählen gleich viel.</strong> Das ist eine bewusste
+Entscheidung, und sie hat einen Grund: Die Forschung liefert
+<em>kein</em> Mischverhältnis für diese beiden Größen. Sie untersucht sie als
+zwei getrennte Verfahren und vergleicht sie miteinander — in der Arbeit von
+George &amp; Hwang war für den US-Markt sogar die Nähe zum 52-Wochen-Hoch die
+stärkere der beiden. Wo Arbeiten mehrere solcher Größen zusammenfassen,
+gewichten sie üblicherweise gleich.</p>
+<p>Jedes andere Verhältnis wäre also eine Zahl, die niemand belegt hat. Wenn
+man nicht weiß, welche Zutat wie viel wiegen sollte, ist Gleichgewichtung die
+ehrliche Wahl — sie behauptet nichts.</p>
+<p>Damit man sieht, woher der Score kommt, zeigt jede Karte
+<strong>zusätzlich beide Teil-Ränge</strong> („3. von 470"). So erkennt man
+sofort, ob ein Titel in beiden Zutaten stark ist oder nur in einer.</p>
 <p>Wichtig: Die Ränge werden <strong>immer nur innerhalb eines Marktes</strong>
 gebildet — US-Titel gegen US-Titel, deutsche gegen deutsche. Nie gemischt.
 Bei exakt gleichem Wert entscheidet die alphabetische Reihenfolge des Tickers;
-dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar.</p>""",
+dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar. Bei
+Gleichgewichtung kommt das häufiger vor als vorher — zwei Titel mit
+spiegelbildlichen Teil-Rängen landen exakt gleichauf. Auch dann entscheidet
+allein das Alphabet, nie der Zufall.</p>""",
         ),
         _method_card(
             "Warum nur fünf Titel — und was das kostet",

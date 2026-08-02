@@ -14,10 +14,22 @@ from .sources import SCORE_COMPONENT_SOURCES
 SCHEMA_VERSION = 1
 
 # --- Score-Zusammensetzung ------------------------------------------------
-# Beleg momentum_12_1 (Jegadeesh & Titman 1993) + skip_month (Jegadeesh 1990)
-WEIGHT_MOMENTUM_12_1 = 0.70
-# Beleg high_52w (George & Hwang 2004)
-WEIGHT_HIGH_52W = 0.30
+# 50/50 = Konvention der Komposit-Literatur; ein belegtes optimales
+# Verhaeltnis existiert nicht.
+#
+# Ausfuehrlich, weil hier zuvor eine unbelegte Setzung stand (70/30):
+# Kein Paper liefert ein Mischverhaeltnis fuer 12-1-Momentum und
+# 52-Wochen-Hoch-Naehe -- die Literatur vergleicht beide als GETRENNTE
+# Strategien. George & Hwang (2004) fanden die 52-Wochen-Naehe in den USA
+# sogar dominant; international bestehen beide Effekte unabhaengig
+# voneinander. Wer mischt, mischt in dieser Literatur gleichgewichtet.
+# Die frueheren 70/30 gewichteten damit ausgerechnet das in der
+# Vergleichsstudie schwaechere Signal hoeher -- ohne Beleg dafuer.
+#
+# Belege: momentum_12_1 (Jegadeesh & Titman 1993) + skip_month
+# (Jegadeesh 1990); high_52w (George & Hwang 2004).
+WEIGHT_MOMENTUM_12_1 = 0.50
+WEIGHT_HIGH_52W = 0.50
 SCORE_SCALE = 100.0
 
 # Messfenster der 12-1-Rendite, in Monaten, relativ zum Stichtag-Monat M.
