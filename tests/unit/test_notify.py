@@ -147,3 +147,201 @@ def test_unerreichbares_ntfy_wird_nicht_zum_absturz(monkeypatch, capsys):
 def test_leeres_secret_zaehlt_als_fehlend(monkeypatch, leer):
     monkeypatch.setenv("NTFY_TOPIC", leer)
     assert notify.push("T", "B") is False
+
+
+# --------------------------------------------------------------------------
+# NTFY_TOPIC haerten
+#
+# Am 02.08.2026 scheiterte der Push mit HTTP 400 "topic invalid": im Secret
+# steckte ein unsichtbarer Rest vom Kopieren. Der Lauf sagte nur "HTTP 400"
+# -- zu stumm, um daraus etwas zu lernen.
+# --------------------------------------------------------------------------
+
+GUELTIG = ["momentum-report", "abc", "A_b-9", "x" * 64, "0"]
+UNGUELTIG_UNSICHTBAR = {
+    "momentum-report ": ("Position 16", "Leerzeichen"),
+    "momentum-report\n": ("Position 16", "Zeilenumbruch"),
+    "momentum-report\r\n": ("Position 16", "Wagenruecklauf"),
+    "momentum-report\t": ("Position 16", "Tabulator"),
+    "momen tum": ("Position 6", "Leerzeichen"),
+}
+
+
+@pytest.mark.parametrize("topic", GUELTIG)
+def test_gueltige_themen_kommen_durch(topic):
+    assert notify.pruefe_topic(topic) is None
+    gesammelt = []
+    assert notify.push("T", "B", topic=topic, opener=_sammler(gesammelt)) is True
+    assert _payload(gesammelt[0])["topic"] == topic
+
+
+@pytest.mark.parametrize("topic,erwartet", sorted(UNGUELTIG_UNSICHTBAR.items()))
+def test_unsichtbare_reste_werden_benannt(topic, erwartet):
+    """Das Zeichen wird nach Position UND Art genannt -- sonst sucht man ewig."""
+    stelle, art = erwartet
+    diagnose = notify.pruefe_topic(topic)
+    assert diagnose is not None
+    assert stelle in diagnose, diagnose
+    assert art in diagnose, diagnose
+
+
+def test_anhaengsel_am_ende_werden_vorher_abgeschnitten(monkeypatch):
+    """Leerzeichen und Zeilenumbruch AM RAND kosten keinen Push.
+
+    Genau das ist der haeufige Paste-Rest. Er wird geputzt, nicht bemaengelt
+    -- der Push geht raus, und zwar an das saubere Thema.
+    """
+    for roh in ("momentum-report ", " momentum-report", "momentum-report\n", "\tmomentum-report\r\n"):
+        monkeypatch.setenv("NTFY_TOPIC", roh)
+        gesammelt = []
+        assert notify.push("T", "B", opener=_sammler(gesammelt)) is True, roh
+        assert _payload(gesammelt[0])["topic"] == "momentum-report"
+
+
+def test_ein_rest_MITTEN_drin_bricht_ab_und_schickt_nichts(monkeypatch, capsys):
+    """Was .strip() nicht wegbekommt, muss VOR dem Senden auffallen."""
+    monkeypatch.setenv("NTFY_TOPIC", "momen tum-report")
+    gesammelt = []
+    assert notify.push("T", "B", opener=_sammler(gesammelt)) is False
+    assert gesammelt == [], "es wurde trotz ungueltigem Thema gesendet"
+    fehler = capsys.readouterr().err
+    assert "NTFY_TOPIC ungueltig" in fehler
+    assert "Position 6" in fehler
+    assert "Leerzeichen" in fehler
+
+
+@pytest.mark.parametrize(
+    "topic,art",
+    [
+        ("momentum report", "geschuetztes Leerzeichen"),
+        ("momentum​report", "ohne Breite"),
+        ("﻿momentum", "Byte-Order-Mark"),
+        ("momentum.report", "Satzzeichen"),
+        ("momentum/report", "Satzzeichen"),
+        ("momentum+report", "Symbol"),
+        ("momentüm", "Buchstabe ausserhalb A-Z"),
+    ],
+)
+def test_auch_die_hinterhaeltigen_zeichen_werden_erkannt(topic, art):
+    """U+00A0 und U+200B ueberleben .strip() teilweise bzw. ganz."""
+    diagnose = notify.pruefe_topic(topic)
+    assert diagnose is not None, topic
+    assert art in diagnose, (topic, diagnose)
+
+
+def test_zu_langes_thema_wird_an_der_laenge_erkannt():
+    diagnose = notify.pruefe_topic("x" * 65)
+    assert diagnose is not None
+    assert "65 Zeichen" in diagnose
+    assert "1 bis 64" in diagnose
+
+
+def test_leeres_thema_gilt_weiter_als_fehlend(monkeypatch, capsys):
+    monkeypatch.setenv("NTFY_TOPIC", "   \n")
+    assert notify.push("T", "B") is False
+    assert "PUSH NICHT VERSCHICKT" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "topic",
+    ["geheim-thema ", "geheim-thema\n", "gehe im-thema", "geheim.thema", "geheim​thema"],
+)
+def test_die_diagnose_verraet_das_thema_NICHT(topic, monkeypatch, capsys):
+    """Ein Secret gehoert nicht ins Protokoll -- auch nicht bruchstueckweise."""
+    monkeypatch.setenv("NTFY_TOPIC", topic)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    notify.push("T", "B")
+    ausgabe = capsys.readouterr()
+    gesamt = ausgabe.out + ausgabe.err
+    geputzt = topic.strip()
+    assert geputzt not in gesamt, "das Thema steht im Klartext im Protokoll"
+    # auch kein laengeres Bruchstueck
+    assert "geheim" not in gesamt, gesamt
+    assert "thema" not in gesamt, gesamt
+
+
+def test_ungueltiges_thema_erzeugt_eine_fehler_annotation(monkeypatch, capsys):
+    monkeypatch.setenv("NTFY_TOPIC", "mit leerzeichen")
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    notify.push("T", "B")
+    ausgabe = capsys.readouterr().out
+    assert "::error title=NTFY_TOPIC ungueltig::" in ausgabe
+    # Die Annotation muss einzeilig sein, sonst zeigt GitHub sie nicht an.
+    zeile = [z for z in ausgabe.splitlines() if z.startswith("::error")][0]
+    assert "Position 4" in zeile and "Leerzeichen" in zeile
+
+
+# ------------------------------------------------------- Antwort des Servers
+
+
+class _Fehlerantwort:
+    def __init__(self, status, koerper):
+        self.status = status
+        self._koerper = koerper
+
+    def read(self):
+        return self._koerper
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+def test_der_grund_des_servers_steht_im_protokoll(capsys):
+    """"HTTP 400" allein war zu stumm — der Koerper nennt den Grund."""
+    koerper = b'{"code":40009,"http":400,"error":"invalid request: topic invalid"}'
+
+    def opener(request, timeout=None):
+        return _Fehlerantwort(400, koerper)
+
+    assert notify.push("T", "B", topic="gueltig", opener=opener) is False
+    fehler = capsys.readouterr().err
+    assert "HTTP 400" in fehler
+    assert "invalid request: topic invalid" in fehler
+    assert "40009" in fehler
+
+
+def test_auch_die_geworfene_http_ausnahme_wird_ausgelesen(capsys):
+    """urlopen wirft bei 4xx — der echte Weg. Auch da muss der Grund raus."""
+    import io
+    import urllib.error
+
+    def opener(request, timeout=None):
+        raise urllib.error.HTTPError(
+            "https://ntfy.sh",
+            400,
+            "Bad Request",
+            {},
+            io.BytesIO(b'{"code":40009,"http":400,"error":"topic invalid"}'),
+        )
+
+    assert notify.push("T", "B", topic="gueltig", opener=opener) is False
+    fehler = capsys.readouterr().err
+    assert "HTTP 400" in fehler
+    assert "topic invalid" in fehler
+
+
+def test_der_antworttext_schwaerzt_das_thema(capsys):
+    """Falls ein Server das Thema zurueckspiegelt: nicht ins Protokoll."""
+
+    def opener(request, timeout=None):
+        return _Fehlerantwort(400, b'{"error":"topic geheimnis unbekannt"}')
+
+    notify.push("T", "B", topic="geheimnis", opener=opener)
+    fehler = capsys.readouterr().err
+    assert "geheimnis" not in fehler
+    assert "<topic>" in fehler
+
+
+def test_unlesbare_antwort_kippt_nichts(capsys):
+    class Kaputt(_Fehlerantwort):
+        def read(self):
+            raise OSError("Verbindung weg")
+
+    def opener(request, timeout=None):
+        return Kaputt(503, b"")
+
+    assert notify.push("T", "B", topic="gueltig", opener=opener) is False
+    assert "HTTP 503" in capsys.readouterr().err

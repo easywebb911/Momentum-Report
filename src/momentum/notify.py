@@ -21,12 +21,28 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
+import unicodedata
 import urllib.error
 import urllib.request
 
 NTFY_BASE = os.environ.get("NTFY_BASE", "https://ntfy.sh")
 TIMEOUT_SECONDS = 20
+
+# Was ntfy als Thema akzeptiert. Alles andere lehnt die JSON-Schnittstelle
+# mit HTTP 400 "topic invalid" ab -- und zwar BEVOR irgendetwas zugestellt
+# wird. Genau das ist am 02.08.2026 passiert: im Secret steckte ein
+# unsichtbarer Rest vom Kopieren.
+#
+# \A und \Z statt ^ und $, und das ist hier KEINE Kosmetik: Pythons $ passt
+# auch VOR einem abschliessenden Zeilenumbruch. Mit ^...$ haette
+# "thema\n" als gueltig gegolten -- ausgerechnet der Fall, um den es geht.
+TOPIC_MUSTER = re.compile(r"\A[-_A-Za-z0-9]{1,64}\Z")
+TOPIC_MAX = 64
+
+# Wie viel vom Antwortkoerper des Servers ins Protokoll darf.
+FEHLERTEXT_MAX = 500
 
 # ntfy-Prioritaeten: 3 = normal, 4 = hoch (loest auf dem iPhone die
 # auffaellige Zustellung aus). Mehr braucht dieses Werkzeug nicht.
@@ -40,12 +56,113 @@ MISSING_TOPIC_BANNER = (
 )
 
 
-def _loud(message: str) -> None:
+def _loud(message: str, *, titel: str = "NTFY_TOPIC fehlt", art: str = "warning") -> None:
     """Immer sichtbar: im Log UND als GitHub-Annotation."""
     bar = "=" * 72
     print(f"\n{bar}\n{message}\n{bar}\n", file=sys.stderr, flush=True)
     if os.environ.get("GITHUB_ACTIONS"):
-        print(f"::warning title=NTFY_TOPIC fehlt::{message}", flush=True)
+        einzeilig = " ".join(message.split())
+        print(f"::{art} title={titel}::{einzeilig}", flush=True)
+
+
+# Unsichtbare Zeichen beim Namen nennen -- das sind die Faelle, die man
+# sonst stundenlang sucht, weil man sie im Secret-Feld schlicht nicht sieht.
+_UNSICHTBAR = {
+    " ": "ein Leerzeichen",
+    "\n": "ein Zeilenumbruch",
+    "\r": "ein Wagenruecklauf",
+    "\t": "ein Tabulator",
+    "\v": "ein Vertikaltabulator",
+    "\f": "ein Seitenvorschub",
+    " ": "ein geschuetztes Leerzeichen (U+00A0)",
+    "​": "ein Zeichen ohne Breite (U+200B)",
+    "‌": "ein Zeichen ohne Breite (U+200C)",
+    "‍": "ein Zeichen ohne Breite (U+200D)",
+    "﻿": "eine Byte-Order-Mark (U+FEFF)",
+}
+
+_KATEGORIEN = {
+    "Z": "ein Leerraum-Zeichen",
+    "C": "ein unsichtbares Steuerzeichen",
+    "P": "ein Satzzeichen",
+    "S": "ein Symbol",
+    "L": "ein Buchstabe ausserhalb A-Z",
+    "N": "eine Ziffer ausserhalb 0-9",
+    "M": "ein kombinierendes Zeichen",
+}
+
+
+def _zeichen_beschreiben(zeichen: str) -> str:
+    """Ein verbotenes Zeichen benennen, OHNE es auszugeben.
+
+    Unsichtbare Zeichen bekommen ihren Codepunkt genannt -- sie sind der
+    haeufige Fall und tragen nichts vom Geheimnis. Sichtbare Zeichen werden
+    nur ihrer Art nach beschrieben: der Hinweis reicht zum Finden, und das
+    Thema selbst bleibt vollstaendig im Dunkeln.
+    """
+    if zeichen in _UNSICHTBAR:
+        return _UNSICHTBAR[zeichen]
+    kategorie = unicodedata.category(zeichen)
+    if kategorie[0] in ("Z", "C"):
+        return f"{_KATEGORIEN[kategorie[0]]} (U+{ord(zeichen):04X})"
+    return _KATEGORIEN.get(kategorie[0], "ein unerlaubtes Zeichen")
+
+
+def pruefe_topic(topic: str) -> str | None:
+    """Das Thema pruefen. None = in Ordnung, sonst die Diagnose im Klartext.
+
+    Die Diagnose enthaelt NIE das Thema selbst -- nur seine Laenge und
+    Position und Art des ersten unerlaubten Zeichens. Ein Secret gehoert
+    nicht ins Lauf-Protokoll, auch nicht bruchstueckweise.
+    """
+    if TOPIC_MUSTER.match(topic):
+        return None
+    for stelle, zeichen in enumerate(topic, start=1):
+        if not re.match(r"[-_A-Za-z0-9]", zeichen):
+            return (
+                f"NTFY_TOPIC ungueltig: Zeichen an Position {stelle} ist "
+                f"{_zeichen_beschreiben(zeichen)}. Laenge des Wertes: "
+                f"{len(topic)} Zeichen. Erlaubt sind nur Buchstaben A-Z/a-z, "
+                f"Ziffern, Bindestrich und Unterstrich (1 bis {TOPIC_MAX} "
+                f"Zeichen). Haeufigste Ursache: ein Rest vom Kopieren am Ende "
+                f"des Secrets. Abhilfe: Settings -> Secrets and variables -> "
+                f"Actions -> NTFY_TOPIC neu setzen, ohne Leerzeichen und ohne "
+                f"Zeilenumbruch."
+            )
+    # Alle Zeichen erlaubt -- dann kann es nur an der Laenge liegen.
+    return (
+        f"NTFY_TOPIC ungueltig: Der Wert ist {len(topic)} Zeichen lang, "
+        f"erlaubt sind 1 bis {TOPIC_MAX}. Es wurde NICHTS verschickt."
+    )
+
+
+def _lies(antwort) -> bytes:
+    """Den Koerper einer Antwort holen, ohne daran zu scheitern."""
+    try:
+        return antwort.read() or b""
+    except Exception:  # noqa: BLE001 - ein unlesbarer Koerper darf nichts kippen
+        return b""
+
+
+def _antworttext(rohdaten: bytes, topic: str) -> str:
+    """Den Antwortkoerper lesbar machen -- und das Thema darin schwaerzen.
+
+    ntfy antwortet auf Fehler mit JSON wie
+    {"code":40009,"http":400,"error":"invalid request: topic invalid"}.
+    Der Grund steht also im Koerper; nur "HTTP 400" war zu stumm.
+    """
+    text = rohdaten.decode("utf-8", "replace").strip()
+    try:
+        daten = json.loads(text)
+    except (ValueError, TypeError):
+        daten = None
+    if isinstance(daten, dict) and daten.get("error"):
+        text = f"{daten['error']} (code {daten.get('code', '?')})"
+    if topic:
+        text = text.replace(topic, "<topic>")
+    if len(text) > FEHLERTEXT_MAX:
+        text = text[:FEHLERTEXT_MAX] + " …"
+    return text or "(leere Antwort)"
 
 
 def push(
@@ -58,9 +175,20 @@ def push(
     opener=urllib.request.urlopen,
 ) -> bool:
     """Eine Nachricht schicken. True nur bei tatsaechlich verschicktem Push."""
-    topic = topic if topic is not None else os.environ.get("NTFY_TOPIC", "").strip()
+    # .strip() auf BEIDEN Wegen: ein Secret-Feld nimmt beim Einfuegen gern
+    # einen Zeilenumbruch mit, und der ist im Formular nicht zu sehen.
+    roh = topic if topic is not None else os.environ.get("NTFY_TOPIC", "")
+    topic = roh.strip()
     if not topic:
         _loud(MISSING_TOPIC_BANNER)
+        return False
+
+    # Erst pruefen, dann senden. Ein ungueltiges Thema wuerde ntfy ohnehin
+    # mit HTTP 400 ablehnen -- dann aber erst nach dem Absenden und mit
+    # einer Meldung, die nicht sagt, WAS am Thema falsch ist.
+    diagnose = pruefe_topic(topic)
+    if diagnose is not None:
+        _loud(diagnose, titel="NTFY_TOPIC ungueltig", art="error")
         return False
 
     # Bewusst die JSON-Schnittstelle statt der Header-Schnittstelle:
@@ -82,12 +210,30 @@ def push(
     )
     try:
         with opener(request, timeout=TIMEOUT_SECONDS) as response:
-            ok = 200 <= getattr(response, "status", 200) < 300
+            status = getattr(response, "status", 200)
+            ok = 200 <= status < 300
+            koerper = b"" if ok else _lies(response)
+    except urllib.error.HTTPError as exc:
+        # DER Fall, der zaehlt: urlopen wirft bei 4xx/5xx. Der Grund steht
+        # im Koerper der Antwort -- ohne ihn stand frueher nur "HTTP 400"
+        # im Protokoll, und das half niemandem weiter.
+        print(
+            f"ntfy hat den Push abgelehnt: HTTP {exc.code} — "
+            f"{_antworttext(_lies(exc), topic)}",
+            file=sys.stderr,
+            flush=True,
+        )
+        return False
     except (urllib.error.URLError, OSError) as exc:
         print(f"ntfy nicht erreichbar: {exc}", file=sys.stderr, flush=True)
         return False
     if not ok:
-        print("ntfy hat den Push abgelehnt.", file=sys.stderr, flush=True)
+        print(
+            f"ntfy hat den Push abgelehnt: HTTP {status} — "
+            f"{_antworttext(koerper, topic)}",
+            file=sys.stderr,
+            flush=True,
+        )
     return ok
 
 
