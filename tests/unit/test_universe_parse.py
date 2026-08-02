@@ -102,6 +102,80 @@ def test_vorzugsaktien_brauchen_keine_sonderbehandlung():
 # DE: iShares-Bestandslisten
 # --------------------------------------------------------------------------
 
+# ==========================================================================
+# DAS ECHTE FORMAT. Vorspann und Kopfzeile stehen hier WOERTLICH so, wie
+# iShares die Datei ausliefert — extern verifiziert am 02.08.2026 an allen
+# drei Dateien (EXS1 / EXS3 / EXS2, Bestands-Stichtag 31. Juli 2026).
+#
+# Drei Eigenheiten, an denen der Lauf vom 02.08.2026 gescheitert ist:
+#   * KEIN Fondsname — der ganze Vorspann ist eine einzige Zeile.
+#   * Stichtag als "31.Juli2026": deutscher Monatsname, ohne Leerzeichen.
+#   * UTF-8-BOM am Dateianfang.
+# Dazu: Komma als Trenner und KEINE ISIN-Spalte.
+#
+# Nicht verifiziert sind die Datenzeilen selbst — geliefert wurden nur
+# Vorspann, Kopfzeile und die Zeilenzahl je Index. Die Werte unten sind
+# deshalb nachgebildet; wortwoertlich ist alles ueber der ersten Datenzeile.
+# ==========================================================================
+
+BOM = "﻿"
+
+# Zweite Zeile: eine Zeile mit genau EINEM Leerzeichen, kein Leerstring.
+VORSPANN_ECHT = 'Fondsposition per,"31.Juli2026"\n \n'
+
+KOPFZEILE_ECHT = (
+    "Emittententicker,Name,Sektor,Anlageklasse,Marktwert,Gewichtung (%),"
+    "Nominalwert,Nominale,Kurs,Standort,Börse,Marktwährung"
+)
+
+
+def echte_datei(titel, *, vorspann=VORSPANN_ECHT, bom=True, zusatz=()):
+    """Eine Bestandsliste im echten Format bauen. `titel`: (Ticker, Name)."""
+    zeilen = [KOPFZEILE_ECHT]
+    zeilen += [
+        f"{ticker},{name},Informationstechnologie,Aktien,"
+        f"1234567.89,1.23,10000,10000,123.45,Deutschland,Xetra,EUR"
+        for ticker, name in titel
+    ]
+    zeilen += list(zusatz)
+    return (BOM if bom else "") + vorspann + "\n".join(zeilen) + "\n"
+
+
+def platzhalter(anzahl):
+    """`anzahl` verschiedene Aktien-Zeilen — fuer die Tests am Anzahl-Gatter."""
+    return [(f"T{i:02d}", f"BEISPIEL {i:02d} AG") for i in range(anzahl)]
+
+
+# Echte Groessen der drei Indizes, ausgezaehlt an den echten Dateien.
+ECHTE_ANZAHL = {"DAX": 40, "MDAX": 50, "TecDAX": 30}
+
+DAX_ECHT = echte_datei(
+    [
+        ("SAP", "SAP SE"),
+        ("AIXA", "AIXTRON SE"),
+        ("VOW3", "VOLKSWAGEN AG VZ"),
+        ("1COV", "COVESTRO AG"),
+    ],
+    zusatz=[
+        "-,EUR CASH,Bargeld,Bargeld und/oder Derivate,"
+        "1000.00,0.01,1000,1000,1.00,-,-,EUR",
+        "-,DAX INDEX FUTURE SEP 26,Derivate,Futures,"
+        "5000.00,0.04,5,5,1000.00,-,EUREX,EUR",
+    ],
+)
+
+
+# ==========================================================================
+# FORMVARIANTEN — ausdruecklich NICHT das verifizierte Format.
+#
+# Semikolon statt Komma, ISIN-Spalte, mehrere Vorspann-Zeilen samt
+# Fondsnamen. Sie bleiben im Bestand, weil sie beweisen, dass der Parser
+# nicht auf genau eine Schreibweise festgenagelt ist: eine ueberzaehlige
+# Vorspann-Zeile darf ihn ebenso wenig aus dem Tritt bringen wie der
+# Wechsel des Trenners. Der frueher hier gepruefte Fondsname wird nirgends
+# mehr gelesen — er steht nur noch als harmlose Vorspann-Zeile drin.
+# ==========================================================================
+
 # Deutsche Fassung: Semikolon, Dezimal-Komma, Vorspann, Bargeld-Zeile.
 DAX_CSV_DE = """\
 "iShares Core DAX UCITS ETF (DE)";;;;;;;
@@ -156,11 +230,57 @@ HTML_STATT_CSV = """<!DOCTYPE html>
 """
 
 
-def _de_lade(inhalt, index="DAX", heute=HEUTE, **kw):
-    return bu.parse_ishares_holdings(inhalt, index, heute=heute, **kw)
+# Das ANZAHL-GATTER ausgesetzt: die Beispieldateien oben sind bewusst
+# klein, ein DAX mit 40 Zeilen waere in jedem Test unlesbar. Das Gatter
+# selbst hat weiter unten eigene Tests — mit echten Groessen.
+OHNE_ANZAHL_GATTER = (0, 1000)
+
+
+def _de_lade(inhalt, index="DAX", heute=HEUTE, anzahl=OHNE_ANZAHL_GATTER, **kw):
+    return bu.parse_ishares_holdings(
+        inhalt, index, heute=heute, erwartete_anzahl=anzahl, **kw
+    )
 
 
 # ------------------------------------------------------- Grundfunktion
+
+
+def test_das_echte_format_wird_gelesen():
+    """Der Fall, an dem der Lauf vom 02.08.2026 gescheitert ist.
+
+    BOM, einzeiliger Vorspann ohne Fondsnamen, Stichtag "31.Juli2026",
+    Komma-Trenner, keine ISIN-Spalte — alles in einer Datei.
+    """
+    befund = _de_lade(DAX_ECHT)
+    assert [k.ticker for k in befund.kandidaten] == [
+        "SAP.DE",
+        "AIXA.DE",
+        "VOW3.DE",
+        "1COV.DE",
+    ]
+    assert befund.bestand_stand == Date(2026, 7, 31)
+    assert befund.aktien_zeilen == 4
+    assert befund.nicht_aktien == 2, "Bargeld- und Futures-Zeile gehoeren nicht dazu"
+    assert befund.ungeloest == []
+    assert all(k.herkunft == "DAX" for k in befund.kandidaten)
+
+
+def test_das_byte_order_mark_stoert_nicht():
+    """Mit und ohne BOM muss dasselbe herauskommen."""
+    mit = _de_lade(DAX_ECHT)
+    ohne = _de_lade(echte_datei([("SAP", "SAP SE")], bom=False))
+    assert DAX_ECHT.startswith(BOM), "die Beispieldatei traegt gar keine BOM"
+    assert mit.kandidaten[0].ticker == ohne.kandidaten[0].ticker == "SAP.DE"
+    assert mit.bestand_stand == ohne.bestand_stand == Date(2026, 7, 31)
+
+
+def test_ohne_fondsnamen_laeuft_es_trotzdem():
+    """Die echten Dateien fuehren keinen — kein Codepfad darf einen erwarten."""
+    assert "iShares" not in DAX_ECHT
+    assert not hasattr(bu, "pruefe_fondsname")
+    assert not hasattr(bu, "_index_im_namen")
+    assert "fonds_name" not in bu.Befund().__dict__
+    assert _de_lade(DAX_ECHT).kandidaten, "Datei ohne Fondsnamen muss durchgehen"
 
 
 def test_deutsche_fassung_wird_gelesen():
@@ -171,7 +291,6 @@ def test_deutsche_fassung_wird_gelesen():
         "VOW3.DE",
         "1COV.DE",
     ]
-    assert befund.fonds_name == "iShares Core DAX UCITS ETF (DE)"
     assert befund.bestand_stand == Date(2026, 7, 31)
     assert all(k.herkunft == "DAX" for k in befund.kandidaten)
     assert befund.ungeloest == []
@@ -180,7 +299,6 @@ def test_deutsche_fassung_wird_gelesen():
 def test_englische_fassung_wird_gelesen():
     befund = _de_lade(MDAX_CSV_EN, index="MDAX")
     assert [k.ticker for k in befund.kandidaten] == ["AT1.DE", "FPE3.DE", "RHM.DE"]
-    assert befund.fonds_name == "iShares MDAX UCITS ETF (DE)"
     assert befund.bestand_stand == Date(2026, 7, 31)
 
 
@@ -203,8 +321,11 @@ def test_vorspann_wird_uebersprungen_und_ausgewertet():
     assert not any("Fondsbestände" in k.name for k in befund.kandidaten)
     assert not any("Basiswährung" in k.name for k in befund.kandidaten)
     # ... ihre Angaben aber sehr wohl ausgewertet werden
-    assert befund.fonds_name.startswith("iShares")
     assert befund.bestand_stand is not None
+    # Auch beim echten, einzeiligen Vorspann
+    echt = _de_lade(DAX_ECHT)
+    assert not any("Fondsposition" in k.name for k in echt.kandidaten)
+    assert echt.bestand_stand is not None
 
 
 def test_fehlender_ticker_greift_auf_die_isin_reserve_zurueck():
@@ -232,44 +353,128 @@ def test_ohne_reserve_bleibt_der_titel_ungeloest():
     assert len(befund.ungeloest) == 1
 
 
-# ------------------------------------------------------- Fondsname-Gatter
+# ---------------------------------------------------------- Anzahl-Gatter
+#
+# Der Ersatz fuer das frueher gepruefte Fondsnamen-Gatter. Weil die echten
+# Dateien keinen Fondsnamen fuehren, wird die Vertauschung jetzt an der
+# Zeilenzahl erkannt — die drei erlaubten Bereiche ueberlappen nicht.
 
 
-def test_falscher_fonds_hinter_der_url_bricht_ab():
-    """Die MDAX-Datei unter der DAX-URL: muss auffallen, nicht durchrutschen."""
-    with pytest.raises(bu.QuelleUnbrauchbar, match="gehoert zum MDAX"):
-        _de_lade(MDAX_CSV_EN, index="DAX")
-
-
-def test_tecdax_datei_unter_der_dax_url_bricht_ab():
-    with pytest.raises(bu.QuelleUnbrauchbar, match="gehoert zum TecDAX"):
-        _de_lade(TECDAX_CSV_DE, index="DAX")
-
-
-def test_dax_datei_unter_der_mdax_url_bricht_ab():
-    with pytest.raises(bu.QuelleUnbrauchbar, match="gehoert zum DAX"):
-        _de_lade(DAX_CSV_DE, index="MDAX")
+@pytest.mark.parametrize("index,anzahl", sorted(ECHTE_ANZAHL.items()))
+def test_die_echte_groesse_kommt_durch(index, anzahl):
+    befund = bu.parse_ishares_holdings(
+        echte_datei(platzhalter(anzahl)), index, heute=HEUTE
+    )
+    assert befund.aktien_zeilen == anzahl
+    assert len(befund.kandidaten) == anzahl
 
 
 @pytest.mark.parametrize(
-    "name,erwartet",
+    "echter_index,unter_url_von",
     [
-        ("iShares Core DAX UCITS ETF (DE)", "DAX"),
-        ("iShares MDAX UCITS ETF (DE)", "MDAX"),
-        ("iShares TecDAX UCITS ETF (DE)", "TecDAX"),
-        ("iShares TECDAX UCITS ETF", "TecDAX"),
-        ("iShares STOXX Europe 600", None),
+        ("DAX", "MDAX"),
+        ("MDAX", "DAX"),
+        ("DAX", "TecDAX"),
+        ("TecDAX", "DAX"),
+        ("MDAX", "TecDAX"),
+        ("TecDAX", "MDAX"),
     ],
 )
-def test_index_erkennung_achtet_auf_wortgrenzen(name, erwartet):
-    """MDAX enthaelt DAX als Zeichenfolge — das darf nicht verwechselt werden."""
-    assert bu._index_im_namen(name) == erwartet
+def test_jede_vertauschung_faellt_auf(echter_index, unter_url_von):
+    """Jede der drei Paarungen, in beide Richtungen — einzeln bewiesen.
+
+    Die Datei des einen Index landet unter der URL des anderen. Genau der
+    Fall, den frueher der Fondsname abgefangen hat.
+    """
+    datei = echte_datei(platzhalter(ECHTE_ANZAHL[echter_index]))
+    with pytest.raises(bu.QuelleUnbrauchbar) as fehler:
+        bu.parse_ishares_holdings(datei, unter_url_von, heute=HEUTE)
+
+    text = str(fehler.value)
+    unten, oben = bu.ANZAHL_ERWARTET[unter_url_von]
+    assert f"{ECHTE_ANZAHL[echter_index]} Aktien-Zeilen" in text, "Ist-Zahl fehlt"
+    assert f"{unten}–{oben}" in text, "erwarteter Bereich fehlt"
+    # "passt zum DAX" darf nicht versehentlich in "passt zum MDAX" treffen —
+    # der Praefix bis einschliesslich "zum " macht die Pruefung eindeutig.
+    assert f"passt zum {echter_index}" in text, "der Verursacher wird nicht genannt"
+    assert "NICHTS geschrieben" in text
 
 
-def test_ohne_erkennbaren_index_im_fondsnamen_bricht_es_ab():
-    ohne = DAX_CSV_DE.replace("iShares Core DAX UCITS ETF (DE)", "iShares Irgendwas ETF")
-    with pytest.raises(bu.QuelleUnbrauchbar, match="kein Index"):
-        _de_lade(ohne)
+def test_die_drei_bereiche_ueberlappen_nicht():
+    """Darauf ruht die Vertauschungs-Erkennung — also festgenagelt."""
+    assert bu.ANZAHL_ERWARTET == {
+        "DAX": (38, 42),
+        "MDAX": (48, 52),
+        "TecDAX": (28, 32),
+    }
+    bereiche = sorted(bu.ANZAHL_ERWARTET.values())
+    for (_, oben), (unten, _) in zip(bereiche, bereiche[1:]):
+        assert oben < unten, f"Bereiche ueberlappen: {oben} >= {unten}"
+
+
+def test_eine_zahl_ausserhalb_aller_bereiche_bricht_ohne_verdacht_ab():
+    """Kein Verwechslungs-Hinweis, wo es nichts zu verwechseln gibt."""
+    with pytest.raises(bu.QuelleUnbrauchbar) as fehler:
+        bu.parse_ishares_holdings(echte_datei(platzhalter(7)), "DAX", heute=HEUTE)
+    text = str(fehler.value)
+    assert "7 Aktien-Zeilen" in text and "38–42" in text
+    assert "vermutlich zeigt" not in text.lower()
+
+
+def test_das_gatter_greift_vor_der_isin_reserve():
+    """Eine vertauschte Datei darf keinen einzigen Netzabruf ausloesen."""
+    gerufen = []
+
+    def resolver(isin):
+        gerufen.append(isin)
+        return "SIE.DE"
+
+    # Eigene Datei: sie braucht eine ISIN-Spalte, damit die Reserve ueberhaupt
+    # greifen KOENNTE. Das echte Format fuehrt keine — hier ginge der Test
+    # sonst folgenlos durch und wuerde nichts beweisen.
+    zeilen = ['Fondsbestände Stand;"31.Juli2026"', "Emittententicker;Name;Anlageklasse;ISIN"]
+    zeilen += [f"-;BEISPIEL {i} AG;Aktien;DE00000{i:05d}" for i in range(50)]
+    datei = "\n".join(zeilen) + "\n"
+
+    with pytest.raises(bu.QuelleUnbrauchbar, match="Aktien-Zeilen"):
+        bu.parse_ishares_holdings(datei, "DAX", heute=HEUTE, isin_resolver=resolver)
+    assert gerufen == [], "die ISIN-Reserve wurde trotz falscher Datei befragt"
+
+    # Gegenprobe: bei passender Anzahl wird sie sehr wohl befragt.
+    passend = "\n".join(zeilen[:2] + zeilen[2:42]) + "\n"
+    bu.parse_ishares_holdings(passend, "DAX", heute=HEUTE, isin_resolver=resolver)
+    assert len(gerufen) == 40
+
+
+def test_die_grenzen_des_bereichs_sind_eingeschlossen():
+    for index, (unten, oben) in bu.ANZAHL_ERWARTET.items():
+        bu.pruefe_anzahl(unten, index)
+        bu.pruefe_anzahl(oben, index)
+        with pytest.raises(bu.QuelleUnbrauchbar):
+            bu.pruefe_anzahl(unten - 1, index)
+        with pytest.raises(bu.QuelleUnbrauchbar):
+            bu.pruefe_anzahl(oben + 1, index)
+
+
+def test_anzahl_gatter_und_gesamtschranke_vertragen_sich():
+    """Die Frage, die man sich bei zwei Schranken stellen muss.
+
+    Heute sind 18 TecDAX-Werte zugleich im DAX oder MDAX (40 + 50 + 30 =
+    120 Zeilen, nach Dedup 102 Titel — extern ausgezaehlt am 02.08.2026).
+    Bei dieser Ueberschneidung liegt JEDE Kombination der drei Bereiche
+    innerhalb der Gesamtschranke 95–125: keine Datei kann alle drei
+    Anzahl-Gatter bestehen und dann an der Gesamtschranke scheitern.
+
+    Die Ueberschneidung aendert sich mit jeder Index-Ueberpruefung der
+    Deutschen Boerse — deshalb bleibt die Gesamtschranke der Auffangriegel
+    und wird hier nicht wegoptimiert.
+    """
+    ueberschneidung = 18
+    unten_ges, oben_ges = bu.ERWARTET["de"]
+    kleinste = sum(u for u, _ in bu.ANZAHL_ERWARTET.values()) - ueberschneidung
+    groesste = sum(o for _, o in bu.ANZAHL_ERWARTET.values()) - ueberschneidung
+    assert (kleinste, groesste) == (96, 108)
+    assert unten_ges <= kleinste and groesste <= oben_ges
 
 
 # ------------------------------------------------------ Veraltungs-Gatter
@@ -306,6 +511,10 @@ def test_fehlender_stichtag_bricht_ab():
 @pytest.mark.parametrize(
     "text,erwartet",
     [
+        # DAS echte Format: deutscher Monatsname, KEIN Leerzeichen davor.
+        ('Fondsposition per,"31.Juli2026"', Date(2026, 7, 31)),
+        # ... auch mit BOM davor, also als allererste Zeile der Datei.
+        ('﻿Fondsposition per,"31.Juli2026"', Date(2026, 7, 31)),
         ("Fondsbestände Stand;31.Jul.2026", Date(2026, 7, 31)),
         ('Fund Holdings as of,"Jul 31, 2026"', Date(2026, 7, 31)),
         ("Stand: 31.07.2026", Date(2026, 7, 31)),
@@ -316,6 +525,23 @@ def test_fehlender_stichtag_bricht_ab():
 )
 def test_datumsformate(text, erwartet):
     assert bu._datum_aus_text(text) == erwartet
+
+
+@pytest.mark.parametrize(
+    "monat,nummer",
+    list(
+        zip(
+            [
+                "Januar", "Februar", "März", "April", "Mai", "Juni",
+                "Juli", "August", "September", "Oktober", "November", "Dezember",
+            ],
+            range(1, 13),
+        )
+    ),
+)
+def test_alle_zwoelf_deutschen_monatsnamen_ohne_leerzeichen(monat, nummer):
+    """Im August faellt nur der Juli auf — geprueft wird trotzdem das Jahr."""
+    assert bu._datum_aus_text(f'"15.{monat}2026"') == Date(2026, nummer, 15)
 
 
 def test_wochenenden_zaehlen_nicht_als_handelstage():
@@ -341,9 +567,17 @@ def test_umbenannte_spalten_brechen_ab():
 
 
 def test_leere_bestandsliste_bricht_ab():
+    """Ohne ausgesetztes Gatter faengt schon die Anzahl den leeren Fall ab."""
     leer = "\n".join(DAX_CSV_DE.splitlines()[:5]) + "\n"
-    with pytest.raises(bu.QuelleUnbrauchbar, match="kein einziger Aktien-Eintrag"):
-        _de_lade(leer)
+    with pytest.raises(bu.QuelleUnbrauchbar, match="0 Aktien-Zeilen"):
+        bu.parse_ishares_holdings(leer, "DAX", heute=HEUTE)
+
+
+def test_aktien_ohne_aufloesbaren_ticker_brechen_ab():
+    """Zeilen da, Ticker keiner: eigener Befund, eigene Meldung."""
+    ohne_ticker = echte_datei([("-", f"OHNE TICKER {i} AG") for i in range(4)])
+    with pytest.raises(bu.QuelleUnbrauchbar, match="keiner einzigen"):
+        _de_lade(ohne_ticker)
 
 
 # ---------------------------------------------------------------- HDAX
@@ -474,6 +708,14 @@ def test_die_drei_bestandsquellen_sind_vollstaendig_beschrieben():
         assert quelle.url.startswith("https://www.ishares.com/")
         assert "fileType=csv" in quelle.url
         assert quelle.env_override.startswith("MOMENTUM_URL_")
+
+
+def test_die_extern_verifizierten_produkt_ids_stehen_drin():
+    """Am 02.08.2026 abgerufen und ausgezaehlt — nicht wieder verlieren."""
+    ids = {q.index_name: q.url for q in bu.ISHARES_DE}
+    assert "/produkte/251464/" in ids["DAX"]
+    assert "/produkte/251845/" in ids["MDAX"]
+    assert "/produkte/251975/" in ids["TecDAX"]
 
 
 def test_nur_die_tecdax_isin_gilt_als_belegt():

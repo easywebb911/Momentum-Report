@@ -31,12 +31,12 @@ Titel ohne Xetra-Notierung oder mit abweichendem Yahoo-Symbol fallen in
 der Kurspruefung heraus und werden dort NAMENTLICH genannt.
 
 SICHERUNGEN, in dieser Reihenfolge:
-  1. Fondsname aus der Datei gegen den erwarteten Index pruefen -- eine
-     vertauschte URL faellt damit auf, statt still ein falsches Universum
-     zu erzeugen
-  2. Bestands-Stichtag aus dem Vorspann lesen; aelter als 10 Handelstage
+  1. Bestands-Stichtag aus dem Vorspann lesen; aelter als 10 Handelstage
      -> Abbruch (VERALTUNGS-GATTER)
-  3. nur Zeilen der Anlageklasse Aktie; Cash, Futures, Geldmarkt fliegen raus
+  2. nur Zeilen der Anlageklasse Aktie; Cash, Futures, Geldmarkt fliegen raus
+  3. Anzahl der Aktien-Zeilen gegen den erwarteten Bereich des Index pruefen
+     -- eine vertauschte URL faellt damit auf, statt still ein falsches
+     Universum zu erzeugen (ANZAHL-GATTER, siehe ANZAHL_ERWARTET)
   4. Ticker-Spalte lesen; fehlt der Ticker, ISIN-Reserve ueber die
      Yahoo-Suche -- jede solche Aufloesung wird namentlich protokolliert
   5. Vereinigung der drei Listen, Doppelmitglieder genau einmal
@@ -82,17 +82,23 @@ QUELLE_US = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 #      "Universum aktualisieren" als Eingabefeld mitgeben (url_dax,
 #      url_mdax, url_tecdax) -- dann ist keine Code-Aenderung noetig
 #
-# STAND DER PRUEFUNG: Die drei URLs unten sind NICHT verifiziert. Der
-# Egress-Proxy der Entwicklungs-Sitzung blockt ishares.com, sie konnten
-# also nicht abgerufen werden. Verifiziert werden sie erst vom ersten
-# echten Actions-Lauf; bis dahin gelten sie als Vermutung. Zieht eine
-# nicht, bricht der Lauf LAUT ab und nennt genau diese Anleitung.
+# STAND DER PRUEFUNG (02.08.2026): Die drei PRODUKT-IDs unten sind extern
+# verifiziert -- die Dateien wurden abgerufen und ausgezaehlt: 251464 = DAX
+# (40 Aktien-Zeilen), 251845 = MDAX (50), 251975 = TecDAX (30), alle mit
+# Bestands-Stichtag 31. Juli 2026. Der Egress-Proxy dieser Sitzung blockt
+# ishares.com, hier konnte also nichts nachgeprueft werden.
 #
-# Ebenfalls unverifiziert: die Zuordnung Xetra-Kennung -> Fonds fuer EXS1
-# und EXS3 (aus Recherche). Belegt ist nur EXS2 = iShares TecDAX,
-# ISIN DE0005933972. Deshalb prueft der Bootstrap bei JEDEM Lauf den
-# Fondsnamen aus der Datei gegen den erwarteten Index -- eine vertauschte
-# Zuordnung faellt damit auf, bevor irgendetwas geschrieben wird.
+# NICHT einzeln verifiziert ist der sprechende Namensteil im Pfad
+# ({schnipsel}); er dient der Lesbarkeit, geschluesselt wird ueber die
+# Produkt-ID. Zieht eine URL trotzdem nicht, bricht der Lauf LAUT ab und
+# nennt die Anleitung oben; der Ersatz-Link laesst sich dem Workflow als
+# Eingabefeld mitgeben, ohne den Code zu aendern.
+#
+# Ebenfalls unverifiziert bleibt die Zuordnung Xetra-Kennung -> Fonds fuer
+# EXS1 und EXS3 (aus Recherche). Belegt ist nur EXS2 = iShares TecDAX,
+# ISIN DE0005933972. Gegen eine vertauschte URL schuetzt deshalb das
+# ANZAHL-GATTER: die drei Indizes haben verschieden viele Mitglieder, und
+# die erlaubten Bereiche ueberlappen nicht.
 # --------------------------------------------------------------------------
 
 _ISHARES_DOWNLOAD = (
@@ -103,7 +109,7 @@ _ISHARES_DOWNLOAD = (
 
 @dataclass(frozen=True)
 class Bestandsquelle:
-    index_name: str        # erwarteter Index -- wird gegen den Fondsnamen geprueft
+    index_name: str        # erwarteter Index -- Schluessel fuer ANZAHL_ERWARTET
     xetra: str             # Xetra-Kennung des ETF
     isin: str | None       # ISIN des ETF, soweit belegt
     isin_belegt: bool      # False = aus Recherche, nicht bestaetigt
@@ -128,7 +134,7 @@ ISHARES_DE: tuple[Bestandsquelle, ...] = (
         isin="DE0005933923",
         isin_belegt=False,
         url=_ISHARES_DOWNLOAD.format(
-            produkt="251771", schnipsel="ishares-mdax-ucits-etf-de-fund", datei="EXS3_holdings"
+            produkt="251845", schnipsel="ishares-mdax-ucits-etf-de-fund", datei="EXS3_holdings"
         ),
         env_override="MOMENTUM_URL_MDAX",
     ),
@@ -138,7 +144,7 @@ ISHARES_DE: tuple[Bestandsquelle, ...] = (
         isin="DE0005933972",   # belegt
         isin_belegt=True,
         url=_ISHARES_DOWNLOAD.format(
-            produkt="251811", schnipsel="ishares-tecdax-ucits-etf-de-fund", datei="EXS2_holdings"
+            produkt="251975", schnipsel="ishares-tecdax-ucits-etf-de-fund", datei="EXS2_holdings"
         ),
         env_override="MOMENTUM_URL_TECDAX",
     ),
@@ -154,6 +160,28 @@ ISHARES_DE: tuple[Bestandsquelle, ...] = (
 # Schranke, die bei jeder zweiten Umstellung anschlaegt, schuetzt nicht,
 # sie blockiert nur.
 ERWARTET = {"us": (495, 510), "de": (95, 125)}
+
+# ANZAHL-GATTER: So viele Aktien-Zeilen muss die Bestandsliste EINES Index
+# fuehren. Das ist der Ersatz fuer die frueher geprueften Fondsnamen -- die
+# echten deutschen iShares-Dateien fuehren gar keinen Fondsnamen, ihr
+# Vorspann besteht aus einer einzigen Zeile mit dem Stichtag.
+#
+# Der Schutz bleibt derselbe: Die drei Bereiche UEBERLAPPEN NICHT. Zeigt die
+# DAX-URL versehentlich auf die MDAX-Datei, kommen 50 Zeilen an, wo 38–42
+# erwartet werden -- Abbruch, statt still ein falsches Universum zu bauen.
+#
+# Warum ein Bereich und keine feste Zahl: zwischen zwei Index-Ueberpruefungen
+# der Deutschen Boerse kann ein Wert ausscheiden, bevor der Nachruecker im
+# Fondsbestand ankommt, und ein physisch replizierender ETF haelt am
+# Umstellungstag kurzzeitig beide. +/- 2 faengt das ab, ohne die Trennung
+# zwischen den Indizes aufzuweichen (kleinster Abstand: 42 zu 48).
+#
+# Sollwerte extern verifiziert am 02.08.2026 an den echten Dateien.
+ANZAHL_ERWARTET: dict[str, tuple[int, int]] = {
+    "DAX": (38, 42),
+    "MDAX": (48, 52),
+    "TecDAX": (28, 32),
+}
 
 # VERALTUNGS-GATTER: So alt darf der Bestands-Stichtag hoechstens sein.
 # Ein physisch replizierender ETF veroeffentlicht arbeitstaeglich; ist die
@@ -215,8 +243,13 @@ class Befund:
     kandidaten: list[Kandidat] = field(default_factory=list)
     ueber_reserve: list[str] = field(default_factory=list)
     ungeloest: list[str] = field(default_factory=list)
-    fonds_name: str = ""
     bestand_stand: _dt.date | None = None
+    # Zeilen der Anlageklasse Aktie -- die Groesse, gegen die das
+    # ANZAHL-GATTER prueft. Bewusst NICHT len(kandidaten): eine Zeile ohne
+    # aufloesbaren Ticker ist trotzdem ein Index-Mitglied, und ob die Datei
+    # zum erwarteten Index gehoert, ist eine andere Frage als die, ob jeder
+    # Titel einen Kurs hat. Letzteres klaert die Kurspruefung.
+    aktien_zeilen: int = 0
     nicht_aktien: int = 0
 
 
@@ -304,9 +337,11 @@ def _trenner(zeile: str) -> str:
 def _kopfzeile_finden(zeilen: list[str]) -> tuple[int, str, list[str]]:
     """Erste Zeile finden, die wie eine Spaltenueberschrift aussieht.
 
-    iShares stellt der Tabelle mehrere Vorspann-Zeilen voran (Fondsname,
-    Stichtag, Hinweise). Die Kopfzeile erkennt man daran, dass sie eine
-    Namensspalte UND eine Ticker- oder ISIN-Spalte fuehrt.
+    iShares stellt der Tabelle Vorspann-Zeilen voran -- in den echten
+    deutschen Dateien genau eine mit dem Stichtag, in anderen Fassungen
+    mehrere. Die Kopfzeile erkennt man daran, dass sie eine Namensspalte
+    UND eine Ticker- oder ISIN-Spalte fuehrt; wie viele Zeilen davor
+    stehen, spielt dadurch keine Rolle.
     """
     for i, zeile in enumerate(zeilen):
         if not zeile.strip():
@@ -327,12 +362,18 @@ def _kopfzeile_finden(zeilen: list[str]) -> tuple[int, str, list[str]]:
 
 def _datum_aus_text(text: str) -> _dt.date | None:
     """Datum aus einer Vorspann-Zeile lesen; deutsche und englische Schreibung."""
-    aufbereitet = text.strip().strip('"')
+    aufbereitet = text.lstrip("﻿").strip().strip('"')
     treffer = re.search(r"(\d{4})-(\d{2})-(\d{2})", aufbereitet)
     if treffer:
         return _dt.date(int(treffer[1]), int(treffer[2]), int(treffer[3]))
-    # 31.Jul.2026 / 31-Jul-2026 / 31. Juli 2026
-    treffer = re.search(r"(\d{1,2})[.\-/ ]\s*([A-Za-zÄÖÜäöüß]{3,9})\.?[.\-/ ]\s*(\d{4})", aufbereitet)
+    # 31.Jul.2026 / 31-Jul-2026 / 31. Juli 2026 / 31.Juli2026
+    #
+    # Der Trenner VOR dem Jahr ist ausdruecklich freigestellt: die echten
+    # deutschen iShares-Dateien schreiben "31.Juli2026", ganz ohne. Genau
+    # daran ist der Lauf vom 02.08.2026 gescheitert. Der ausgeschriebene
+    # Monatsname wird ueber seine ersten drei Zeichen aufgeloest, damit
+    # alle zwoelf deutschen Namen ohne eigene Liste greifen.
+    treffer = re.search(r"(\d{1,2})[.\-/ ]\s*([A-Za-zÄÖÜäöüß]{3,9})\.?[.\-/ ]?\s*(\d{4})", aufbereitet)
     if treffer:
         monat = MONATE.get(treffer[2][:3].lower())
         if monat:
@@ -350,38 +391,38 @@ def _datum_aus_text(text: str) -> _dt.date | None:
     return None
 
 
-def _index_im_namen(fonds_name: str) -> str | None:
-    """Welcher Index steckt im Fondsnamen? Genau einer, oder None.
-
-    Wortgrenzen sind hier entscheidend: "MDAX" enthaelt "DAX" als
-    Zeichenfolge, ist aber ein anderer Index. Deshalb wird DAX nur
-    anerkannt, wenn davor kein Buchstabe steht.
-    """
-    gross = fonds_name.upper()
-    if re.search(r"(?<![A-Z])TECDAX(?![A-Z])", gross):
-        return "TecDAX"
-    if re.search(r"(?<![A-Z])MDAX(?![A-Z])", gross):
-        return "MDAX"
-    if re.search(r"(?<![A-Z])DAX(?![A-Z])", gross):
-        return "DAX"
+def _anderer_index_mit_dieser_anzahl(anzahl: int, ausser: str) -> str | None:
+    """Passt die Anzahl zu einem ANDEREN Index? Dann ist die URL vertauscht."""
+    for name, (unten, oben) in ANZAHL_ERWARTET.items():
+        if name != ausser and unten <= anzahl <= oben:
+            return name
     return None
 
 
-def pruefe_fondsname(fonds_name: str, erwarteter_index: str) -> None:
-    """Abbruch, wenn die Datei zu einem anderen Index gehoert als gedacht."""
-    gefunden = _index_im_namen(fonds_name)
-    if gefunden is None:
-        raise QuelleUnbrauchbar(
-            f"Bestandsliste: im Fondsnamen {fonds_name!r} ist kein Index "
-            f"(DAX / MDAX / TecDAX) erkennbar. Erwartet war {erwarteter_index}. "
-            f"Es wurde NICHTS geschrieben."
-        )
-    if gefunden != erwarteter_index:
-        raise QuelleUnbrauchbar(
-            f"Bestandsliste: die Datei gehoert zum {gefunden}, erwartet war "
-            f"{erwarteter_index} (Fondsname: {fonds_name!r}). Vermutlich zeigt "
-            f"eine der URLs auf den falschen Fonds. Es wurde NICHTS geschrieben."
-        )
+def pruefe_anzahl(
+    anzahl: int, erwarteter_index: str, bereich: tuple[int, int] | None = None
+) -> None:
+    """ANZAHL-GATTER: Abbruch, wenn die Datei nicht zu diesem Index passen kann.
+
+    Ersetzt die frueher geprueften Fondsnamen -- die echten deutschen
+    iShares-Bestandslisten fuehren keinen. Weil die erlaubten Bereiche der
+    drei Indizes nicht ueberlappen, faellt eine vertauschte URL genauso auf
+    wie vorher, nur gegen das tatsaechliche Dateiformat.
+    """
+    unten, oben = bereich if bereich is not None else ANZAHL_ERWARTET[erwarteter_index]
+    if unten <= anzahl <= oben:
+        return
+    verwechselt = _anderer_index_mit_dieser_anzahl(anzahl, erwarteter_index)
+    hinweis = (
+        f" Diese Anzahl passt zum {verwechselt} -- vermutlich zeigt die "
+        f"{erwarteter_index}-URL auf die {verwechselt}-Bestandsliste."
+        if verwechselt
+        else ""
+    )
+    raise QuelleUnbrauchbar(
+        f"{erwarteter_index}-Bestandsliste: {anzahl} Aktien-Zeilen, erwartet "
+        f"waren {unten}–{oben}.{hinweis} Es wurde NICHTS geschrieben."
+    )
 
 
 def handelstage_zwischen(frueher: _dt.date, spaeter: _dt.date) -> int:
@@ -435,36 +476,32 @@ def parse_ishares_holdings(
     heute: _dt.date,
     isin_resolver=None,
     max_alter: int = MAX_ALTER_HANDELSTAGE,
+    erwartete_anzahl: tuple[int, int] | None = None,
 ) -> Befund:
     """Eine iShares-Bestandsliste auswerten.
 
     Nimmt den Dateiinhalt entgegen, nicht eine URL -- deshalb ohne Netz
     testbar. `isin_resolver` ist die Reserve fuer Zeilen ohne Ticker.
+    `erwartete_anzahl` uebersteuert das ANZAHL-GATTER; ohne Angabe gilt der
+    Bereich aus ANZAHL_ERWARTET.
+
+    Ein FONDSNAME wird nirgends erwartet: die echten deutschen Dateien
+    fuehren keinen. Ihr gesamter Vorspann ist eine Zeile mit dem Stichtag.
     """
-    zeilen = inhalt.splitlines()
+    # Byte-Order-Mark am Dateianfang: die echten Dateien tragen eine. Hier
+    # abgeraeumt und nicht erst beim Abruf, damit die Funktion fuer sich
+    # allein richtig ist -- egal, wer ihr den Inhalt reicht.
+    zeilen = inhalt.lstrip("﻿").splitlines()
     kopf_index, trenner, spalten = _kopfzeile_finden(zeilen)
 
-    vorspann = zeilen[:kopf_index]
     befund = Befund()
-    # Der Fondsname steht im ersten belegten Feld der ersten belegten
-    # Vorspann-Zeile. Ueber den CSV-Leser geholt, damit Anfuehrungszeichen
-    # und angehaengte Leerspalten ("Name";;;;) sauber wegfallen.
-    for zeile in vorspann:
-        if not zeile.strip():
-            continue
-        felder = next(csv.reader([zeile], delimiter=trenner), [])
-        erstes = felder[0].strip() if felder else ""
-        if erstes:
-            befund.fonds_name = erstes
-            break
-    for zeile in vorspann:
+    for zeile in zeilen[:kopf_index]:
         gefunden = _datum_aus_text(zeile)
         if gefunden is not None:
             befund.bestand_stand = gefunden
             break
 
-    quelle = f"{erwarteter_index} ({befund.fonds_name or 'ohne Fondsnamen'})"
-    pruefe_fondsname(befund.fonds_name, erwarteter_index)
+    quelle = f"{erwarteter_index}-Bestandsliste"
     pruefe_aktualitaet(befund.bestand_stand, heute, quelle, max_alter)
 
     def feld(zeile: list[str], namen: tuple[str, ...]) -> str:
@@ -475,17 +512,26 @@ def parse_ishares_holdings(
                     return zeile[stelle].strip().strip('"')
         return ""
 
-    leser = csv.reader(zeilen[kopf_index + 1 :], delimiter=trenner)
-    for roh in leser:
+    # Erster Durchgang: nur aussortieren und zaehlen. Das ANZAHL-GATTER
+    # greift damit VOR jeder ISIN-Reserve -- eine vertauschte Datei loest
+    # keinen einzigen Netzabruf mehr aus.
+    aktien: list[list[str]] = []
+    for roh in csv.reader(zeilen[kopf_index + 1 :], delimiter=trenner):
         if not roh or not any(f.strip() for f in roh):
             continue
-        name = feld(roh, NAME_SPALTEN)
-        if not name:
+        if not feld(roh, NAME_SPALTEN):
             continue
         klasse = feld(roh, ANLAGEKLASSE_SPALTEN).lower()
         if klasse and klasse not in AKTIEN_KLASSEN:
             befund.nicht_aktien += 1
             continue
+        aktien.append(roh)
+
+    befund.aktien_zeilen = len(aktien)
+    pruefe_anzahl(befund.aktien_zeilen, erwarteter_index, erwartete_anzahl)
+
+    for roh in aktien:
+        name = feld(roh, NAME_SPALTEN)
         ticker = xetra_zu_yahoo(feld(roh, SYMBOL_SPALTEN))
         if ticker is None:
             isin = feld(roh, ISIN_SPALTEN).upper()
@@ -508,7 +554,8 @@ def parse_ishares_holdings(
 
     if not befund.kandidaten:
         raise QuelleUnbrauchbar(
-            f"{quelle}: kein einziger Aktien-Eintrag in der Bestandsliste. "
+            f"{quelle}: {befund.aktien_zeilen} Aktien-Zeilen gelesen, aber aus "
+            f"keiner einzigen liess sich ein Ticker gewinnen. "
             f"Es wurde NICHTS geschrieben."
         )
     return befund
@@ -522,6 +569,7 @@ def vereinige(befunde: list[Befund]) -> Befund:
     for befund in befunde:
         zusammen.ueber_reserve.extend(befund.ueber_reserve)
         zusammen.ungeloest.extend(befund.ungeloest)
+        zusammen.aktien_zeilen += befund.aktien_zeilen
         zusammen.nicht_aktien += befund.nicht_aktien
         if befund.bestand_stand:
             staende.append(befund.bestand_stand)
@@ -705,10 +753,12 @@ def sammle(markt: str, heute: _dt.date) -> tuple[Befund, str, str, str]:  # prag
             heute=heute,
             isin_resolver=yahoo_ticker_aus_isin,
         )
+        unten, oben = ANZAHL_ERWARTET[quelle.index_name]
         zusammenfassung(
-            f"- {quelle.index_name} ({quelle.xetra}): {len(befund.kandidaten)} Aktien, "
-            f"Bestands-Stichtag **{befund.bestand_stand}**, "
-            f"Fonds „{befund.fonds_name}“"
+            f"- {quelle.index_name} ({quelle.xetra}): "
+            f"**{befund.aktien_zeilen}** Aktien-Zeilen (erwartet {unten}–{oben}), "
+            f"davon {len(befund.kandidaten)} mit Ticker, "
+            f"Bestands-Stichtag **{befund.bestand_stand}**"
         )
         befunde.append(befund)
     return (
