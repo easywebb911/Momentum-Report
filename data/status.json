@@ -1,0 +1,35 @@
+{
+  "lauf_datum": "2026-08-02",
+  "maerkte": [
+    {
+      "daten": {
+        "angefragt": 503,
+        "fehlgeschlagene_bloecke": [],
+        "geliefert": 503,
+        "ticker_ohne_daten": [],
+        "zeilen_gesamt": 159451,
+        "zeilen_verworfen_nicht_endlich": 682
+      },
+      "faellige_monate_offen": [
+        "2026-07"
+      ],
+      "kurse_vom": "2026-07-31",
+      "markt": "us"
+    },
+    {
+      "daten": {
+        "angefragt": 102,
+        "fehlgeschlagene_bloecke": [],
+        "geliefert": 102,
+        "ticker_ohne_daten": [],
+        "zeilen_gesamt": 32742,
+        "zeilen_verworfen_nicht_endlich": 419
+      },
+      "faellige_monate_offen": [
+        "2026-07"
+      ],
+      "kurse_vom": "2026-07-31",
+      "markt": "de"
+    }
+  ]
+}
