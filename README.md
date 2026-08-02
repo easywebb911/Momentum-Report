@@ -52,6 +52,25 @@ Es gibt keinen Schalter und keine Neuberechnung — sonst wäre die
 Einfrierung keine. Nach dem Löschen bildet der nächste Lauf den Monat mit
 korrektem Stichtag neu.
 
+## Woher das Universum kommt
+
+| Markt | Quelle | Schutz gegen Veraltung |
+|---|---|---|
+| USA | Wikipedia *List of S&P 500 companies* | laufend gepflegter Artikel |
+| Deutschland | tägliche Holdings-CSVs der iShares-ETFs EXS1 / EXS3 / EXS2 | **Veraltungs-Gatter**: Bestands-Stichtag älter als 10 Handelstage → Abbruch |
+
+Der deutsche Weg lief anfangs ebenfalls über Wikipedia und ist daran
+gescheitert: die englischen Artikel zu den DE-Indizes waren jahrealt
+(TecDAX zuletzt eine bloße Namensliste ohne Symbole). Das Tückische daran
+ist nicht der Parse-Fehler, sondern die **fehlende Neuaufnahme** — ein
+Ticker, den es in der Liste nicht gibt, kann in keiner Kursprüfung
+durchfallen. Nur ein Stichtag deckt so etwas auf, und genau den führen die
+ETF-Bestandslisten mit.
+
+Vor dem Schreiben prüft der Bootstrap zusätzlich den **Fondsnamen** aus der
+Datei gegen den erwarteten Index — eine vertauschte URL fällt damit auf,
+statt still ein falsches Universum zu erzeugen.
+
 ## Das Universum ist default-deny
 
 Gerechnet wird **nur** mit einer Universums-Datei, die ausdrücklich
@@ -120,10 +139,13 @@ tests/network    Nachweise gegen die echte Kursquelle (wöchentlich)
    dann als deutliche Zeile im Lauf-Protokoll und als Warnung am Lauf —
    nie als stiller Rückfall.
 3. **Universum befüllen** — Actions → *Universum aktualisieren* → Run
-   workflow. Quellen sind die **englischsprachigen** Wikipedia-Artikel
-   (S&P 500 sowie DAX, MDAX, TecDAX) — nur dort führen die Tabellen eine
-   Symbol-Spalte mit Xetra-Kürzeln. Bis dahin verweigert das Werkzeug
-   bewusst jedes Ranking.
+   workflow. Bis dahin verweigert das Werkzeug bewusst jedes Ranking.
+   Quellen: für die USA der englischsprachige Wikipedia-Artikel
+   *List of S&P 500 companies*; für Deutschland die **täglichen
+   Bestandslisten** der physisch replizierenden iShares-ETFs EXS1 (DAX),
+   EXS3 (MDAX) und EXS2 (TecDAX) — was so ein Fonds hält, ist praktisch
+   der Index. Zieht ein CSV-Link nicht mehr, lässt er sich dem Workflow
+   als Eingabefeld mitgeben, ohne den Code zu ändern.
 4. **Ersten Lauf starten** — Actions → *Momentum-Lauf* → Run workflow.
    Er bildet rückwirkend das Ranking zum letzten Handelstag Juli 2026.
 
