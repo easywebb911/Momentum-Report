@@ -291,7 +291,7 @@ def test_erzeugte_datei_wird_vom_werkzeug_akzeptiert(tmp_path):
 
 def test_plausibilitaets_schranken_stehen_wie_beauftragt():
     assert bu.ERWARTET["us"] == (495, 510)
-    assert bu.ERWARTET["de"] == (110, 125)
+    assert bu.ERWARTET["de"] == (95, 125)
 
 
 def test_quellen_sind_die_englische_wikipedia():

@@ -15,8 +15,9 @@
 #
 # Der HDAX umfasst DAX (40), MDAX (50) und TecDAX (30). TecDAX-Werte sind
 # seit 2018 zugleich in DAX oder MDAX, die Vereinigungsmenge ist deshalb
-# kleiner als die Summe von 120. Der Bootstrap erwartet 110-125 Titel nach
-# Abzug der Doppelmitglieder und schreibt sonst gar nichts.
+# kleiner als die Summe von 120 -- und sie schwankt mit jeder
+# Index-Ueberpruefung. Der Bootstrap erwartet 95-125 Titel nach Abzug der
+# Doppelmitglieder und schreibt sonst gar nichts.
 #
 # Befuellen: in GitHub unter "Actions" den Workflow
 # "Universum aktualisieren" starten (workflow_dispatch).

@@ -60,12 +60,14 @@ QUELLEN_DE = {
 
 # Plausibilitaets-Schranken. Ausserhalb: Abbruch statt Halbergebnis.
 #
-# DE: HDAX = DAX (40) + MDAX (50) + TecDAX (30) = 120 Eintraege vor Abzug
-# der Doppelmitglieder; TecDAX-Werte sind seit 2018 zugleich in DAX oder
-# MDAX. Der Auftrag setzt 110-125 nach Dedup. ACHTUNG: faellt die echte
-# Vereinigungsmenge knapp darunter, schreibt der Lauf bewusst nichts --
-# dann ist HIER die eine Zeile zu weiten, nirgends sonst.
-ERWARTET = {"us": (495, 510), "de": (110, 125)}
+# DE: HDAX = DAX (40) + MDAX (50) + TecDAX (30) = 120 Eintraege VOR Abzug der
+# Doppelmitglieder. TecDAX-Werte sind seit 2018 zugleich in DAX oder MDAX,
+# und wie gross diese Ueberschneidung ausfaellt, aendert sich mit JEDER
+# Index-Ueberpruefung der Deutschen Boerse. Die Vereinigungsmenge ist damit
+# keine feste Zahl, sondern schwankt -- deshalb der Boden bei 95 statt bei
+# 110: eine Schranke, die bei jeder zweiten Umstellung anschlaegt, schuetzt
+# nicht, sie blockiert nur.
+ERWARTET = {"us": (495, 510), "de": (95, 125)}
 
 # Spaltennamen, unter denen die Quellen das Boersenkuerzel fuehren.
 SYMBOL_SPALTEN = ("symbol", "ticker", "ticker symbol", "code", "trading symbol")

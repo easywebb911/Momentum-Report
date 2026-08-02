@@ -403,6 +403,21 @@ gebildet — US-Titel gegen US-Titel, deutsche gegen deutsche. Nie gemischt.
 Bei exakt gleichem Wert entscheidet die alphabetische Reihenfolge des Tickers;
 dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar.</p>""",
         ),
+        _method_card(
+            "Warum nur fünf Titel — und was das kostet",
+            ("portfolio_statistic", "long_only"),
+            """<p>Die Untersuchungen teilen den Markt in zehn gleich große
+Gruppen und messen die stärkste davon. Bei rund 105 Titeln wären das etwa
+zehn bis elf Aktien.</p>
+<p>Hier stehen <strong>fünf</strong> — also nur die halbe Gruppe. Diese
+Auswahl ist enger als das, was gemessen wurde: Je weniger Titel, desto
+stärker schlägt das Schicksal eines einzelnen Unternehmens durch. Dieses
+zusätzliche Risiko ist in den Durchschnittszahlen der Aufsätze
+<strong>nicht</strong> enthalten.</p>
+<p>Fünf Titel sind eine Entscheidung für Lesbarkeit auf dem Telefon, keine
+Aussage der Wissenschaft. Wer sich an der Studienlage orientieren will,
+sollte das im Kopf behalten.</p>""",
+        ),
         "<h2>Der monatliche Stichtag</h2>",
         _method_card(
             "Einmal im Monat — und dann eingefroren",

@@ -88,3 +88,18 @@ def test_methodik_datei_in_docs_ist_aktuell():
     assert datei.read_text(encoding="utf-8") == METHODIK, (
         "docs/methodik.html ist veraltet — neu erzeugen und mit committen"
     )
+
+
+def test_methodik_benennt_die_engere_auswahl_gegenueber_den_studien():
+    """Die Top-5 sind enger geschnitten als das gemessene Gewinner-Dezil.
+
+    Zeilenumbrueche im HTML-Quelltext duerfen den Nachweis nicht kippen,
+    deshalb wird auf normalisiertem Text geprueft.
+    """
+    text = " ".join(METHODIK.split())
+    assert "zehn gleich große Gruppen" in text
+    assert "zehn bis elf Aktien" in text
+    assert "Hier stehen <strong>fünf</strong>" in text
+    assert "enger als das, was gemessen wurde" in text
+    assert "Schicksal eines einzelnen Unternehmens" in text
+    assert "<strong>nicht</strong> enthalten" in text
