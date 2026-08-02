@@ -14,7 +14,9 @@ from dataclasses import dataclass
 from .config import (
     LIQUIDITY_MIN_MEDIAN_TURNOVER,
     LIQUIDITY_WINDOW_MONTHS,
+    REPO_SLUG,
     TOP_N,
+    WORKFLOW_LAUF,
     WEIGHT_HIGH_52W,
     WEIGHT_MOMENTUM_12_1,
     Market,
@@ -132,16 +134,34 @@ def _head(title: str, description: str) -> str:
 <link rel="stylesheet" href="style.css">
 <script>{_FS_BOOTSTRAP}</script>
 </head>
-<body>"""
+<body data-repo="{e(REPO_SLUG)}" data-workflow="{e(WORKFLOW_LAUF)}">"""
 
 
-def _header(subline: str) -> str:
-    return f"""<header class="hdr">
-  <div class="hdr-main">
-    <h1>Momentum-Report</h1>
-    <p class="stand">{subline}</p>
+def _header(subline: str, *, zurueck: bool = False) -> str:
+    """Seitenkopf. `zurueck` setzt den Rueckweg fuer Unterseiten.
+
+    WARUM DER RUECKWEG SEIN MUSS: Als installierte PWA laeuft die Seite im
+    Standalone-Modus — ohne Adresszeile und ohne Zurueck-Taste des Browsers.
+    Eine Unterseite ohne sichtbaren Rueckweg ist dort eine Sackgasse: man
+    kaeme nur ueber das Schliessen und Neustarten der App wieder heraus.
+    Der Kopf ist ohnehin sticky, der Weg zurueck also immer in Reichweite.
+    """
+    zurueck_html = (
+        """  <a class="back" href="./index.html">
+    <span class="back-arrow" aria-hidden="true">←</span>Zurück zur Übersicht
+  </a>
+"""
+        if zurueck
+        else ""
+    )
+    return f"""<header class="hdr{" hdr--sub" if zurueck else ""}">
+{zurueck_html}  <div class="hdr-row">
+    <div class="hdr-main">
+      <h1>Momentum-Report</h1>
+      <p class="stand">{subline}</p>
+    </div>
+    <button class="menu-btn" id="menu-btn" aria-label="Menü öffnen" aria-expanded="false">☰</button>
   </div>
-  <button class="menu-btn" id="menu-btn" aria-label="Menü öffnen" aria-expanded="false">☰</button>
 </header>
 <div class="overlay" id="overlay" hidden>
   <div class="overlay-backdrop" data-close></div>
@@ -150,6 +170,18 @@ def _header(subline: str) -> str:
       <span class="sheet-icon" aria-hidden="true">▤</span>
       <span><span class="sheet-title">Methodik</span><span class="sheet-sub">Jede Zutat mit Quelle</span></span>
     </a>
+    <button type="button" class="sheet-item sheet-item--btn" id="reload-btn">
+      <span class="sheet-icon" aria-hidden="true">⟳</span>
+      <span><span class="sheet-title">Neu laden</span><span class="sheet-sub">Daten frisch holen, ohne die Seite neu zu öffnen</span></span>
+    </button>
+    <button type="button" class="sheet-item sheet-item--btn" id="recalc-btn">
+      <span class="sheet-icon" aria-hidden="true">Σ</span>
+      <span><span class="sheet-title">Neu berechnen</span><span class="sheet-sub">Stößt den Momentum-Lauf bei GitHub an</span></span>
+    </button>
+    <button type="button" class="sheet-item sheet-item--btn" id="lock-btn" disabled>
+      <span class="sheet-icon" aria-hidden="true">⌧</span>
+      <span><span class="sheet-title">Sperren</span><span class="sheet-sub" id="lock-sub">Kein Token gespeichert</span></span>
+    </button>
     <div class="sheet-item sheet-item--static">
       <span class="sheet-icon" aria-hidden="true">A</span>
       <span class="sheet-grow"><span class="sheet-title">Textgröße</span>
@@ -163,6 +195,57 @@ def _header(subline: str) -> str:
     </div>
     <button type="button" class="sheet-close" data-close>Schließen</button>
   </nav>
+</div>
+{_TOKEN_DIALOG}
+{_RUNBAR}"""
+
+
+# --------------------------------------------------------------------------
+# Fernsteuerung: Token-Dialog und Lauf-Banner
+#
+# Beide stehen auf JEDER Seite, weil das Menue auf jeder Seite steht. Ohne
+# gespeicherten Token passiert nichts Stilles: der Knopf oeffnet diesen
+# Dialog, mehr nicht.
+# --------------------------------------------------------------------------
+
+_TOKEN_DIALOG = """<div class="overlay" id="tok-overlay" hidden>
+  <div class="overlay-backdrop" data-tok-close></div>
+  <div class="sheet tok-dlg" role="dialog" aria-modal="true" aria-labelledby="tok-title">
+    <h2 class="tok-title" id="tok-title">Zugriffs-Token nötig</h2>
+    <p class="tok-text">Die Neuberechnung startet den Lauf bei GitHub. Dafür braucht
+      diese Seite einen <strong>Fine-grained Personal Access Token</strong>, der nur
+      für dieses eine Repository gilt.</p>
+    <ol class="tok-steps">
+      <li>Auf GitHub: <strong>Settings → Developer settings → Personal access tokens
+        → Fine-grained tokens → Generate new token</strong>.
+        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Direkt dorthin →</a></li>
+      <li><em>Repository access</em>: <strong>Only select repositories</strong> →
+        <code>Momentum-Report</code>. Kein anderes.</li>
+      <li><em>Repository permissions</em>: <strong>Actions</strong> auf
+        <em>Read and write</em>, <strong>Contents</strong> auf <em>Read and write</em>.
+        Alles andere auf <em>No access</em> lassen.</li>
+      <li>Token erzeugen, kopieren, hier einsetzen.</li>
+    </ol>
+    <label class="tok-label" for="tok-input">Token</label>
+    <input class="tok-input" id="tok-input" type="password" autocomplete="off"
+           autocapitalize="off" spellcheck="false" placeholder="github_pat_…">
+    <p class="tok-note">Der Token bleibt <strong>auf diesem Gerät</strong> (IndexedDB),
+      28 Tage lang, danach wird erneut gefragt. Er geht ausschließlich an
+      <code>api.github.com</code>, steht in keiner Adresszeile und in keinem
+      Protokoll. Über <em>Sperren</em> im Menü ist er sofort wieder weg.</p>
+    <p class="tok-error" id="tok-error" role="alert" hidden></p>
+    <div class="tok-row">
+      <button type="button" class="tok-btn tok-btn--main" id="tok-save">Speichern und starten</button>
+      <button type="button" class="tok-btn" data-tok-close>Abbrechen</button>
+    </div>
+  </div>
+</div>"""
+
+_RUNBAR = """<div class="runbar" id="runbar" hidden role="status" aria-live="polite">
+  <span class="runbar-dot" id="runbar-dot" aria-hidden="true"></span>
+  <span class="runbar-text" id="runbar-text"></span>
+  <a class="runbar-link" id="runbar-link" target="_blank" rel="noopener noreferrer" hidden>Protokoll →</a>
+  <button type="button" class="runbar-close" id="runbar-close" aria-label="Meldung schließen">✕</button>
 </div>"""
 
 
@@ -461,7 +544,7 @@ def _method_card(title: str, keys: tuple[str, ...], body_html: str, anchor: str 
 def render_methodik() -> str:
     body = [
         _head("Methodik — Momentum-Report", "Jede Zutat mit Primaerquelle."),
-        _header("Wie gerechnet wird — und was bewusst fehlt"),
+        _header("Wie gerechnet wird — und was bewusst fehlt", zurueck=True),
         "<main>",
         """<p class="lead">Dieses Werkzeug erfindet nichts. Es rechnet eine
 Vorschrift nach, die in wissenschaftlichen Aufsätzen veröffentlicht und

@@ -134,6 +134,39 @@ tests/network    Nachweise gegen die echte Kursquelle (wöchentlich)
 | `Tests` | jeder Push / PR | Wert-, Mutations-, Determinismus- und Layout-Tests |
 | `Datenquelle prüfen` | montags + manuell | Netz-Nachweise gegen Yahoo |
 
+## Die Seite bedienen
+
+Das ☰-Menü steht auf **jeder** Seite; jede Unterseite trägt oben zusätzlich
+einen **← Zurück**-Link. Der ist kein Schmuck: als installierte PWA läuft
+das Werkzeug im Standalone-Modus, ohne Adresszeile und ohne Zurück-Taste
+des Browsers — ohne diesen Link wäre die Methodik-Seite eine Sackgasse.
+
+| Menüpunkt | Was passiert |
+|---|---|
+| **Neu laden** | holt dieselbe Seite frisch (Cache-Brecher am Zeitstempel) und tauscht den Inhalt aus — ohne die Seite neu zu öffnen |
+| **Neu berechnen** | stößt den `Momentum-Lauf` per `workflow_dispatch` auf `main` an und verfolgt ihn bis zum Ende |
+| **Sperren** | verwirft den gespeicherten Zugriffs-Token sofort |
+
+**Neu berechnen** braucht einen **Fine-grained Personal Access Token** —
+nur für dieses Repository, mit *Actions: Read and write* und *Contents:
+Read and write*. Ohne gespeicherten Token passiert **nichts Stilles**: der
+Knopf öffnet den Dialog, der erklärt, wo der Token entsteht.
+
+Zum Token, unbeschönigt:
+
+* Er liegt **auf dem Gerät** (IndexedDB), 28 Tage, danach wird erneut
+  gefragt. Er steht in keiner Adresszeile, in keiner Protokollausgabe und
+  nirgends im Repository; er geht ausschließlich als
+  `Authorization`-Kopfzeile an `api.github.com`.
+* Wer das entsperrte Gerät in die Hand bekommt, kann ihn benutzen. Das ist
+  die Grenze des Verfahrens — deshalb der Punkt *Sperren*, und deshalb ein
+  Token, der nur dieses eine Repository erreicht.
+
+Während der Lauf läuft, zeigt ein Banner unten die Sekunden. Es zählt
+**nicht** ewig: Schlägt der Lauf fehl, wird das Banner rot und verweist auf
+das Actions-Protokoll; nach 10 Minuten ohne Ergebnis sagt es genau das.
+Läuft der Lauf durch, werden die Daten geholt und die Seite aktualisiert.
+
 ## Einrichtung (einmalig, in der GitHub-Oberfläche)
 
 1. **GitHub Pages aktivieren** — Settings → Pages → Source:
