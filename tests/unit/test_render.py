@@ -7,6 +7,7 @@ misst im echten Browser; hier wird der Inhalt geprueft.
 from __future__ import annotations
 
 import datetime as _dt
+import re
 from pathlib import Path
 
 import pytest
@@ -94,15 +95,66 @@ def test_kopfzeile_zeigt_ranking_naechsten_stichtag_und_kursdatum():
     assert "Ranking vom 31.07. · nächstes am 31.08. · Kurse vom 03.08.2026" in html
 
 
-def test_alle_vier_ehrlichkeits_anzeigen_stehen_prominent_auf_der_seite():
+def test_die_uebersicht_traegt_den_ehrlichkeits_block_nicht_mehr():
+    """Produktentscheidung: die vier Karten stehen jetzt in der Methodik."""
     html = render_index([_view(warnung=False)], Date(2026, 8, 3))
-    kopf, _, rest = html.partition('<section class="market">')
-    assert "Keine Einzelaktien-Prognose" in kopf
-    assert "Portfolio-Statistik" in kopf
-    assert "0,3 %" in kopf
-    assert "Gewinner MINUS Verlierer" in kopf
-    assert 'href="methodik.html#trend-ampel"' in kopf
-    assert rest, "es muss auch eine Markt-Sektion geben"
+    assert 'class="disc-box"' not in html
+    assert "disc-item" not in html
+    for satz in ("Keine Einzelaktien-Prognose", "0,3 %", "Gewinner MINUS Verlierer"):
+        assert satz not in html, satz
+    # Der Haftungshinweis im Fuss bleibt, wo er ist.
+    assert "Keine Anlageberatung" in html
+    assert 'class="market"' in html, "es muss auch eine Markt-Sektion geben"
+
+
+def test_alle_vier_ehrlichkeits_anzeigen_stehen_in_der_methodik():
+    """Verlustfrei umgezogen: Titel, Text, Quelle und der Ampel-Verweis."""
+    from momentum.render import HONESTY
+    from momentum.sources import source
+
+    html = render_methodik()
+    assert "<h2>Ehrlich gesagt</h2>" in html
+    assert 'class="disc-box" id="ehrlich-gesagt"' in html
+    assert html.count('class="disc-item"') == 4
+
+    for key, titel, text, _link in HONESTY:
+        assert titel.replace("&", "&amp;") in html, titel
+        # Der Text steht maskiert in der Seite (Gedankenstriche, Umlaute).
+        anfang = text.split("—")[0].strip().replace("&", "&amp;")
+        assert anfang in html, titel
+        assert source(key).short.replace("&", "&amp;") in html, key
+
+    # Der Verweis springt jetzt INNERHALB der Methodik zur Ampel-Erklaerung.
+    assert '<a class="disc-link" href="#trend-ampel">' in html
+    assert 'id="trend-ampel"' in html, "der Anker, auf den verwiesen wird"
+
+
+def test_kein_verweis_zeigt_mehr_auf_den_alten_ort():
+    """Nichts darf auf den Block auf der Uebersicht zeigen — den gibt es nicht."""
+    index = render_index([_view(warnung=False)], Date(2026, 8, 3))
+    methodik = render_methodik()
+    assert "methodik.html#ehrlich-gesagt" not in index + methodik
+    assert "index.html#ehrlich-gesagt" not in index + methodik
+    # Die Trend-Ampel auf der Uebersicht verweist weiter auf die Methodik-Seite.
+    assert 'href="methodik.html#trend-ampel"' in index
+
+
+def test_die_methodik_sagt_die_beiden_haerten_nur_einmal():
+    """Zusammengefuehrt statt gedoppelt: die Karten-Fassung gewinnt."""
+    html = render_methodik()
+    # frueher stand beides zusaetzlich als Aufzaehlungspunkt in "Klare Grenzen"
+    assert "Keine Verlierer-Seite" not in html
+    assert "Das steht auf der Startseite" not in html
+    # ... und der Punkt verweist stattdessen nach oben
+    assert '<a href="#ehrlich-gesagt">Ehrlich gesagt</a>' in html
+    # Die Aussagen selbst sind weiterhin da — je einmal als Ehrlichkeits-
+    # Karte. Dass sie zusaetzlich in der Quellen-Fussnote stehen, ist kein
+    # Doppel, sondern der Beleg (SOURCES[...].claim).
+    assert "Gewinner MINUS Verlierer" in html
+    assert "0,3 %" in html
+    ohne_belege = re.sub(r'<ul class="src-list">.*?</ul>', "", html, flags=re.S)
+    assert ohne_belege.count("Gewinner MINUS Verlierer") == 1
+    assert ohne_belege.count("0,3 %") == 1
 
 
 def test_trend_ampel_warnung_traegt_den_beauftragten_wortlaut():

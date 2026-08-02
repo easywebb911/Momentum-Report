@@ -27,6 +27,10 @@ Date = _dt.date
 
 # Die vier Ehrlichkeits-Anzeigen. Reihenfolge und Wortlaut sind Teil des
 # Produkts, nicht Dekoration -- jede haengt an einem Beleg.
+#
+# Sie stehen seit dem 02.08.2026 auf der METHODIK-Seite, nicht mehr auf der
+# Uebersicht (Produktentscheidung). Deshalb ist der Verweis auf die
+# Trend-Ampel jetzt ein Sprung INNERHALB derselben Seite.
 HONESTY = (
     (
         "portfolio_statistic",
@@ -38,8 +42,8 @@ HONESTY = (
         "momentum_crash",
         "Momentum kann abrupt einbrechen",
         "Die schweren Einbrueche haeuften sich nach fallenden Maerkten. "
-        "Was die Trend-Ampel oben je Markt bedeutet:",
-        "methodik.html#trend-ampel",
+        "Was die Trend-Ampel auf der Uebersicht je Markt bedeutet:",
+        "#trend-ampel",
     ),
     (
         "decay",
@@ -368,7 +372,8 @@ def _honesty_block() -> str:
     </li>"""
         )
     return (
-        '<section class="disc-box" aria-label="Was dieses Werkzeug nicht kann">\n'
+        '<section class="disc-box" id="ehrlich-gesagt" '
+        'aria-label="Was dieses Werkzeug nicht kann">\n'
         '  <ul class="disc-list">\n' + "\n".join(items) + "\n  </ul>\n</section>"
     )
 
@@ -520,15 +525,17 @@ def render_index(views: list[MarketView], run_date: Date) -> str:
         _header(subline),
         "<main>",
         # Das Banner steht als ERSTES im Inhalt, direkt unter der Ueberschrift
-        # -- Easys ausdrueckliche Platzierung. Sie ersetzt die urspruengliche
-        # Vorgabe, es hinter den Hinweis-Bereich zu setzen.
+        # -- Easys ausdrueckliche Platzierung.
         #
         # Bewusst NICHT in den <header>: der ist sticky. Dort wuerde das Band
         # beim Scrollen kleben und dauerhaft Bildschirmplatz kosten. Als
         # erstes Element in <main> scrollt es weg wie jeder andere Inhalt und
         # nimmt zugleich Innenabstand und Maximalbreite des Inhalts mit.
+        #
+        # Die vier Ehrlichkeits-Anzeigen standen frueher hier. Sie stehen
+        # jetzt auf der Methodik-Seite unter „Ehrlich gesagt" -- ebenfalls
+        # Produktentscheidung. Der Haftungshinweis im Fuss bleibt, wo er ist.
         _banner(),
-        _honesty_block(),
     ]
     for view in views:
         if view.ranking:
@@ -571,6 +578,12 @@ Vorschrift nach, die in wissenschaftlichen Aufsätzen veröffentlicht und
 geprüft wurde. Unten steht jede einzelne Zutat: was gerechnet wird, in
 einfacher Sprache, und woher sie stammt. Was hier keine Quelle hat, steht
 nicht im Score.</p>""",
+        # Zuerst die Grenzen, dann die Rechnung: Wer wissen will, wie das
+        # Werkzeug rechnet, soll vorher wissen, was es NICHT behauptet.
+        "<h2>Ehrlich gesagt</h2>",
+        """<p class="lead">Vier Dinge, die man wissen muss, bevor man eine
+Zahl auf der Übersicht ernst nimmt. Jede hat eine Quelle.</p>""",
+        _honesty_block(),
         "<h2>Die zwei Zutaten des Scores</h2>",
         _method_card(
             f"1. 12-1-Momentum (Gewicht {int(WEIGHT_MOMENTUM_12_1 * 100)} %)",
@@ -687,21 +700,23 @@ Qualitätsaussage — es sorgt nur dafür, dass die Liste keine Titel zeigt, die
 praktisch kaum handelbar sind.</p>""",
         ),
         "<h2>Was dieses Werkzeug bewusst NICHT tut</h2>",
+        # „Keine Verlierer-Seite" und „der Effekt ist geschrumpft" standen
+        # hier frueher als eigene Punkte. Beides sagt oben schon „Ehrlich
+        # gesagt" — mit denselben Belegen. Doppelt gesagt wirkt nicht
+        # doppelt, sondern beliebig, deshalb steht es nur noch dort.
         _method_card(
             "Klare Grenzen",
-            ("long_only", "decay", "portfolio_statistic"),
+            ("portfolio_statistic",),
             """<ul class="nolist">
 <li>Keine Rückrechnung (Backtest), keine Trefferquote, keine Erfolgsbilanz —
 das wäre eine eigene Wissenschaft und würde hier nur Sicherheit vortäuschen.</li>
 <li>Keine Kursziele, keine Kauf- oder Verkaufssignale, keine Ausstiegsregeln.</li>
-<li>Keine Verlierer-Seite: Die Studien messen Gewinner <em>minus</em> Verlierer.
-Hier steht nur die Gewinner-Seite — die Studienrenditen gelten für das
-Gezeigte also nicht.</li>
 <li>Keine Zutat ohne Quelle. Nichts wird „weil es plausibel klingt“ ergänzt.</li>
 <li>Keine risikogesteuerten Varianten in dieser Fassung — dokumentiert, aber
 nicht gebaut.</li>
-<li>Der Effekt ist im US-Markt nach 2000 deutlich geschrumpft. Das steht auf
-der Startseite, weil es dorthin gehört.</li>
+<li>Die beiden härtesten Einschränkungen — nur die Gewinner-Seite, und ein
+seit 2000 geschrumpfter Effekt — stehen oben unter
+<a href="#ehrlich-gesagt">Ehrlich gesagt</a>.</li>
 </ul>""",
         ),
         "<h2>Warum Japan, Taiwan und Südkorea fehlen</h2>",

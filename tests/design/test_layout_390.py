@@ -8,6 +8,8 @@ Geprueft wird im echten Browser:
   * auch bei groesster Textgroesse (20px) bleibt alles im Rahmen
   * das Kopf-Banner skaliert ueber sein viewBox-Verhaeltnis
   * jede Unterseite hat einen sichtbaren Rueckweg (PWA-Standalone!)
+  * die vier Ehrlichkeits-Karten stehen in der Methodik, nicht mehr
+    auf der Uebersicht — und kein Verweis zeigt ins Leere
 
 Browser, gerenderte Seite und der Oeffnen-Helfer stehen in conftest.py.
 Laeuft nur, wenn Playwright samt Browser vorhanden ist (Marker "browser").
@@ -17,7 +19,7 @@ from __future__ import annotations
 
 import pytest
 
-from .conftest import BREITE
+from .conftest import BREITE, HOEHE
 
 pytestmark = pytest.mark.browser
 
@@ -171,8 +173,10 @@ def test_das_banner_steht_direkt_unter_der_ueberschrift(oeffne):
              .map(el => el.className.split(' ')[0])"""
     )
     assert reihenfolge[0] == "banner", reihenfolge
-    assert reihenfolge.index("banner") < reihenfolge.index("disc-box"), reihenfolge
-    assert reihenfolge.index("disc-box") < reihenfolge.index("market"), reihenfolge
+    assert reihenfolge.index("banner") < reihenfolge.index("market"), reihenfolge
+    # Der Ehrlichkeits-Block stand frueher dazwischen; er ist in die
+    # Methodik gezogen und darf hier nicht mehr auftauchen.
+    assert "disc-box" not in reihenfolge, reihenfolge
 
     # ... und zwar UNTER dem Kopf, nicht darin.
     lage = page.evaluate(
@@ -235,6 +239,72 @@ def test_das_banner_laedt_nichts_nach(oeffne):
         assert "Helvetica, Arial, sans-serif" == familie, familie
 
 
+# --------------------------------------------- Ehrlichkeits-Block (Umzug)
+
+
+def test_die_uebersicht_zeigt_den_ehrlichkeits_block_nicht_mehr(oeffne):
+    page = oeffne("index.html")
+    assert page.locator(".disc-box").count() == 0
+    assert page.locator(".disc-item").count() == 0
+    # Der Haftungshinweis im Fuss bleibt.
+    assert "Keine Anlageberatung" in page.inner_text("footer")
+
+
+def test_alle_vier_karten_stehen_samt_quellen_in_der_methodik(oeffne):
+    page = oeffne("methodik.html")
+    karten = page.evaluate(
+        """() => [...document.querySelectorAll('#ehrlich-gesagt .disc-item')]
+             .map(li => ({
+               titel: li.querySelector('.disc-title').textContent.trim(),
+               text: li.querySelector('.disc-text').textContent.trim(),
+               quelle: li.querySelector('.disc-src').textContent.trim(),
+               sichtbar: li.getBoundingClientRect().height > 0,
+             }))"""
+    )
+    assert len(karten) == 4, karten
+    titel = [k["titel"] for k in karten]
+    assert titel == [
+        "Staerkstes Momentum nach belegter Methode",
+        "Momentum kann abrupt einbrechen",
+        "Der Effekt ist geschrumpft",
+        "Hier fehlt die halbe Studie",
+    ], titel
+    for karte in karten:
+        assert karte["sichtbar"], karte
+        assert karte["text"], karte
+        # Jede Karte nennt Autoren, Jahr und Journal.
+        assert "(" in karte["quelle"] and ")" in karte["quelle"], karte
+        assert len(karte["quelle"]) > 20, karte
+
+
+def test_der_ampel_verweis_ist_kein_toter_anker(oeffne):
+    """Der Link zeigt jetzt INNERHALB der Methodik — das Ziel muss es geben."""
+    page = oeffne("methodik.html")
+    ziel = page.get_attribute("#ehrlich-gesagt .disc-link", "href")
+    assert ziel == "#trend-ampel", ziel
+    assert page.locator("#trend-ampel").count() == 1, "Ankerziel fehlt"
+
+    page.click("#ehrlich-gesagt .disc-link")
+    assert page.url.endswith("#trend-ampel"), page.url
+    oben = page.evaluate(
+        "document.querySelector('#trend-ampel').getBoundingClientRect().top"
+    )
+    assert -1 <= oben <= HOEHE, f"Sprungziel nicht im Bild (top={oben})"
+
+
+def test_kein_link_der_seiten_zeigt_ins_leere(oeffne):
+    """Jeder Sprungmarken-Verweis muss auf ein vorhandenes Ziel zeigen."""
+    for datei in ("index.html", "methodik.html"):
+        page = oeffne(datei)
+        tot = page.evaluate(
+            """() => [...document.querySelectorAll('a[href]')]
+                 .map(a => a.getAttribute('href'))
+                 .filter(h => h.startsWith('#'))
+                 .filter(h => h.length > 1 && !document.querySelector(h))"""
+        )
+        assert tot == [], f"{datei}: tote Anker {tot}"
+
+
 # ------------------------------------------------------- Rueckweg (PWA)
 #
 # In der installierten PWA laeuft die Seite im Standalone-Modus: KEINE
@@ -280,7 +350,7 @@ def test_der_rueckweg_fuehrt_wirklich_zur_uebersicht(oeffne, datei):
     page.click(".back")
     page.wait_for_load_state()
     assert page.url.endswith("index.html"), page.url
-    assert page.locator(".disc-box").count() == 1
+    assert page.locator(".card").count() > 0, "die Uebersicht zeigt keine Karten"
     # Die Uebersicht selbst braucht keinen Rueckweg — sie IST das Ziel.
     assert page.locator(".back").count() == 0
 
