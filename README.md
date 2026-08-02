@@ -17,12 +17,21 @@ von GitHub Pages, siehe unten)
 
 | Zutat | Gewicht | Quelle |
 |---|---|---|
-| 12-1-Momentum (jüngster Monat übersprungen) | 70 % | Jegadeesh & Titman (1993), *The Journal of Finance*; Jegadeesh (1990) |
-| Nähe zum 52-Wochen-Hoch | 30 % | George & Hwang (2004), *The Journal of Finance* |
+| 12-1-Momentum (jüngster Monat übersprungen) | 50 % | Jegadeesh & Titman (1993), *The Journal of Finance*; Jegadeesh (1990) |
+| Nähe zum 52-Wochen-Hoch | 50 % | George & Hwang (2004), *The Journal of Finance* |
 
-Score `0–100 = 70 × Perzentil(12-1) + 30 × Perzentil(52W-Nähe)`,
+Score `0–100 = 50 × Perzentil(12-1) + 50 × Perzentil(52W-Nähe)`,
 Perzentile **immer nur innerhalb eines Marktes** (Rouwenhorst 1998),
 Gleichstände deterministisch alphabetisch gebrochen.
+
+**Warum gleichgewichtet.** Die Literatur liefert *kein* Mischverhältnis für
+diese beiden Zutaten — sie untersucht sie als getrennte Strategien und
+vergleicht sie; bei George & Hwang war für den US-Markt sogar die
+52-Wochen-Nähe die stärkere. Wo Arbeiten mehrere solcher Größen
+zusammenfassen, gewichten sie üblicherweise gleich. Jedes andere Verhältnis
+wäre eine unbelegte Setzung. Damit die Mischung sichtbar bleibt, führt jeder
+Titel **zusätzlich beide Teil-Ränge** (`rank_12_1`, `rank_52w`) — auf der
+Karte als „3. von 470".
 
 Dazu je Markt eine **Trend-Ampel** (Moskowitz/Ooi/Pedersen 2012): steht der
 Index über zwölf Monate im Minus, erscheint eine Warnung (Daniel &

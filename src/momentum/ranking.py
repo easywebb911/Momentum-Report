@@ -35,6 +35,7 @@ from .scoring import (
     index_12m_return,
     median,
     momentum_12_1,
+    ordinal_ranks,
     percentile_ranks,
     shift_month,
 )
@@ -140,7 +141,8 @@ def build_ranking(
       1. Handelbarkeits-Filter (Liquiditaet) -- reduziert nur die Auswahl
       2. Kennzahlen je Titel (12-1, 52W-Naehe)
       3. Perzentil-Raenge NUR innerhalb dieses Marktes (Beleg within_market)
-      4. Score = 70/30, Sortierung mit deterministischem Gleichstandsbruch
+      4. Score = gleichgewichtetes Mittel beider Perzentile (50/50),
+         Sortierung mit deterministischem Gleichstandsbruch
     """
     universe_tickers = list(universe.tickers)
     delivered = [t for t in universe_tickers if t in bundle.adjusted]
@@ -182,6 +184,13 @@ def build_ranking(
 
     pct_mom = percentile_ranks(momentum)
     pct_high = percentile_ranks(high52)
+    # Zusaetzlich die Platzziffern je Zutat. Sie gehen NICHT in die Rechnung
+    # ein -- sie machen sichtbar, woher der Endscore kommt. Bei 50/50 ist
+    # genau das die interessante Information: ein Titel kann vorn stehen,
+    # weil er in einer Zutat sehr stark und in der anderen mittelmaessig
+    # ist. Das soll man sehen, statt es glauben zu muessen.
+    rang_mom = ordinal_ranks(momentum)
+    rang_high = ordinal_ranks(high52)
 
     rows = []
     for ticker in momentum:
@@ -195,6 +204,8 @@ def build_ranking(
                 "high_52w": round(high52[ticker], 8),
                 "perzentil_momentum": round(pct_mom[ticker], 8),
                 "perzentil_high_52w": round(pct_high[ticker], 8),
+                "rank_12_1": rang_mom[ticker],
+                "rank_52w": rang_high[ticker],
                 "kurs_stichtag": round(closes[ticker], 4),
             }
         )

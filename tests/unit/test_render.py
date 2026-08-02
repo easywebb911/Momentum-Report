@@ -59,6 +59,8 @@ def _ranking(*, warnung: bool, name: str = "Beispiel AG") -> dict:
                 "momentum_12_1": 0.4211,
                 "high_52w": 0.9812,
                 "kurs_stichtag": 123.45,
+                "rank_12_1": 3,
+                "rank_52w": 12,
                 "rang": 1,
             },
             {
@@ -68,6 +70,8 @@ def _ranking(*, warnung: bool, name: str = "Beispiel AG") -> dict:
                 "momentum_12_1": -0.1234,
                 "high_52w": 0.7,
                 "kurs_stichtag": 50.0,
+                "rank_12_1": 40,
+                "rank_52w": 1,
                 "rang": 2,
             },
         ],
@@ -125,12 +129,58 @@ def test_farb_semantik_gruen_nur_positiv_rot_nur_negativ():
     assert f'<span class="m-val">98,1{NBSP}%</span>' in html
 
 
-def test_karte_zeigt_die_drei_kacheln_und_das_ehrlichkeits_label():
+def test_karte_zeigt_die_kacheln_und_das_ehrlichkeits_label():
     html = render_index([_view(warnung=False)], Date(2026, 8, 3))
     for label in ("12-1-Momentum", "52W-Hoch-Nähe", "Kurs (USD)"):
         assert label in html
     assert "keine Prognose für diese Aktie" in html
     assert 'class="card-ft"' in html
+
+
+def test_karte_zeigt_beide_teil_raenge():
+    """Bei Gleichgewichtung muss sichtbar sein, WOHER der Score kommt."""
+    html = render_index([_view(warnung=False)], Date(2026, 8, 3))
+    assert 'class="metrics metrics--rang"' in html
+    assert "Rang 12-1-Momentum" in html
+    assert "Rang 52W-Hoch-Nähe" in html
+    # AAA steht 3. in 12-1 und 12. in der 52W-Naehe, von 469 bewerteten.
+    assert f"3.{NBSP}von{NBSP}469" in html
+    assert f"12.{NBSP}von{NBSP}469" in html
+    # BBB: 40. und 1.
+    assert f"40.{NBSP}von{NBSP}469" in html
+    assert f"1.{NBSP}von{NBSP}469" in html
+
+
+def test_die_teil_raenge_zaehlen_gegen_die_bewerteten_titel():
+    """"von N" ist die Zahl der BEWERTETEN Titel, nicht die Universumsgroesse."""
+    view = _view(warnung=False)
+    assert view.ranking["abdeckung"]["bewertet"] == 469
+    assert view.ranking["abdeckung"]["universum"] == 500
+    html = render_index([view], Date(2026, 8, 3))
+    assert f"3.{NBSP}von{NBSP}469" in html
+    assert f"3.{NBSP}von{NBSP}500" not in html
+
+
+def test_die_methodik_erklaert_die_gleichgewichtung():
+    html = render_methodik()
+    assert "Beide Zutaten zählen gleich viel" in html
+    assert "kein" in html and "Mischverhältnis" in html
+    assert "George &amp; Hwang" in html
+    assert "Gleichgewichtung die" in html
+    assert "Teil-Ränge" in html
+    assert "Gewicht 50 %" in html
+    assert "50 × Perzentil(12-1-Momentum)" in html
+    assert "50 × Perzentil(52-Wochen-Hoch-Nähe)" in html
+
+
+def test_nirgends_steht_noch_ein_70_30():
+    """Belegter Gegencheck ueber alles Ausgelieferte."""
+    erzeugt = render_index([_view(warnung=False)], Date(2026, 8, 3)) + render_methodik()
+    for datei in ("index.html", "methodik.html", "style.css", "app.js"):
+        erzeugt += Path("docs", datei).read_text(encoding="utf-8")
+    erzeugt += Path("README.md").read_text(encoding="utf-8")
+    for verboten in ("Gewicht 70", "Gewicht 30", "70 × Perzentil", "30 × Perzentil", "70/30"):
+        assert verboten not in erzeugt, verboten
 
 
 def test_anzeige_kurs_kommt_aus_dem_tagesabruf_nicht_aus_dem_ranking():

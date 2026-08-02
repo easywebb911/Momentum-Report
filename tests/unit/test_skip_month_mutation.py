@@ -52,10 +52,15 @@ def test_mutation_kippt_die_rangfolge(ohne_skip):
     scores = {t: combined_score(pct_mom[t], pct_high[t]) for t in serien}
     rangfolge = sorted(scores, key=lambda t: (-scores[t], t))
 
-    # Mutiert:  AAA 85,0 | DDD 65,0 | EEE 60,0 | BBB 40,0 | CCC 0,0
-    assert rangfolge == ["AAA", "DDD", "EEE", "BBB", "CCC"]
+    # Mutierte Perzentile 12-1 (aufsteigend, Gleichstand BBB vor DDD):
+    #   CCC 0,00 | BBB 0,25 | DDD 0,50 | EEE 0,75 | AAA 1,00
+    # 52W-Perzentile bleiben unveraendert. Endscore bei 50/50:
+    #   AAA 75,0 | DDD 75,0 | BBB 50,0 | EEE 50,0 | CCC 0,0
+    # Zwei Gleichstaende, beide alphabetisch gebrochen (AAA vor DDD,
+    # BBB vor EEE).
+    assert rangfolge == ["AAA", "DDD", "BBB", "EEE", "CCC"]
     assert rangfolge != SOLL_RANGFOLGE
-    assert scores["AAA"] == pytest.approx(85.0)
+    assert scores["AAA"] == pytest.approx(75.0)
     assert scores["AAA"] != pytest.approx(SOLL_SCORE["AAA"])
 
 

@@ -4,7 +4,7 @@ Geprueft wird im echten Browser:
   * die Seite scrollt NICHT seitwaerts (kein Umbruch-Bruch)
   * kein einzelnes Element ragt ueber den Rand hinaus
   * eine Karte mit sehr langem Firmennamen bleibt heil
-  * die drei Kennzahl-Kacheln stehen nebeneinander in einer Reihe
+  * die Kacheln stehen in zwei sauberen Reihen (3 Kennzahlen + 2 Teil-Raenge)
   * auch bei groesster Textgroesse (20px) bleibt alles im Rahmen
   * das Kopf-Banner skaliert ueber sein viewBox-Verhaeltnis
   * jede Unterseite hat einen sichtbaren Rueckweg (PWA-Standalone!)
@@ -73,14 +73,49 @@ def test_langer_firmenname_bleibt_einzeilig(oeffne):
     assert masse["abgeschnitten"] is True, "der lange Name muesste ellipsiert werden"
 
 
-def test_die_drei_kacheln_stehen_in_einer_reihe(oeffne):
+def test_die_kacheln_stehen_in_zwei_sauberen_reihen(oeffne):
+    """Drei Kennzahl-Kacheln oben, zwei Teil-Rang-Kacheln darunter.
+
+    Frueher waren es nur die drei oberen. Mit der Gleichgewichtung kamen die
+    beiden Teil-Raenge dazu — sie stehen bewusst in einer EIGENEN Reihe:
+    zwei Kacheln in der Dreier-Spur haetten eine Luecke gelassen.
+    """
     page = oeffne("index.html")
-    oberkanten = page.evaluate(
-        """() => Array.from(document.querySelector('.card').querySelectorAll('.metric-box'))
-             .map(el => Math.round(el.getBoundingClientRect().top))"""
+    reihen = page.evaluate(
+        """() => Array.from(document.querySelector('.card').querySelectorAll('.metrics'))
+             .map(g => Array.from(g.querySelectorAll('.metric-box'))
+               .map(el => Math.round(el.getBoundingClientRect().top)))"""
     )
-    assert len(oberkanten) == 3
-    assert len(set(oberkanten)) == 1, f"Kacheln umgebrochen: {oberkanten}"
+    assert len(reihen) == 2, f"erwartet zwei Kachelreihen, gefunden {len(reihen)}"
+    assert len(reihen[0]) == 3 and len(reihen[1]) == 2, reihen
+    for oberkanten in reihen:
+        assert len(set(oberkanten)) == 1, f"Kacheln umgebrochen: {oberkanten}"
+    assert reihen[1][0] > reihen[0][0], "die Rang-Reihe steht nicht darunter"
+
+
+def test_die_teil_raenge_stehen_auf_der_karte(oeffne):
+    """Die Mischung soll sichtbar sein, nicht behauptet."""
+    page = oeffne("index.html")
+    befund = page.evaluate(
+        """() => {
+          const g = document.querySelector('.card').querySelector('.metrics--rang');
+          const kacheln = Array.from(g.querySelectorAll('.metric-box'));
+          return kacheln.map(k => ({
+            wert: k.querySelector('.m-val').textContent,
+            label: k.querySelector('.m-lbl').textContent,
+            breite: k.getBoundingClientRect().width,
+            abgeschnitten: k.querySelector('.m-val').scrollWidth
+                         > k.querySelector('.m-val').clientWidth,
+          }));
+        }"""
+    )
+    assert len(befund) == 2
+    assert "Rang 12-1-Momentum" in befund[0]["label"]
+    assert "Rang 52W-Hoch-Nähe" in befund[1]["label"]
+    for kachel in befund:
+        assert "von" in kachel["wert"], kachel
+        assert kachel["abgeschnitten"] is False, f"Wert abgeschnitten: {kachel}"
+        assert kachel["breite"] >= 150, kachel
 
 
 def test_karte_und_kacheln_haben_sinnvolle_breiten(oeffne):

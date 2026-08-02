@@ -104,7 +104,7 @@ einfacher Sprache, und woher sie stammt. Was hier keine Quelle hat, steht
 nicht im Score.</p>
 <h2>Die zwei Zutaten des Scores</h2>
 <article class="card mcard">
-  <h3>1. 12-1-Momentum (Gewicht 70 %)</h3>
+  <h3>1. 12-1-Momentum (Gewicht 50 %)</h3>
   <p>Wir schauen, wie stark eine Aktie in einem Fenster von rund einem
 Jahr gestiegen ist — und lassen dabei den <strong>jüngsten Monat bewusst
 weg</strong>.</p>
@@ -119,7 +119,7 @@ Aktiensplits sind eingerechnet, weil die Studien Gesamtrenditen messen.</p>
   <ul class="src-list"><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Aktien, die in den vergangenen rund zwoelf Monaten am staerksten gestiegen sind, liefen im Durchschnitt der Folgemonate weiter besser als die schwaechsten. Gemessen wird die Rendite vom Ende des Monats vor zwoelf Monaten bis zum Ende des VORLETZTEN Monats.</li><li>Jegadeesh (1990): „Evidence of Predictable Behavior of Security Returns“, <em>The Journal of Finance</em>. Auf Sicht eines einzelnen Monats kehren sich Kursbewegungen im Mittel um. Deshalb laesst die Standard-Rezeptur den juengsten Monat bewusst aus dem Messfenster heraus -- dieser uebersprungene Monat ist Teil der belegten Methode, keine Option.</li><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Gemessen wurden Gesamtrenditen inklusive Dividenden. Deshalb rechnet dieses Tool ausschliesslich mit dividenden- und split-bereinigten Kursen.</li></ul>
 </article>
 <article class="card mcard">
-  <h3>2. Nähe zum 52-Wochen-Hoch (Gewicht 30 %)</h3>
+  <h3>2. Nähe zum 52-Wochen-Hoch (Gewicht 50 %)</h3>
   <p>Wie nah notiert die Aktie heute an ihrem höchsten Stand des
 letzten Jahres?</p>
 <p class="formula">Kurs am Stichtag ÷ höchster Tages-Schlusskurs der letzten
@@ -135,12 +135,28 @@ Nachbilden dieser Arbeit.</p>
   <p>Beide Zutaten werden je Markt in eine Rangreihe gebracht. Der
 schwächste Titel bekommt 0, der stärkste 1, alle anderen liegen gleichmäßig
 dazwischen (Perzentil-Rang).</p>
-<p class="formula">Score = 70 × Perzentil(12-1-Momentum)
-+ 30 × Perzentil(52-Wochen-Hoch-Nähe)</p>
+<p class="formula">Score = 50 × Perzentil(12-1-Momentum)
++ 50 × Perzentil(52-Wochen-Hoch-Nähe)</p>
+<p><strong>Beide Zutaten zählen gleich viel.</strong> Das ist eine bewusste
+Entscheidung, und sie hat einen Grund: Die Forschung liefert
+<em>kein</em> Mischverhältnis für diese beiden Größen. Sie untersucht sie als
+zwei getrennte Verfahren und vergleicht sie miteinander — in der Arbeit von
+George &amp; Hwang war für den US-Markt sogar die Nähe zum 52-Wochen-Hoch die
+stärkere der beiden. Wo Arbeiten mehrere solcher Größen zusammenfassen,
+gewichten sie üblicherweise gleich.</p>
+<p>Jedes andere Verhältnis wäre also eine Zahl, die niemand belegt hat. Wenn
+man nicht weiß, welche Zutat wie viel wiegen sollte, ist Gleichgewichtung die
+ehrliche Wahl — sie behauptet nichts.</p>
+<p>Damit man sieht, woher der Score kommt, zeigt jede Karte
+<strong>zusätzlich beide Teil-Ränge</strong> („3. von 470"). So erkennt man
+sofort, ob ein Titel in beiden Zutaten stark ist oder nur in einer.</p>
 <p>Wichtig: Die Ränge werden <strong>immer nur innerhalb eines Marktes</strong>
 gebildet — US-Titel gegen US-Titel, deutsche gegen deutsche. Nie gemischt.
 Bei exakt gleichem Wert entscheidet die alphabetische Reihenfolge des Tickers;
-dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar.</p>
+dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar. Bei
+Gleichgewichtung kommt das häufiger vor als vorher — zwei Titel mit
+spiegelbildlichen Teil-Rängen landen exakt gleichauf. Auch dann entscheidet
+allein das Alphabet, nie der Zufall.</p>
   <ul class="src-list"><li>Rouwenhorst (1998): „International Momentum Strategies“, <em>The Journal of Finance</em>. Der Effekt wurde je Markt gegen die Titel DESSELBEN Marktes gemessen. Deshalb werden Perzentil-Raenge hier ausschliesslich innerhalb eines Marktes gebildet und nie ueber Maerkte gemischt.</li></ul>
 </article>
 <article class="card mcard">
