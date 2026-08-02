@@ -52,10 +52,32 @@ def test_nur_ein_ausdrueckliches_verified_kommt_durch(tmp_path):
     assert load_universe(pfad).status == "VERIFIED"
 
 
-def test_die_ausgelieferten_universen_sind_gesperrt():
+def test_die_universen_im_repo_sind_entweder_geprueft_oder_gesperrt():
+    """Default-deny, angewandt auf die Dateien, die wirklich im Repo liegen.
+
+    Frueher stand hier die schaerfere Aussage „beide sind Platzhalter". Die
+    war nur so lange richtig, wie noch gar kein Universum befuellt war --
+    mit dem ersten erfolgreichen Bootstrap-Lauf (US, 02.08.2026, 503 Titel)
+    ist sie falsch geworden, obwohl nichts kaputt war. Ein Test, der beim
+    bestimmungsgemaessen Fortschritt umkippt, misst das Falsche.
+
+    Die Aussage, die dauerhaft gelten MUSS, ist diese: kein Zwischending.
+    Entweder eine Datei traegt ausdruecklich VERIFIED und ist dann auch
+    wirklich befuellt -- oder sie wird abgelehnt. Ein drittes gibt es nicht.
+    """
+    gesehen = {}
     for pfad in ("universe/universe_us.txt", "universe/universe_de.txt"):
-        with pytest.raises(UniverseNotReady, match="PLATZHALTER"):
-            load_universe(pfad)
+        try:
+            universum = load_universe(pfad)
+        except UniverseNotReady as abgelehnt:
+            gesehen[pfad] = "abgelehnt"
+            assert "STATUS" in str(abgelehnt) or "PLATZHALTER" in str(abgelehnt)
+            continue
+        gesehen[pfad] = "VERIFIED"
+        assert universum.status == "VERIFIED"
+        assert universum.tickers, f"{pfad}: VERIFIED, aber ohne einen einzigen Titel"
+        assert universum.origin and "NOCH NICHT" not in universum.origin
+    assert set(gesehen.values()) <= {"VERIFIED", "abgelehnt"}
 
 
 # --------------------------------------------------------------------------
