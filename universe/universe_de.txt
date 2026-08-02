@@ -4,14 +4,19 @@
 # STATUS: PLACEHOLDER
 #
 # Diese Datei ist bewusst leer und als PLATZHALTER markiert.
-# Solange die Zeile "# STATUS: PLACEHOLDER" hier steht, verweigert das
-# Werkzeug jeden Lauf mit einem lauten Abbruch. Es gibt KEINEN stillen
-# Rueckfall auf eine Teilliste -- lieber gar kein Ranking als ein Ranking
-# auf einem erfundenen Universum.
+# Das Werkzeug arbeitet DEFAULT-DENY: gerechnet wird nur mit einer Datei,
+# die ausdruecklich "# STATUS: VERIFIED" traegt. Diese Zeile schreibt
+# allein der Bootstrap-Workflow, und zwar erst, nachdem jeder einzelne
+# Ticker gegen echte Kursdaten geprueft wurde. Platzhalter, halb
+# geschriebene und von Hand angelegte Dateien werden alle abgelehnt --
+# lauter Abbruch, kein stiller Rueckfall auf eine Teilliste. Damit kann
+# aus einem ungeprueften Universum niemals ein eingefrorenes Ranking
+# entstehen.
 #
-# Der HDAX umfasst DAX, MDAX und TecDAX (rund 100 Titel; TecDAX-Werte sind
-# teilweise auch in DAX oder MDAX enthalten, die Vereinigungsmenge ist
-# deshalb kleiner als die Summe).
+# Der HDAX umfasst DAX (40), MDAX (50) und TecDAX (30). TecDAX-Werte sind
+# seit 2018 zugleich in DAX oder MDAX, die Vereinigungsmenge ist deshalb
+# kleiner als die Summe von 120. Der Bootstrap erwartet 110-125 Titel nach
+# Abzug der Doppelmitglieder und schreibt sonst gar nichts.
 #
 # Befuellen: in GitHub unter "Actions" den Workflow
 # "Universum aktualisieren" starten (workflow_dispatch).

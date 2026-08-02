@@ -137,15 +137,19 @@ jobs:
           )
           PY
 
-      - name: Lauf-Fehlschlag melden (mit Sirene)
-        if: failure()
+      # Die Analyse meldet ihren eigenen Fehlschlag selbst -- mit dem echten
+      # Grund ("Universum ist Platzhalter") statt eines allgemeinen "Job rot".
+      # Dieser Schritt deckt nur die Faelle ab, in denen das Programm gar
+      # nicht erst startet (Checkout, Python, pip). Sonst gaebe es zwei Pushes.
+      - name: Fehlschlag vor der Analyse melden (mit Sirene)
+        if: failure() && steps.analyse.outcome != 'failure'
         run: |
           python - <<'PY'
           import os
           from momentum.notify import push_run_failed
           push_run_failed(
-              "Die Analyse selbst ist durchgefallen. Die Seite zeigt weiter "
-              "den letzten guten Stand.\n"
+              "Der Lauf ist abgebrochen, BEVOR die Analyse ueberhaupt "
+              "gestartet ist (Einrichtung des Laufs).\n"
               f"Lauf: {os.environ.get('GITHUB_RUN_URL', '')}"
           )
           PY

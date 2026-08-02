@@ -25,7 +25,7 @@ from pathlib import Path
 
 from .config import HISTORY_DAYS, MARKETS, TOP_N, Market
 from .data import PriceBundle, download_prices
-from .notify import push_new_ranking
+from .notify import push_new_ranking, push_run_failed
 from .ranking import (
     RANKING_DIR,
     RankingNotPossible,
@@ -235,17 +235,30 @@ def main(argv: list[str] | None = None, *, downloader=None) -> int:
 
 
 def cli() -> int:
+    """Einstieg fuer die Kommandozeile.
+
+    Ein Abbruch ist hier IMMER laut: deutliche Zeile im Lauf-Log UND
+    Fehlschlag-Push mit dem exakten Grund. Der Push wird bewusst hier
+    verschickt und nicht erst vom Workflow -- so steht der wirkliche Grund
+    drin ("Universum ist Platzhalter") statt eines allgemeinen "Job rot".
+    Der Workflow deckt nur noch die Faelle ab, in denen dieses Programm gar
+    nicht erst startet (siehe .github/workflows/lauf.yml).
+    """
     try:
         return main()
     except (UniverseNotReady, RankingNotPossible) as exc:
         log("")
         log("=" * 72)
         log(f"LAUF ABGEBROCHEN: {exc}")
-        log("Es wurde bewusst nichts veroeffentlicht.")
+        log("Es wurde bewusst nichts veroeffentlicht und nichts eingefroren.")
         log("=" * 72)
+        if os.environ.get("GITHUB_ACTIONS"):
+            print(f"::error title=Lauf abgebrochen::{exc}", flush=True)
+        push_run_failed(str(exc))
         return 2
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         traceback.print_exc()
+        push_run_failed(f"Unerwarteter Fehler: {type(exc).__name__}: {exc}")
         return 1
 
 

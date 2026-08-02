@@ -43,7 +43,34 @@ Das ist nicht bloß Konvention, sondern technisch verriegelt:
   erst beschafft.
 
 Fällt der letzte Werktag auf einen Feiertag, holt der erste Lauf des
-Folgemonats das Ranking mit dem korrekten Stichtag nach.
+Folgemonats das Ranking mit dem korrekten Stichtag nach — mit demselben
+Ergebnis, als wäre es am Stichtag selbst entstanden.
+
+**Ein geschriebenes Ranking korrigieren** geht bewusst nur auf einem Weg:
+die betreffende Datei unter `data/rankings/` von Hand aus dem Repo löschen.
+Es gibt keinen Schalter und keine Neuberechnung — sonst wäre die
+Einfrierung keine. Nach dem Löschen bildet der nächste Lauf den Monat mit
+korrektem Stichtag neu.
+
+## Das Universum ist default-deny
+
+Gerechnet wird **nur** mit einer Universums-Datei, die ausdrücklich
+`# STATUS: VERIFIED` trägt. Diese Zeile schreibt allein
+`tools/build_universe.py`, und zwar erst, nachdem **jeder einzelne Ticker**
+gegen echte Kursdaten geprüft wurde.
+
+Abgelehnt wird alles andere: der ausgelieferte Platzhalter, eine Datei ohne
+Statuszeile, mit fremdem Status oder halb geschrieben. Der Riegel greift
+**vor** dem Datenabruf — bei einem ungeprüften Universum wird nicht ein
+einziger Kurs angefragt, es kann also gar kein Ranking entstehen, das
+einfrieren könnte.
+
+Folge, die man kennen muss: Wird ein Universum später wieder auf
+`PLACEHOLDER` gesetzt, obwohl schon ein echtes Ranking existiert, verweigert
+auch der gewöhnliche Anzeige-Lauf den Dienst — die Kurse werden dann nicht
+mehr aktualisiert und die Seite friert auf dem letzten guten Stand ein. Das
+ist gewollt. Wer nur die Läufe stoppen will, schaltet stattdessen den
+Workflow ab.
 
 ## Was dieses Werkzeug bewusst NICHT tut
 
@@ -65,7 +92,7 @@ src/momentum/
   render.py      HTML für docs/ — Methodik-Seite wird aus sources.py erzeugt
   notify.py      ntfy-Push
   run.py         Einstiegspunkt des Laufs
-universe/        committete statische Listen mit Herkunft + Stand-Datum
+universe/        committete statische Listen, Status VERIFIED + Herkunft
 data/rankings/   die eingefrorenen Monats-Rankings (JSON, ohne Zeitstempel)
 docs/            die veröffentlichte Seite (GitHub Pages)
 tools/           Bootstrap für die Universums-Listen
@@ -93,7 +120,10 @@ tests/network    Nachweise gegen die echte Kursquelle (wöchentlich)
    dann als deutliche Zeile im Lauf-Protokoll und als Warnung am Lauf —
    nie als stiller Rückfall.
 3. **Universum befüllen** — Actions → *Universum aktualisieren* → Run
-   workflow. Bis dahin verweigert das Werkzeug bewusst jedes Ranking.
+   workflow. Quellen sind die **englischsprachigen** Wikipedia-Artikel
+   (S&P 500 sowie DAX, MDAX, TecDAX) — nur dort führen die Tabellen eine
+   Symbol-Spalte mit Xetra-Kürzeln. Bis dahin verweigert das Werkzeug
+   bewusst jedes Ranking.
 4. **Ersten Lauf starten** — Actions → *Momentum-Lauf* → Run workflow.
    Er bildet rückwirkend das Ranking zum letzten Handelstag Juli 2026.
 

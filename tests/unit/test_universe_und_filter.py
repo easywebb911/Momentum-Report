@@ -22,34 +22,26 @@ Date = _dt.date
 # ------------------------------------------------------------------ Universum
 
 
-def test_platzhalter_bricht_laut_ab(tmp_path):
-    datei = tmp_path / "u.txt"
-    datei.write_text(
-        "# Universum: S&P 500\n# Herkunft: x\n# Stand: 2026-07-31\n# STATUS: PLACEHOLDER\n",
-        encoding="utf-8",
-    )
-    with pytest.raises(UniverseNotReady, match="PLATZHALTER"):
-        load_universe(datei)
-
-
-def test_die_ausgelieferten_universen_sind_noch_platzhalter():
-    """Bis der Bootstrap-Workflow lief, MUSS das Werkzeug den Dienst verweigern."""
-    for pfad in ("universe/universe_us.txt", "universe/universe_de.txt"):
-        with pytest.raises(UniverseNotReady):
-            load_universe(pfad)
+# Platzhalter und Status-Gatter: siehe tests/unit/test_kein_platzhalter_ranking.py
 
 
 def test_fehlende_herkunft_ist_ein_fehler(tmp_path):
     datei = tmp_path / "u.txt"
-    datei.write_text("# Universum: X\n# Stand: 2026-07-31\nAAA\tFirma\n", encoding="utf-8")
+    datei.write_text(
+        "# Universum: X\n# Stand: 2026-07-31\n# STATUS: VERIFIED\nAAA\tFirma\n",
+        encoding="utf-8",
+    )
     with pytest.raises(UniverseNotReady, match="herkunft"):
         load_universe(datei)
 
 
 def test_unplausibles_stand_datum_ist_ein_fehler(tmp_path):
+    # Status-Gatter kommt zuerst -- hier soll die Datumspruefung greifen.
     datei = tmp_path / "u.txt"
     datei.write_text(
-        "# Universum: X\n# Herkunft: y\n# Stand: irgendwann\nAAA\tFirma\n", encoding="utf-8"
+        "# Universum: X\n# Herkunft: y\n# Stand: irgendwann\n"
+        "# STATUS: VERIFIED\nAAA\tFirma\n",
+        encoding="utf-8",
     )
     with pytest.raises(UniverseNotReady, match="Stand"):
         load_universe(datei)
@@ -58,7 +50,8 @@ def test_unplausibles_stand_datum_ist_ein_fehler(tmp_path):
 def test_doppelter_ticker_ist_ein_fehler(tmp_path):
     datei = tmp_path / "u.txt"
     datei.write_text(
-        "# Universum: X\n# Herkunft: y\n# Stand: 2026-07-31\nAAA\tEins\nAAA\tZwei\n",
+        "# Universum: X\n# Herkunft: y\n# Stand: 2026-07-31\n# STATUS: VERIFIED\n"
+        "AAA\tEins\nAAA\tZwei\n",
         encoding="utf-8",
     )
     with pytest.raises(UniverseNotReady, match="doppelt"):
@@ -67,7 +60,10 @@ def test_doppelter_ticker_ist_ein_fehler(tmp_path):
 
 def test_leeres_universum_ist_ein_fehler(tmp_path):
     datei = tmp_path / "u.txt"
-    datei.write_text("# Universum: X\n# Herkunft: y\n# Stand: 2026-07-31\n", encoding="utf-8")
+    datei.write_text(
+        "# Universum: X\n# Herkunft: y\n# Stand: 2026-07-31\n# STATUS: VERIFIED\n",
+        encoding="utf-8",
+    )
     with pytest.raises(UniverseNotReady, match="keine Ticker"):
         load_universe(datei)
 

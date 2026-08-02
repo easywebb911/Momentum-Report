@@ -114,11 +114,14 @@ def make_downloader(
     return downloader
 
 
-def write_universe(path, tickers, *, label="Testuniversum", origin="Kunst-Beispiel"):
+def write_universe(
+    path, tickers, *, label="Testuniversum", origin="Kunst-Beispiel", status="VERIFIED"
+):
     lines = [
         f"# Universum: {label}",
         f"# Herkunft: {origin}",
         "# Stand: 2026-07-31",
+        f"# STATUS: {status}",
     ]
     lines += [f"{t}\tFirma {t}" for t in tickers]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")

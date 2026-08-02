@@ -3,15 +3,24 @@
 Bewusste Entscheidung: das Universum wird NICHT bei jedem Lauf frisch aus
 dem Netz gezogen. Es steht als Datei im Repo, mit Herkunft und Stand-Datum
 im Kopf, und wird nur durch einen bewusst angestossenen Vorgang
-(.github/workflows/universe-bootstrap.yml) veraendert. So kann sich das
+(.github/workflows/universum.yml) veraendert. So kann sich das
 Universum nie unbemerkt unter einem laufenden Ranking wegdrehen.
+
+DER STATUS-MARKER ARBEITET DEFAULT-DENY. Eine Datei ist nur dann brauchbar,
+wenn sie AUSDRUECKLICH "# STATUS: VERIFIED" traegt -- diese Zeile schreibt
+allein tools/build_universe.py, und zwar erst, nachdem jeder einzelne Ticker
+gegen echte Kursdaten geprueft wurde. Jede andere Datei -- Platzhalter,
+halb geschrieben, von Hand angelegt, Statuszeile verlorengegangen -- wird
+abgelehnt. Das ist die Umkehr des naheliegenden Entwurfs: nicht "sperre,
+wenn PLACEHOLDER dasteht", sondern "erlaube nur, wenn VERIFIED dasteht".
+Der Unterschied ist genau der Fall, in dem etwas schiefgeht.
 
 Dateiformat (UTF-8):
 
     # Universum: <Bezeichnung>
     # Herkunft: <Quelle, woertlich>
     # Stand: JJJJ-MM-TT
-    # STATUS: PLACEHOLDER      <- optional; solange gesetzt: harter Abbruch
+    # STATUS: VERIFIED         <- Pflicht; alles andere wird abgelehnt
     TICKER<TAB>Firmenname
     ...
 """
@@ -22,7 +31,10 @@ import datetime as _dt
 from dataclasses import dataclass
 from pathlib import Path
 
-PLACEHOLDER_MARKER = "PLACEHOLDER"
+# Der einzige Status, unter dem gerechnet werden darf. Wird ausschliesslich
+# von tools/build_universe.py gesetzt, nach bestandener Kurspruefung.
+STATUS_VERIFIED = "VERIFIED"
+STATUS_PLACEHOLDER = "PLACEHOLDER"
 
 
 class UniverseNotReady(Exception):
@@ -44,6 +56,7 @@ class Universe:
     label: str
     origin: str
     as_of: str
+    status: str
     entries: tuple[UniverseEntry, ...]
 
     @property
@@ -77,11 +90,23 @@ def load_universe(path: str | Path) -> Universe:
     lines = p.read_text(encoding="utf-8").splitlines()
     header = _parse_header(lines)
 
-    if header.get("status", "").upper().startswith(PLACEHOLDER_MARKER):
+    # DEFAULT-DENY: nur ein ausdrueckliches VERIFIED laesst die Datei durch.
+    status = header.get("status", "").strip().upper()
+    if status.startswith(STATUS_PLACEHOLDER):
         raise UniverseNotReady(
             f"{p} ist noch ein PLATZHALTER. Das Universum muss einmal ueber "
             f"den Workflow 'Universum aktualisieren' (workflow_dispatch) "
-            f"befuellt werden. Bis dahin wird bewusst KEIN Ranking gebildet."
+            f"befuellt werden. Bis dahin wird bewusst KEIN Ranking gebildet "
+            f"-- und damit auch kein Stichtag eingefroren."
+        )
+    if status != STATUS_VERIFIED:
+        raise UniverseNotReady(
+            f"{p} traegt keinen geprueften Status. Erwartet wird die Zeile "
+            f"'# STATUS: {STATUS_VERIFIED}', gefunden: "
+            f"{status or '(keine Statuszeile)'}. Diese Zeile setzt allein der "
+            f"Workflow 'Universum aktualisieren', nachdem jeder Ticker gegen "
+            f"echte Kursdaten geprueft wurde. Eine Datei ohne diesen Nachweis "
+            f"wird nicht gerechnet -- auch nicht 'nur zum Ausprobieren'."
         )
 
     missing = [k for k in ("universum", "herkunft", "stand") if k not in header]
@@ -119,5 +144,6 @@ def load_universe(path: str | Path) -> Universe:
         label=header["universum"],
         origin=header["herkunft"],
         as_of=header["stand"],
+        status=status,
         entries=tuple(entries),
     )

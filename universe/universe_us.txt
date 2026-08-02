@@ -4,10 +4,14 @@
 # STATUS: PLACEHOLDER
 #
 # Diese Datei ist bewusst leer und als PLATZHALTER markiert.
-# Solange die Zeile "# STATUS: PLACEHOLDER" hier steht, verweigert das
-# Werkzeug jeden Lauf mit einem lauten Abbruch. Es gibt KEINEN stillen
-# Rueckfall auf eine Teilliste -- lieber gar kein Ranking als ein Ranking
-# auf einem erfundenen Universum.
+# Das Werkzeug arbeitet DEFAULT-DENY: gerechnet wird nur mit einer Datei,
+# die ausdruecklich "# STATUS: VERIFIED" traegt. Diese Zeile schreibt
+# allein der Bootstrap-Workflow, und zwar erst, nachdem jeder einzelne
+# Ticker gegen echte Kursdaten geprueft wurde. Platzhalter, halb
+# geschriebene und von Hand angelegte Dateien werden alle abgelehnt --
+# lauter Abbruch, kein stiller Rueckfall auf eine Teilliste. Damit kann
+# aus einem ungeprueften Universum niemals ein eingefrorenes Ranking
+# entstehen.
 #
 # Befuellen: in GitHub unter "Actions" den Workflow
 # "Universum aktualisieren" starten (workflow_dispatch). Der Workflow
