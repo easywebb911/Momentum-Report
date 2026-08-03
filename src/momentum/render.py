@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import html
+import math
 from dataclasses import dataclass
 
 from .config import (
@@ -378,19 +379,95 @@ def _honesty_block() -> str:
     )
 
 
+# --------------------------------------------------------------------------
+# TREND-TACHO — reine Anzeige der vorhandenen Felder.
+#
+# Gelesen werden ausschliesslich `rendite_12m` und `warnung` aus dem
+# eingefrorenen Ranking. Hier wird NICHTS gerechnet, was nicht schon im
+# Report steht -- der Tacho ist ein Bild derselben Zahl, die daneben in
+# Worten steht, kein zweites Kriterium.
+#
+# Geometrie nach Easys Vorlage: viewBox 0 0 120 72, Halbbogen aus zwei
+# Segmenten um den Drehpunkt (60, 64) mit Radius 48.
+# --------------------------------------------------------------------------
+
+TACHO_MITTE_X = 60.0
+TACHO_MITTE_Y = 64.0
+TACHO_NADEL_LAENGE = 46.0
+
+# Skalenende: -25 % links, +25 % rechts. 0 % liegt exakt oben -- und damit
+# genau auf dem Umschlagpunkt zwischen rotem und gruenem Segment. Das ist
+# kein Zufall, sondern die Aussage: das Trendkriterium fragt nur, ob der
+# Index ueber zwoelf Monate im Minus steht.
+TACHO_SKALA = 0.25
+
+
+def tacho_winkel(rendite: float) -> float:
+    """Grad auf dem Halbbogen: 180 bei -25 %, 90 bei 0 %, 0 bei +25 %.
+
+    Werte ausserhalb der Skala werden an die Enden GEKLEMMT -- die Nadel
+    verlaesst den Bogen nie. Ein Anschlag ist ehrlicher als eine Nadel, die
+    ins Nichts zeigt; die genaue Zahl steht ohnehin als Text daneben.
+    """
+    anteil = max(-1.0, min(1.0, rendite / TACHO_SKALA))
+    return 90.0 - anteil * 90.0
+
+
+def tacho_nadel(rendite: float, laenge: float = TACHO_NADEL_LAENGE) -> tuple[float, float]:
+    """Endpunkt der Nadel im viewBox-Koordinatensystem.
+
+    x = 60 + L·cos(θ), y = 64 − L·sin(θ) — y zeigt im SVG nach unten,
+    deshalb das Minus. Auf zwei Nachkommastellen gerundet, damit bei
+    gleicher Eingabe Zeichen fuer Zeichen dasselbe SVG entsteht.
+    """
+    bogen = math.radians(tacho_winkel(rendite))
+    x = TACHO_MITTE_X + laenge * math.cos(bogen)
+    y = TACHO_MITTE_Y - laenge * math.sin(bogen)
+    return round(x, 2), round(y, 2)
+
+
+def _trend_tacho(markt_key: str, index_name: str, rendite: float, warnung: bool) -> str:
+    """Der Tacho als eigenstaendiges SVG — inline, ohne Nachladen.
+
+    Die id am Wurzelelement traegt den Markt (tta-us / tta-de). INNEN gibt
+    es bewusst keine einzige id: was nichts referenziert, kann auch nicht
+    kollidieren, wenn dieselbe Grafik zweimal auf der Seite steht.
+    """
+    nadel_x, nadel_y = tacho_nadel(rendite)
+    zahl = de_pct(rendite)
+    lage = "Warnung: Markt im 12-Monats-Minus" if warnung else "kein Alarm"
+    return f"""    <svg class="tta{" tta--warn" if warnung else ""}" id="tta-{e(markt_key)}"
+         viewBox="0 0 120 72" role="img"
+         aria-label="Trend-Kriterium {e(index_name)}: {zahl}, {lage}">
+      <path d="M12,64 A48,48 0 0 1 60,16" fill="none" stroke="#ef4444"
+            stroke-width="9" stroke-linecap="round"
+            opacity="{"0.9" if warnung else "0.55"}"/>
+      <path d="M60,16 A48,48 0 0 1 108,64" fill="none" stroke="#4ade80"
+            stroke-width="9" stroke-linecap="round"
+            opacity="{"0.45" if warnung else "0.85"}"/>
+      <line class="tta-nadel" x1="60" y1="64" x2="{nadel_x}" y2="{nadel_y}"
+            stroke="#e7ecf4" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="60" cy="64" r="5" fill="#e7ecf4"/>
+      <text class="tta-zahl" x="60" y="60" text-anchor="middle"
+            fill="{"#f87171" if warnung else "#4ade80"}">{zahl}</text>
+    </svg>"""
+
+
 def _trend_banner(view: MarketView) -> str:
     ampel = view.ranking["trend_ampel"]
     ret = ampel["rendite_12m"]
     src = source("momentum_crash")
+    tacho = _trend_tacho(view.market.key, ampel["index_name"], ret, ampel["warnung"])
     if ampel["warnung"]:
         return f"""  <div class="ampel ampel--warn" role="status">
-    <span class="ampel-dot" aria-hidden="true"></span>
+{tacho}
     <span class="ampel-body"><strong>Momentum-Gefahrenlage:</strong> Markt im 12-Monats-Minus
     ({e(ampel["index_name"])} {de_pct(ret)}) — in solchen Phasen häufen sich historisch die
     Momentum-Einbrüche. <a href="methodik.html#trend-ampel">Was das heißt →</a>
     <span class="ampel-src">{e(src.short)}</span></span>
   </div>"""
     return f"""  <div class="ampel ampel--ok" role="status">
+{tacho}
     <span class="ampel-body">{e(ampel["index_name"])} auf 12 Monate {de_pct(ret)} — das
     Trendkriterium schlägt derzeit nicht an.
     <a href="methodik.html#trend-ampel">Erklärung →</a></span>

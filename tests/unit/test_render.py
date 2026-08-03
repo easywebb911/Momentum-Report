@@ -7,6 +7,7 @@ misst im echten Browser; hier wird der Inhalt geprueft.
 from __future__ import annotations
 
 import datetime as _dt
+import math
 import re
 from pathlib import Path
 
@@ -86,6 +87,17 @@ def _view(**kwargs) -> MarketView:
         ranking=_ranking(**kwargs),
         price_asof=Date(2026, 8, 3),
         prices={"AAA": 130.5, "BBB": 48.25},
+        next_ranking_date=Date(2026, 8, 31),
+    )
+
+
+def _view_de(**kwargs) -> MarketView:
+    """Zweiter Markt — fuer die Pruefung auf eindeutige SVG-ids."""
+    return MarketView(
+        market=MARKETS_BY_KEY["de"],
+        ranking=_ranking(**kwargs),
+        price_asof=Date(2026, 8, 3),
+        prices={"AAA": 1.0, "BBB": 2.0},
         next_ranking_date=Date(2026, 8, 31),
     )
 
@@ -446,3 +458,146 @@ def test_der_token_wird_nie_an_eine_adresse_gehaengt():
     # Und nirgends eine Ausgabe, die ihn mitnehmen koennte.
     for verboten in ("console.log", "console.warn", "console.error", "alert("):
         assert verboten not in quelle, verboten
+
+
+# --------------------------------------------------------------------------
+# TREND-TACHO — reine Anzeige, nachgerechnet
+# --------------------------------------------------------------------------
+
+
+def test_null_prozent_stellt_die_nadel_exakt_senkrecht():
+    """0 % ist der Umschlagpunkt rot/gruen — dort steht die Nadel oben."""
+    from momentum.render import tacho_nadel, tacho_winkel
+
+    assert tacho_winkel(0.0) == pytest.approx(90.0)
+    x, y = tacho_nadel(0.0)
+    assert x == pytest.approx(60.0, abs=1e-9), "Nadel nicht senkrecht"
+    assert y == pytest.approx(64.0 - 46.0, abs=1e-9)
+
+
+def test_plus_18_1_prozent_zeigt_nach_rechts_unter_45_grad():
+    from momentum.render import tacho_nadel, tacho_winkel
+
+    winkel = tacho_winkel(0.181)
+    assert 0 < winkel < 45, winkel
+    x, y = tacho_nadel(0.181)
+    assert x > 60, "positive Rendite muss nach rechts zeigen"
+    # unter 45 Grad heisst: tiefer als der 45-Grad-Punkt
+    assert y > 64 - 46 * math.sin(math.radians(45))
+
+
+def test_minus_7_4_prozent_zeigt_nach_links():
+    from momentum.render import tacho_nadel, tacho_winkel
+
+    assert tacho_winkel(-0.074) > 90
+    x, _y = tacho_nadel(-0.074)
+    assert x < 60, "negative Rendite muss nach links zeigen"
+
+
+@pytest.mark.parametrize(
+    "rendite,soll_winkel",
+    [(0.40, 0.0), (0.25, 0.0), (1.5, 0.0), (-0.40, 180.0), (-0.25, 180.0), (-9.9, 180.0)],
+)
+def test_werte_ausserhalb_der_skala_werden_geklemmt(rendite, soll_winkel):
+    """Die Nadel verlaesst den Bogen nie — Anschlag statt Zeigen ins Nichts."""
+    from momentum.render import tacho_nadel, tacho_winkel
+
+    assert tacho_winkel(rendite) == pytest.approx(soll_winkel)
+    x, y = tacho_nadel(rendite)
+    assert y == pytest.approx(64.0), "am Anschlag liegt die Nadel waagerecht"
+    assert x == pytest.approx(106.0 if soll_winkel == 0 else 14.0)
+
+
+def test_die_nadel_bleibt_immer_innerhalb_des_bogens():
+    """Ueber die ganze Skala hinweg: nie ausserhalb des viewBox."""
+    from momentum.render import tacho_nadel
+
+    for tausendstel in range(-600, 601, 7):
+        x, y = tacho_nadel(tausendstel / 1000)
+        assert 0 <= x <= 120, (tausendstel, x)
+        assert 0 <= y <= 72, (tausendstel, y)
+
+
+def test_gleicher_wert_ergibt_zeichen_fuer_zeichen_dasselbe_svg():
+    from momentum.render import _trend_tacho
+
+    a = _trend_tacho("us", "S&P 500", 0.181, False)
+    b = _trend_tacho("us", "S&P 500", 0.181, False)
+    assert a == b
+    assert a.encode("utf-8") == b.encode("utf-8")
+    # ... und ein anderer Wert ergibt ein anderes SVG
+    assert _trend_tacho("us", "S&P 500", 0.182, False) != a
+
+
+def test_der_tacho_liest_nur_vorhandene_felder():
+    """Kein zweites Kriterium: die Zahl im Bogen ist die des Reports."""
+    from momentum.render import _trend_tacho
+
+    svg = _trend_tacho("us", "S&P 500", 0.181, False)
+    assert f"+18,1{NBSP}%" in svg
+    ampel = _ranking(warnung=False)["trend_ampel"]
+    html = render_index([_view(warnung=False)], Date(2026, 8, 3))
+    from momentum.render import de_pct
+
+    assert de_pct(ampel["rendite_12m"]) in html
+
+
+def test_tacho_zustand_ohne_alarm():
+    from momentum.render import _trend_tacho
+
+    svg = _trend_tacho("us", "S&P 500", 0.152, False)
+    assert 'class="tta"' in svg
+    assert "tta--warn" not in svg
+    assert 'stroke="#4ade80"\n            stroke-width="9" stroke-linecap="round"\n            opacity="0.85"' in svg
+    assert 'stroke="#ef4444"\n            stroke-width="9" stroke-linecap="round"\n            opacity="0.55"' in svg
+    assert 'fill="#4ade80"' in svg, "die Zahl ist gruen"
+    assert "kein Alarm" in svg
+
+
+def test_tacho_zustand_warnung():
+    from momentum.render import _trend_tacho
+
+    svg = _trend_tacho("de", "DAX", -0.084, True)
+    assert 'class="tta tta--warn"' in svg
+    assert 'opacity="0.9"' in svg and 'opacity="0.45"' in svg
+    assert 'fill="#f87171"' in svg, "die Zahl ist rot"
+    assert "Warnung" in svg
+
+
+def test_die_vorlage_wird_unveraendert_uebernommen():
+    """Bogen, Nabe und Strichbreiten stehen genau so in Easys Vorlage."""
+    from momentum.render import _trend_tacho
+
+    svg = _trend_tacho("us", "S&P 500", 0.0, False)
+    assert 'viewBox="0 0 120 72"' in svg
+    assert 'd="M12,64 A48,48 0 0 1 60,16"' in svg
+    assert 'd="M60,16 A48,48 0 0 1 108,64"' in svg
+    assert 'stroke-width="9" stroke-linecap="round"' in svg
+    assert 'stroke="#e7ecf4" stroke-width="3.5" stroke-linecap="round"' in svg
+    assert '<circle cx="60" cy="64" r="5" fill="#e7ecf4"/>' in svg
+    assert 'x="60" y="60" text-anchor="middle"' in svg
+
+
+def test_jeder_markt_bekommt_eine_eigene_id_ohne_kollision():
+    html = render_index(
+        [_view(warnung=False), _view_de(warnung=True)], Date(2026, 8, 3)
+    )
+    assert html.count('id="tta-us"') == 1
+    assert html.count('id="tta-de"') == 1
+    # INNEN keine einzige id — was nichts referenziert, kann nicht kollidieren.
+    for svg in re.findall(r"<svg class=\"tta.*?</svg>", html, flags=re.S):
+        assert svg.count("id=") == 1, svg[:200]
+        assert "url(#" not in svg
+    # und kein Zusammenstoss mit dem, was es sonst auf der Seite gibt
+    ids = set(re.findall(r'id="([^"]+)"', html))
+    assert "tta-us" in ids and "tta-de" in ids
+    assert len(ids) == len(re.findall(r'id="([^"]+)"', html)), f"doppelte id: {ids}"
+
+
+def test_der_tacho_traegt_eine_sprechende_beschriftung():
+    from momentum.render import _trend_tacho
+
+    svg = _trend_tacho("us", "S&P 500", 0.181, False)
+    assert 'role="img"' in svg
+    assert "aria-label=\"Trend-Kriterium S&amp;P 500: +18,1" in svg
+    assert "kein Alarm" in svg

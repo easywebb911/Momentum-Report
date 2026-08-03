@@ -463,3 +463,123 @@ def test_kontrast_der_gedimmten_schrift_ist_ausreichend(oeffne):
         }"""
     )
     assert verhaeltnis >= 4.5, f"Kontrast nur {verhaeltnis:.2f}:1"
+
+
+# ------------------------------------------------------------ Trend-Tacho
+#
+# Die Testseite traegt beide Zustaende: USA mit Warnung (synthetischer
+# Report), Deutschland ohne. So sind sie in EINEM Seitenaufbau messbar.
+
+
+def test_beide_zustaende_stehen_auf_der_seite(oeffne):
+    page = oeffne("index.html")
+    befund = page.evaluate(
+        """() => [...document.querySelectorAll('.tta')].map(svg => ({
+             id: svg.id,
+             warn: svg.classList.contains('tta--warn'),
+             label: svg.getAttribute('aria-label'),
+             zahl: svg.querySelector('.tta-zahl').textContent,
+             farbe: svg.querySelector('.tta-zahl').getAttribute('fill'),
+             nadel: {
+               x: +svg.querySelector('.tta-nadel').getAttribute('x2'),
+               y: +svg.querySelector('.tta-nadel').getAttribute('y2'),
+             },
+           }))"""
+    )
+    assert len(befund) == 2, befund
+    assert [b["id"] for b in befund] == ["tta-us", "tta-de"]
+
+    warn = [b for b in befund if b["warn"]]
+    ruhig = [b for b in befund if not b["warn"]]
+    assert len(warn) == 1 and len(ruhig) == 1, befund
+
+    # Warnfall: Rendite negativ -> Nadel links, Zahl rot.
+    assert warn[0]["nadel"]["x"] < 60, warn
+    assert warn[0]["farbe"] == "#f87171", warn
+    assert "Warnung" in warn[0]["label"], warn
+
+    # Ruhiger Fall: Rendite positiv -> Nadel rechts, Zahl gruen.
+    assert ruhig[0]["nadel"]["x"] > 60, ruhig
+    assert ruhig[0]["farbe"] == "#4ade80", ruhig
+    assert "kein Alarm" in ruhig[0]["label"], ruhig
+
+
+def test_der_tacho_passt_neben_den_text_und_laeuft_nicht_ueber(oeffne):
+    page = oeffne("index.html")
+    masse = page.evaluate(
+        """() => [...document.querySelectorAll('.ampel')].map(box => {
+             const svg = box.querySelector('.tta');
+             const text = box.querySelector('.ampel-body');
+             const b = box.getBoundingClientRect();
+             const s = svg.getBoundingClientRect();
+             const t = text.getBoundingClientRect();
+             return {links: s.left, rechts: s.right, breite: s.width,
+                     hoehe: s.height, box_links: b.left, box_rechts: b.right,
+                     text_links: t.left, text_breite: t.width,
+                     gestapelt: t.top >= s.bottom - 1};
+           })"""
+    )
+    assert len(masse) == 2
+    for m in masse:
+        assert m["links"] >= m["box_links"] - 0.5, m
+        assert m["rechts"] <= m["box_rechts"] + 0.5, m
+        assert m["breite"] > 60, "der Tacho ist zu klein zum Ablesen"
+        # Seitenverhaeltnis 120:72 = 1,667
+        assert abs(m["breite"] / m["hoehe"] - 120 / 72) < 0.05, m
+        # nebeneinander ODER sauber gestapelt — nur nicht gequetscht
+        assert m["text_breite"] >= 150, m
+    assert page.evaluate("document.documentElement.scrollWidth") <= BREITE
+
+
+@pytest.mark.parametrize("schriftgroesse", [15, 16, 20])
+def test_die_trend_box_bleibt_bei_jeder_textgroesse_heil(oeffne, schriftgroesse):
+    page = oeffne("index.html", schriftgroesse)
+    ueberstand = page.evaluate(
+        """() => {
+          const raus = [];
+          document.querySelectorAll('.ampel, .ampel *').forEach(el => {
+            const r = el.getBoundingClientRect();
+            if (r.width > 0 && (r.right > window.innerWidth + 0.5 || r.left < -0.5)) {
+              raus.push((el.className.baseVal ?? el.className) + '|'
+                        + Math.round(r.left) + '..' + Math.round(r.right));
+            }
+          });
+          return raus;
+        }"""
+    )
+    assert ueberstand == [], ueberstand
+    assert page.evaluate("document.documentElement.scrollWidth") <= BREITE
+
+
+def test_nur_die_nadel_pulsiert_und_nur_im_warnfall(oeffne):
+    page = oeffne("index.html")
+    animationen = page.evaluate(
+        """() => [...document.querySelectorAll('.tta')].map(svg => ({
+             warn: svg.classList.contains('tta--warn'),
+             nadel: getComputedStyle(svg.querySelector('.tta-nadel')).animationName,
+             boegen: [...svg.querySelectorAll('path')]
+               .map(p => getComputedStyle(p).animationName),
+             zahl: getComputedStyle(svg.querySelector('.tta-zahl')).animationName,
+             nabe: getComputedStyle(svg.querySelector('circle')).animationName,
+           }))"""
+    )
+    for eintrag in animationen:
+        assert eintrag["nadel"] == ("tta-puls" if eintrag["warn"] else "none"), eintrag
+        assert eintrag["boegen"] == ["none", "none"], eintrag
+        assert eintrag["zahl"] == "none" and eintrag["nabe"] == "none", eintrag
+
+
+def test_bei_reduzierter_bewegung_pulsiert_nichts(oeffne):
+    """prefers-reduced-motion wird respektiert — die Anzeige bleibt statisch."""
+    page = oeffne("index.html", bewegung="reduce")
+    animationen = page.evaluate(
+        """() => [...document.querySelectorAll('.tta .tta-nadel')]
+             .map(el => getComputedStyle(el).animationName)"""
+    )
+    assert animationen == ["none", "none"], animationen
+    # Gegenprobe: ohne die Einstellung pulsiert der Warnfall sehr wohl.
+    normal = oeffne("index.html")
+    assert "tta-puls" in normal.evaluate(
+        """() => [...document.querySelectorAll('.tta .tta-nadel')]
+             .map(el => getComputedStyle(el).animationName).join(',')"""
+    )
