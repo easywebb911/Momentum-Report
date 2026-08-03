@@ -425,6 +425,8 @@ main > h2::after {
 
 .ampel {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 0.75rem;
   border-radius: 8px;
@@ -442,6 +444,37 @@ main > h2::after {
   border: 1px solid var(--brd);
   color: var(--txt-sub);
 }
+/* ------------------------------------------------------- Trend-Tacho */
+/* Reine Anzeige derselben Zahl, die daneben in Worten steht. Die Grafik
+   steht links, der Satz rechts; bei wenig Platz rutscht sie ueber den Text
+   statt ihn zu quetschen (flex-wrap). */
+.tta {
+  flex: none;
+  width: 5.75rem;
+  height: auto;
+  display: block;
+  margin-top: 0.125rem;
+}
+.tta-zahl {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* NUR die Nadel pulsiert, und nur im Warnfall. Das Pulsieren ist
+   Dekoration: die Aussage steht als Zahl im Bogen und als Satz daneben. */
+@keyframes tta-puls {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.tta--warn .tta-nadel { animation: tta-puls 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tta--warn .tta-nadel { animation: none; }
+}
+
 .ampel-dot {
   flex: none;
   width: 0.5rem;
@@ -450,7 +483,10 @@ main > h2::after {
   border-radius: 50%;
   background: var(--ora);
 }
-.ampel-body { min-width: 0; }
+/* 12rem Mindestbreite: reicht der Platz neben dem Tacho nicht, rutscht
+   der Text in eine eigene Zeile UNTER die Grafik, statt sich auf
+   zwei Woerter pro Zeile quetschen zu lassen. */
+.ampel-body { flex: 1 1 12rem; min-width: 0; }
 .ampel-src { display: block; color: var(--txt-dim); font-size: 0.6875rem; margin-top: 0.25rem; }
 
 /* ------------------------------------------------------------ Karten */

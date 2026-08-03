@@ -153,9 +153,13 @@ def oeffne(browser, seite):
     """Seite oeffnen und danach sicher wieder zumachen."""
     offen = []
 
-    def _oeffne(datei, schriftgroesse=None, basis=None):
+    def _oeffne(datei, schriftgroesse=None, basis=None, bewegung=None):
+        # bewegung="reduce" schaltet prefers-reduced-motion ein -- so laesst
+        # sich pruefen, dass die Seite das wirklich respektiert.
         kontext = browser.new_context(
-            viewport={"width": BREITE, "height": HOEHE}, device_scale_factor=3
+            viewport={"width": BREITE, "height": HOEHE},
+            device_scale_factor=3,
+            reduced_motion=bewegung,
         )
         offen.append(kontext)
         page = kontext.new_page()
