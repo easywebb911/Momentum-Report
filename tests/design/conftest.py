@@ -179,6 +179,12 @@ def oeffne(browser, seite):
             reduced_motion=bewegung,
         )
         offen.append(kontext)
+        # KEIN Test geht nach draussen. Die Seite startet ihre Live-Abfrage
+        # beim Aufbau von selbst -- ohne diese Sperre wuerde jeder
+        # Browser-Test den echten Kurs-Dienst anrufen, und das Ergebnis
+        # haenge davon ab, ob der Rechner gerade Netz hat. Genau daran ist
+        # der erste CI-Lauf gescheitert.
+        kontext.route("**/quote-proxy.easywebb.workers.dev/**", lambda route: route.abort())
         page = kontext.new_page()
         page.goto(f"{basis}/{datei}" if basis else (seite / datei).as_uri())
         if schriftgroesse:

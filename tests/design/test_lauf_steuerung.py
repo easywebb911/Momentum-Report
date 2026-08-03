@@ -446,12 +446,15 @@ def test_der_punkt_wird_gruen_und_nennt_die_uhrzeit(app):
 def test_bei_stoerung_wird_der_punkt_grau_und_die_karte_bleibt(app, antwort, warum):
     """FAIL-SOFT: nie eine kaputte Karte, immer nur eine ehrliche Auskunft."""
     vorher = kurse(app)
+    stand_vorher = {e["markt"]: e["text"] for e in live_zustand(app)}
     ruesten(app, [antwort])
     app.evaluate("() => window.MR.liveRunde()")
 
     for eintrag in live_zustand(app):
         assert eintrag["aus"] is True, (warum, eintrag)
-        assert eintrag["text"] == "Live · —", (warum, eintrag)
+        # Der Zeitstempel bleibt stehen — er sagt, wann zuletzt etwas
+        # Gutes kam, nicht wann zuletzt gefragt wurde.
+        assert eintrag["text"] == stand_vorher[eintrag["markt"]], (warum, eintrag)
     assert kurse(app) == vorher, f"{warum}: die Kurse wurden angetastet"
 
 
