@@ -37,7 +37,13 @@ from .ranking import (
     write_ranking,
 )
 from .meta import load_meta
-from .render import MarketView, last_weekday_of_month, render_index, render_methodik
+from .render import (
+    MarketView,
+    last_weekday_of_month,
+    render_index,
+    render_konfluenz,
+    render_methodik,
+)
 from .scoring import shift_month
 from .universe import UniverseNotReady, load_universe
 
@@ -171,6 +177,47 @@ def process_market(
     return view, new_ranking, status
 
 
+def _schreibe_top5(views: list[MarketView], docs_root: Path) -> None:
+    """Die eingefrorenen Top-5 als eigene, kleine Datei — rein additiv.
+
+    Sie aendert nichts an bestehenden Dateien und wird von nichts in diesem
+    Werkzeug gelesen. Sie existiert, damit die Konfluenz-Seite (und
+    grundsaetzlich jeder andere Leser) an die Top-5 kommt, ohne das
+    vollstaendige Ranking oder die HTML-Seite auseinandernehmen zu muessen.
+
+    Ohne Zeitstempel und mit sortierten Schluesseln: die Datei aendert sich
+    nur, wenn sich ihr Inhalt aendert.
+    """
+    maerkte: dict[str, dict] = {}
+    for view in views:
+        if not view.ranking:
+            continue
+        stichtag = view.ranking["stichtag"]
+        maerkte[view.market.key] = {
+            "name": view.market.name,
+            "stichtag": stichtag,
+            "top5": [
+                {
+                    "ticker": row["ticker"],
+                    "rang": row["rang"],
+                    "score": row["score"],
+                    "stichtag": stichtag,
+                }
+                for row in view.ranking["rangliste"][:TOP_N]
+            ],
+        }
+    if not maerkte:
+        return
+    ziel = docs_root / "data" / "top5.json"
+    ziel.parent.mkdir(parents=True, exist_ok=True)
+    ziel.write_text(
+        json.dumps({"schema": 1, "maerkte": maerkte}, ensure_ascii=False,
+                   indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    log(f"Top-5-Export geschrieben: {ziel}")
+
+
 def _github_output(key: str, value: str) -> None:
     path = os.environ.get("GITHUB_OUTPUT")
     if not path:
@@ -209,6 +256,7 @@ def main(argv: list[str] | None = None, *, downloader=None) -> int:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     (DOCS_DIR / "index.html").write_text(render_index(views, today), encoding="utf-8")
     (DOCS_DIR / "methodik.html").write_text(render_methodik(), encoding="utf-8")
+    (DOCS_DIR / "konfluenz.html").write_text(render_konfluenz(), encoding="utf-8")
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     (DATA_DIR / "status.json").write_text(
@@ -221,6 +269,8 @@ def main(argv: list[str] | None = None, *, downloader=None) -> int:
         + "\n",
         encoding="utf-8",
     )
+
+    _schreibe_top5(views, DOCS_DIR)
 
     _github_output("ranking_created", "true" if new_rankings else "false")
 

@@ -323,13 +323,19 @@ def test_disc_farbe_nur_fuer_ehrlichkeits_labels():
         if "var(--disc)" in zeile
     ]
     assert treffer
-    # nur in den Regeln .disc-title und .card-ft
+    # Erlaubt ist --disc ausschliesslich an Ehrlichkeits-Aussagen. Das sind
+    # drei: die Labels der vier Karten (.disc-title), der Fusssatz auf jeder
+    # Titel-Karte (.card-ft) und der feste Satz auf der Konfluenz-Seite
+    # (.konf-regel: "Hier wird nichts verrechnet"). Die Liste waechst NUR um
+    # Stellen, die wirklich eine Einschraenkung aussprechen -- an Dekoration
+    # hat diese Farbe nichts verloren.
+    erlaubt = (".disc-title", ".card-ft", ".konf-regel")
     abschnitte = [
         block for block in css.split("}") if "var(--disc)" in block
     ]
     for block in abschnitte:
         selektor = block.split("{")[0].strip().splitlines()[-1].strip()
-        assert selektor in (".disc-title", ".card-ft"), selektor
+        assert selektor in erlaubt, selektor
 
 
 @pytest.mark.parametrize("seite", ["index", "methodik"])

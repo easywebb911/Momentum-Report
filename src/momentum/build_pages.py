@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as _dt
 from pathlib import Path
 
-from .render import render_index, render_methodik
+from .render import render_index, render_konfluenz, render_methodik
 
 DOCS_DIR = Path("docs")
 
@@ -20,6 +20,12 @@ def main() -> int:
     ziel = DOCS_DIR / "methodik.html"
     ziel.write_text(render_methodik(), encoding="utf-8")
     print(f"geschrieben: {ziel}")
+
+    # Die Konfluenz-Seite ist ein statisches Geruest ohne Lauf-Daten --
+    # sie wird wie die Methodik immer neu erzeugt.
+    konf = DOCS_DIR / "konfluenz.html"
+    konf.write_text(render_konfluenz(), encoding="utf-8")
+    print(f"geschrieben: {konf}")
 
     # Startseite nur anlegen, wenn es noch keine gibt: eine vorhandene
     # Seite traegt echte Ranking-Daten und darf hier nicht ueberbuegelt

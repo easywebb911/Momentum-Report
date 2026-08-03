@@ -179,6 +179,10 @@ def _header(subline: str, *, zurueck: bool = False) -> str:
       <span class="sheet-icon" aria-hidden="true">▤</span>
       <span><span class="sheet-title">Methodik</span><span class="sheet-sub">Jede Zutat mit Quelle</span></span>
     </a>
+    <a class="sheet-item" href="konfluenz.html">
+      <span class="sheet-icon" aria-hidden="true">∩</span>
+      <span><span class="sheet-title">Konfluenz</span><span class="sheet-sub">Wo Momentum und Elliott sich treffen</span></span>
+    </a>
     <button type="button" class="sheet-item sheet-item--btn" id="reload-btn">
       <span class="sheet-icon" aria-hidden="true">⟳</span>
       <span><span class="sheet-title">Neu laden</span><span class="sheet-sub">Daten frisch holen, ohne die Seite neu zu öffnen</span></span>
@@ -684,6 +688,66 @@ def _method_card(title: str, keys: tuple[str, ...], body_html: str, anchor: str 
   {body_html}
   <ul class="src-list">{footnotes}</ul>
 </article>"""
+
+
+# --------------------------------------------------------------------------
+# KONFLUENZ-SEITE
+#
+# Zwei Werkzeuge, zwei Blickwinkel — mehr behauptet diese Seite nie. Es gibt
+# hier KEINEN gemeinsamen Score, KEINE verrechnete Wahrscheinlichkeit und
+# KEINE Rangfolge der Treffer. Ein Mischwert waere eine Zahl, die niemand
+# belegt hat, und genau das duldet dieses Projekt nirgends.
+#
+# Die Seite ist ein leeres Geruest; gefuellt wird sie im Browser aus zwei
+# JSON-Dateien (siehe app.js). So bleibt sie unabhaengig davon, wann das
+# jeweils andere Werkzeug zuletzt gelaufen ist.
+# --------------------------------------------------------------------------
+
+ELLIOTT_REPORT_URL = "https://easywebb911.github.io/Elliott-Report/"
+
+# Der feste Satz. Er steht auf der Seite und in einem Test -- damit er nicht
+# im Laufe der Zeit weichgespuelt wird.
+KONFLUENZ_SATZ = (
+    "Hier wird nichts verrechnet. Beide Werkzeuge messen Verschiedenes und "
+    "stehen unabhängig nebeneinander: Momentum misst vergangene relative "
+    "Stärke, Elliott beschreibt Kursmuster. Eine Überschneidung ist ein "
+    "Zufall zweier Verfahren, kein doppelter Beleg und keine höhere "
+    "Trefferwahrscheinlichkeit."
+)
+
+KONFLUENZ_LEER = (
+    "Keine Überschneidung — das ist der Regelfall. Beide Werkzeuge messen "
+    "Verschiedenes; ein gemeinsamer Treffer ist selten."
+)
+
+
+def render_konfluenz() -> str:
+    body = [
+        _head(
+            "Konfluenz — Momentum-Report",
+            "Wo Momentum-Top-5 und Elliott-Long-Kandidaten sich treffen.",
+        ),
+        _header("Zwei Blickwinkel nebeneinander", zurueck=True),
+        "<main>",
+        f"""<p class="lead">Diese Seite stellt zwei getrennte Werkzeuge
+nebeneinander: die eingefrorenen <strong>Top-5 dieses Momentum-Reports</strong>
+und die <strong>Long-Kandidaten des Elliott-Reports</strong>. Steht ein Titel
+in beiden, wird er hervorgehoben.</p>
+<p class="konf-regel">{e(KONFLUENZ_SATZ)}</p>""",
+        # Der Stand BEIDER Quellen. Die Werkzeuge laufen zu verschiedenen
+        # Zeiten -- wer das nicht sieht, vergleicht womoeglich Aepfel mit
+        # Birnen von gestern.
+        """<div class="konf-stand" id="konf-stand">
+  <span class="konf-quelle"><span class="konf-quelle-name">Momentum</span>
+    <span class="konf-quelle-stand" id="stand-momentum">wird geladen …</span></span>
+  <span class="konf-quelle"><span class="konf-quelle-name">Elliott</span>
+    <span class="konf-quelle-stand" id="stand-elliott">wird geladen …</span></span>
+</div>""",
+        '<div class="konf-hinweis" id="konf-hinweis" role="status" hidden></div>',
+        '<div id="konf-inhalt"></div>',
+        "</main>",
+    ]
+    return "\n".join(body) + _foot()
 
 
 def render_methodik() -> str:

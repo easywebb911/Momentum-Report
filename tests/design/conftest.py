@@ -1,10 +1,13 @@
 """Gemeinsames Geruest der Browser-Tests: Browser, gerenderte Seite, Server.
 
-Zwei Testdateien teilen sich das:
+Drei Testdateien teilen sich das:
   * test_layout_390.py    — Masse und Layout, geoeffnet ueber file://
   * test_lauf_steuerung.py — Bedienung (Neu laden, Lauf anstossen, Token).
     Die braucht einen echten HTTP-Ursprung: unter file:// sind fetch und
     IndexedDB in Chromium gesperrt, und genau die werden dort geprueft.
+  * test_konfluenz.py     — der Abgleich zweier Werkzeuge. Braucht ebenfalls
+    HTTP (die Seite laedt zwei JSON-Dateien) und den eingespielten
+    Elliott-Bericht aus `ELLIOTT`.
 """
 
 from __future__ import annotations
@@ -12,6 +15,7 @@ from __future__ import annotations
 import datetime as _dt
 import functools
 import http.server
+import json
 import os
 import shutil
 import threading
@@ -20,7 +24,7 @@ from pathlib import Path
 import pytest
 
 from momentum.config import MARKETS_BY_KEY
-from momentum.render import MarketView, render_index, render_methodik
+from momentum.render import MarketView, render_index, render_konfluenz, render_methodik
 
 Date = _dt.date
 BREITE = 390
@@ -91,6 +95,60 @@ META = {
 }
 
 
+# Der additive Export, wie ihn der Lauf schreibt. Dieselben Ticker wie oben --
+# so laesst sich der Abgleich gegen echte Kunstdaten pruefen.
+TOP5 = {
+    "schema": 1,
+    "maerkte": {
+        "us": {
+            "name": "USA",
+            "stichtag": "2026-07-31",
+            "top5": [
+                {"ticker": t, "rang": i + 1, "score": 100.0 - i * 3.7,
+                 "stichtag": "2026-07-31"}
+                for i, t in enumerate(["BRK-B", "TICK1", "TICK2", "TICK3", "TICK4"])
+            ],
+        },
+        "de": {
+            "name": "Deutschland",
+            "stichtag": "2026-07-31",
+            "top5": [
+                {"ticker": t, "rang": i + 1, "score": 90.0 - i * 2.5,
+                 "stichtag": "2026-07-31"}
+                for i, t in enumerate(["SAP.DE", "SIE.DE", "ALV.DE", "BAS.DE", "BMW.DE"])
+            ],
+        },
+    },
+}
+
+# Der fremde Bericht -- Schema wie extern geprueft, NICHT aus dem fremden Repo
+# gelesen. US enthaelt einen Treffer (TICK1), einen Short auf einem Titel, der
+# in den Top-5 steht (TICK2 -- zaehlt NICHT) und einen Long ausserhalb der
+# Top-5. DE enthaelt nur Titel ausserhalb der Top-5: der leere Zustand, also
+# der Regelfall, steht damit auf derselben Testseite wie der Treffer.
+ELLIOTT = {
+    "generated_at": "2026-08-02T22:10:00Z",
+    "markets": {
+        "US": {
+            "candidates": [
+                {"ticker": "TICK1", "direction": "long", "company_name":
+                 "Arthur J. Gallagher & Co.", "close": 12.5, "score": 7.4},
+                {"ticker": "TICK2", "direction": "short", "company_name":
+                 "Beispielgesellschaft 2 AG", "close": 1234.56, "score": 8.9},
+                {"ticker": "NVDA", "direction": "long", "company_name":
+                 "NVIDIA Corporation", "close": 180.0, "score": 6.1},
+            ]
+        },
+        "DE": {
+            "candidates": [
+                {"ticker": "DTE.DE", "direction": "long", "company_name":
+                 "Deutsche Telekom AG", "close": 30.1, "score": 5.5},
+            ]
+        },
+    },
+}
+
+
 @pytest.fixture(scope="session")
 def seite(tmp_path_factory):
     """Vollstaendige Seite mit allen Kanten: langer Name, Warnlage, grosse Zahlen."""
@@ -118,6 +176,11 @@ def seite(tmp_path_factory):
     ]
     (ziel / "index.html").write_text(render_index(views, Date(2026, 8, 3)), encoding="utf-8")
     (ziel / "methodik.html").write_text(render_methodik(), encoding="utf-8")
+    (ziel / "konfluenz.html").write_text(render_konfluenz(), encoding="utf-8")
+    (ziel / "data").mkdir(exist_ok=True)
+    (ziel / "data" / "top5.json").write_text(
+        json.dumps(TOP5, ensure_ascii=False), encoding="utf-8"
+    )
     return ziel
 
 
@@ -170,7 +233,7 @@ def oeffne(browser, seite):
     """Seite oeffnen und danach sicher wieder zumachen."""
     offen = []
 
-    def _oeffne(datei, schriftgroesse=None, basis=None, bewegung=None):
+    def _oeffne(datei, schriftgroesse=None, basis=None, bewegung=None, elliott=None):
         # bewegung="reduce" schaltet prefers-reduced-motion ein -- so laesst
         # sich pruefen, dass die Seite das wirklich respektiert.
         kontext = browser.new_context(
@@ -185,6 +248,23 @@ def oeffne(browser, seite):
         # haenge davon ab, ob der Rechner gerade Netz hat. Genau daran ist
         # der erste CI-Lauf gescheitert.
         kontext.route("**/quote-proxy.easywebb.workers.dev/**", lambda route: route.abort())
+        # Dasselbe fuer die Elliott-Quelle: die Konfluenz-Seite ruft sie beim
+        # Aufbau von selbst. Ohne Einspielung wird abgebrochen -- das ist der
+        # Fail-soft-Zustand und zugleich die Garantie, dass kein Test nach
+        # draussen telefoniert. Mit elliott=<dict> antwortet die Sperre selbst.
+        kontext.route(
+            "**/easywebb911.github.io/Elliott-Report/**",
+            (lambda route: route.abort())
+            if elliott is None
+            else (
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=elliott if isinstance(elliott, str)
+                    else json.dumps(elliott, ensure_ascii=False),
+                )
+            ),
+        )
         page = kontext.new_page()
         page.goto(f"{basis}/{datei}" if basis else (seite / datei).as_uri())
         if schriftgroesse:
