@@ -96,6 +96,20 @@ def test_ein_short_kandidat_zaehlt_nicht(rein):
     assert [t["ticker"] for t in treffer] == ["TICK1"]
 
 
+def test_der_elliott_score_kommt_aus_score_heuristic(rein):
+    """Im Bericht heisst das Feld `score_heuristic`. `score` bleibt als
+    Rueckfallebene stehen; fehlt beides, wird nichts geraten."""
+    us = js(rein, """b => window.MR.elliottLong(b, 'us')""", ELLIOTT)
+    nach = {k["ticker"]: k["score"] for k in us}
+    assert nach["TICK1"] == 76.4, "score_heuristic nicht gelesen"
+    assert nach["NVDA"] == 61.2, "Rueckfall auf score greift nicht"
+
+    de = js(rein, """b => window.MR.elliottLong(b, 'de')""", ELLIOTT)
+    ohne = {k["ticker"]: k["score"] for k in de}
+    assert ohne["DTE.DE"] == 76.95
+    assert ohne["BAYN.DE"] is None, "ohne beide Felder darf nichts entstehen"
+
+
 def test_elliott_leer_ergibt_leere_liste(rein):
     for leer in (
         {"markets": {}},
@@ -197,7 +211,7 @@ def test_der_treffer_steht_als_karte_mit_beiden_zahlen(mit_elliott):
     assert "MOMENTUM: RANG · SCORE" in text.upper()
     assert "ELLIOTT: SCORE" in text.upper()
     assert "2." in text and "96,3" in text  # Momentum-Rang und -Score
-    assert "7,4" in text                    # Elliott-Score, unverrechnet
+    assert "76,4" in text                   # Elliott-Score, unverrechnet
 
 
 def test_der_treffer_verlinkt_beide_werkzeuge(mit_elliott):
@@ -241,6 +255,24 @@ def test_beide_top_listen_stehen_nebeneinander_und_treffer_sind_markiert(mit_ell
     markiert = us.locator(".konf-zeile--treffer")
     assert markiert.count() == 2
     assert all("TICK1" in markiert.nth(i).inner_text() for i in range(2))
+
+
+def test_der_elliott_score_steht_deutsch_und_einstellig_da(mit_elliott):
+    """Eine Nachkommastelle, Komma statt Punkt -- und ein Gedankenstrich,
+    wo der Bericht keinen Score liefert."""
+    us = mit_elliott.locator("section.market").first
+    elliott_spalte = us.locator(".konf-spalte").nth(1)
+    zeilen = elliott_spalte.inner_text()
+    assert "76,4" in zeilen and "61,2" in zeilen
+    assert "76.4" not in zeilen, "englisches Format"
+
+    de = mit_elliott.locator("section.market").nth(1)
+    de_spalte = de.locator(".konf-spalte").nth(1)
+    werte = de_spalte.locator(".konf-wert").evaluate_all(
+        "n => n.map(x => x.textContent)"
+    )
+    assert "77,0" in werte or "76,9" in werte, werte  # DTE.DE, eine Stelle
+    assert "—" in werte, f"fehlender Score muss ein Gedankenstrich sein: {werte}"
 
 
 def test_der_stand_beider_quellen_ist_sichtbar(mit_elliott):
