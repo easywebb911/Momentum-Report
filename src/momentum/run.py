@@ -25,7 +25,7 @@ from pathlib import Path
 
 from .config import HISTORY_DAYS, MARKETS, TOP_N, Market
 from .data import PriceBundle, download_prices
-from .notify import push_new_ranking, push_run_failed
+from .notify import push_new_ranking, push_run_failed, push_test
 from .ranking import (
     RANKING_DIR,
     RankingNotPossible,
@@ -186,6 +186,11 @@ def main(argv: list[str] | None = None, *, downloader=None) -> int:
     parser.add_argument(
         "--no-push", action="store_true", help="Keinen ntfy-Push verschicken"
     )
+    parser.add_argument(
+        "--testpush",
+        action="store_true",
+        help="Zusaetzlich EINEN leisen Probe-Push verschicken (Verdrahtung pruefen)",
+    )
     args = parser.parse_args(argv)
     today = Date.fromisoformat(args.today) if args.today else Date.today()
     log(f"Momentum-Report Lauf, Datum {today}")
@@ -233,6 +238,17 @@ def main(argv: list[str] | None = None, *, downloader=None) -> int:
                 }
             )
         push_new_ranking(entries)
+
+    # Verdrahtungsprobe. Sie kommt NUR auf ausdrueckliche Anforderung, laeuft
+    # zusaetzlich zum normalen Lauf und ruehrt keine Daten an. --no-push hat
+    # Vorrang: wer ausdruecklich keine Pushes will, bekommt auch keine Probe.
+    if args.testpush and not args.no_push:
+        if push_test():
+            log("Testpush: verschickt.")
+        else:
+            log("Testpush: NICHT verschickt — der Grund steht in den Zeilen darueber.")
+    elif args.testpush:
+        log("Testpush: uebersprungen, weil --no-push gesetzt ist.")
 
     log("Lauf beendet.")
     return 0

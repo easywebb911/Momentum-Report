@@ -153,3 +153,83 @@ def test_platzhalter_universum_bricht_den_ganzen_lauf_ab(tmp_path, monkeypatch):
     assert run_modul.cli() == 2
     assert not (tmp_path / "docs").exists(), "es darf keine Seite entstehen"
     assert not (tmp_path / "data").exists(), "es darf keine Datei entstehen"
+
+
+# --------------------------------------------------------------------------
+# VERDRAHTUNGSPROBE im Lauf
+# --------------------------------------------------------------------------
+
+
+def test_ohne_den_schalter_geht_keine_probe_raus(welt, monkeypatch):
+    """Der Standardfall: kein Testpush, egal was sonst passiert."""
+    tmp_path, downloader = welt
+    proben = []
+    monkeypatch.setattr(run_modul, "push_test", lambda **kw: proben.append(kw) or True)
+    monkeypatch.setattr(run_modul, "push_new_ranking", lambda *a, **k: True)
+
+    assert run_modul.main(["--today", "2026-07-31"], downloader=downloader) == 0
+    assert proben == [], "es ging ein Testpush raus, ohne dass er angefordert wurde"
+
+
+def test_mit_dem_schalter_geht_genau_eine_probe_raus(welt, monkeypatch, capsys):
+    tmp_path, downloader = welt
+    proben = []
+    monkeypatch.setattr(run_modul, "push_test", lambda **kw: proben.append(kw) or True)
+    monkeypatch.setattr(run_modul, "push_new_ranking", lambda *a, **k: True)
+
+    assert run_modul.main(
+        ["--today", "2026-07-31", "--testpush"], downloader=downloader
+    ) == 0
+    assert len(proben) == 1, "genau eine Probe, nicht mehr und nicht weniger"
+    assert "Testpush: verschickt." in capsys.readouterr().out
+
+
+def test_die_probe_aendert_nichts_an_den_daten(welt, monkeypatch):
+    """Sie laeuft zusaetzlich — der Lauf selbst bleibt Zeichen fuer Zeichen gleich."""
+    tmp_path, downloader = welt
+    monkeypatch.setattr(run_modul, "push_new_ranking", lambda *a, **k: True)
+    monkeypatch.setattr(run_modul, "push_test", lambda **kw: True)
+
+    run_modul.main(["--today", "2026-07-31"], downloader=downloader)
+    ohne = {
+        p.relative_to(tmp_path): p.read_bytes()
+        for p in sorted(tmp_path.rglob("*"))
+        if p.is_file()
+    }
+
+    run_modul.main(["--today", "2026-07-31", "--testpush"], downloader=downloader)
+    mit = {
+        p.relative_to(tmp_path): p.read_bytes()
+        for p in sorted(tmp_path.rglob("*"))
+        if p.is_file()
+    }
+    assert set(mit) == set(ohne), "die Probe hat Dateien angelegt oder entfernt"
+    for name in ohne:
+        if name.parts[:2] == ("data", "rankings"):
+            assert mit[name] == ohne[name], f"{name} wurde veraendert"
+
+
+def test_ein_fehlschlag_der_probe_steht_im_protokoll(welt, monkeypatch, capsys):
+    """Erfolg UND Fehler bekommen eine eigene, klare Zeile."""
+    tmp_path, downloader = welt
+    monkeypatch.setattr(run_modul, "push_new_ranking", lambda *a, **k: True)
+    monkeypatch.setattr(run_modul, "push_test", lambda **kw: False)
+
+    assert run_modul.main(
+        ["--today", "2026-07-31", "--testpush"], downloader=downloader
+    ) == 0, "eine misslungene Probe darf den Lauf nicht rot machen"
+    ausgabe = capsys.readouterr().out
+    assert "Testpush: NICHT verschickt" in ausgabe
+
+
+def test_ohne_push_schlaegt_die_probe_nicht_durch(welt, monkeypatch, capsys):
+    """Wer ausdruecklich keine Pushes will, bekommt auch keine Probe."""
+    tmp_path, downloader = welt
+    proben = []
+    monkeypatch.setattr(run_modul, "push_test", lambda **kw: proben.append(kw) or True)
+
+    run_modul.main(
+        ["--today", "2026-07-31", "--testpush", "--no-push"], downloader=downloader
+    )
+    assert proben == []
+    assert "uebersprungen, weil --no-push" in capsys.readouterr().out

@@ -154,3 +154,42 @@ def test_checkout_folgt_dem_zweignamen_nicht_dem_eingefrorenen_sha():
             for schritt in job["steps"]:
                 if str(schritt.get("uses", "")).startswith("actions/checkout"):
                     assert schritt["with"]["ref"] == "${{ github.ref_name }}", name
+
+
+# --------------------------------------------------------------------------
+# VERDRAHTUNGSPROBE — das Eingabefeld am Workflow
+# --------------------------------------------------------------------------
+
+
+def _lauf_yaml() -> dict:
+    return yaml.safe_load(WORKFLOWS["lauf"].read_text(encoding="utf-8"))
+
+
+def test_der_lauf_hat_ein_feld_fuer_die_verdrahtungsprobe():
+    daten = _lauf_yaml()
+    # PyYAML liest das YAML-Schluesselwort "on" als True.
+    ausloeser = daten.get("on", daten.get(True))
+    felder = ausloeser["workflow_dispatch"]["inputs"]
+    assert "testpush" in felder, "das Eingabefeld fehlt"
+    probe = felder["testpush"]
+    assert probe["type"] == "boolean"
+    assert probe["default"] is False, "die Probe ist standardmaessig AUS"
+    assert probe["required"] is False
+
+
+def test_der_schalter_erreicht_das_programm():
+    """Ohne diese Verdrahtung waere das Feld ein Knopf ohne Draht."""
+    daten = _lauf_yaml()
+    analyse = [
+        schritt
+        for job in daten["jobs"].values()
+        for schritt in job["steps"]
+        if schritt.get("id") == "analyse"
+    ]
+    assert len(analyse) == 1
+    skript = analyse[0]["run"]
+    assert "inputs.testpush" in skript
+    assert "--testpush" in skript
+    # Der normale Lauf bleibt unangetastet: die Probe kommt ZUSAETZLICH.
+    assert "python -m momentum.run" in skript
+    assert "--no-push" in skript

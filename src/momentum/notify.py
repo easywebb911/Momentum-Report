@@ -1,6 +1,6 @@
 """Push ueber ntfy.
 
-Zwei Ereignisse, von Tag 1 an ehrlich getrennt (die Trennung selbst
+Drei Ereignisse, von Tag 1 an ehrlich getrennt (die Trennung selbst
 passiert im Workflow, hier stehen nur die Formulierungen):
 
   1. NEUES MONATS-RANKING  -- der eigentliche Zweck des Werkzeugs
@@ -10,7 +10,17 @@ passiert im Workflow, hier stehen nur die Formulierungen):
        b) "Lauf fehlgeschlagen"
           die Analyse selbst ist rot, Prioritaet high, mit Sirene
 
-Kein Herzschlag-Push in dieser Fassung.
+  3. VERDRAHTUNGSPROBE     -- "Momentum: Push-Verdrahtung ok", leise.
+       Kommt AUSSCHLIESSLICH auf ausdrueckliche Anforderung ueber das
+       Feld "testpush" des Workflows.
+
+Kein Herzschlag-Push in dieser Fassung: es gibt keinen Zeitplan und
+keine Bedingung, unter der von selbst ein "alles ok" kaeme. Die Probe
+oben ist keine Ausnahme davon -- sie kommt nur, wenn jemand sie anfordert.
+
+ALLE DREI gehen durch dasselbe push(). Einen zweiten Sendeweg gibt es
+nicht, und das ist der Punkt: eine Probe, die ihren eigenen Weg nimmt,
+prueft nicht den Weg, auf den es ankommt.
 
 Fehlt NTFY_TOPIC, wird NICHT still zurueckgefallen: die fehlende
 Einstellung erscheint als deutliche Zeile im Lauf-Log und als
@@ -295,6 +305,33 @@ def push_run_failed(detail: str, **kwargs) -> bool:
         ),
         priority="high",
         tags="rotating_light",
+        **kwargs,
+    )
+
+
+def push_test(**kwargs) -> bool:
+    """Push (3): Verdrahtungsprobe. Leise, ohne jede Aussage ueber Kurse.
+
+    Sie geht durch DENSELBEN push() wie jeder echte Push -- gleiche
+    Schnittstelle, gleiche Thema-Pruefung, gleiche Fehlerbehandlung. Ein
+    eigener Sendeweg waere wertlos: er wuerde beweisen, dass der EIGENE
+    Sendeweg funktioniert, und genau das ist nicht die Frage.
+
+    Ausgeloest wird sie ausschliesslich von Hand ueber das Eingabefeld
+    "testpush" des Workflows. Es gibt keinen Zeitplan und keine Bedingung,
+    unter der sie von selbst kaeme -- ein Herzschlag-Push ist das also
+    ausdruecklich nicht.
+    """
+    return push(
+        "Momentum: Push-Verdrahtung ok",
+        (
+            "Diese Nachricht ist eine Probe. Sie wurde von Hand ueber das "
+            "Feld 'testpush' des Momentum-Laufs ausgeloest und sagt NICHTS "
+            "ueber Kurse, Ranking oder Marktlage.\n\n"
+            "Kommt sie an, ist die Kette Lauf -> ntfy -> Geraet in Ordnung."
+        ),
+        priority="default",
+        tags="white_check_mark",
         **kwargs,
     )
 

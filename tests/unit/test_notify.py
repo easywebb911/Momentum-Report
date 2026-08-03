@@ -7,6 +7,7 @@ Rueckfall. Es steht als deutliche Zeile im Lauf-Log.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -130,9 +131,24 @@ def test_titel_mit_umlauten_und_gedankenstrich_bleiben_heil():
 
 
 def test_kein_herzschlag_push_vorhanden():
-    """v0 hat bewusst keinen 'alles ok'-Push."""
+    """v0 hat bewusst keinen 'alles ok'-Push, der von selbst kommt.
+
+    push_test ist keiner: sie hat keinen Zeitplan und keine Bedingung, sie
+    kommt ausschliesslich auf ausdrueckliche Anforderung ueber das
+    Workflow-Feld "testpush". Ein Herzschlag waere eine Nachricht, die man
+    NICHT bestellt hat.
+    """
     funktionen = [name for name in dir(notify) if name.startswith("push_")]
-    assert sorted(funktionen) == ["push_data_conflict", "push_new_ranking", "push_run_failed"]
+    assert sorted(funktionen) == [
+        "push_data_conflict",
+        "push_new_ranking",
+        "push_run_failed",
+        "push_test",
+    ]
+    quelle = Path("src/momentum/notify.py").read_text(encoding="utf-8")
+    assert "schedule" not in quelle and "cron" not in quelle
+    lauf = Path("src/momentum/run.py").read_text(encoding="utf-8")
+    assert "args.testpush" in lauf, "die Probe haengt an einem ausdruecklichen Schalter"
 
 
 def test_unerreichbares_ntfy_wird_nicht_zum_absturz(monkeypatch, capsys):
@@ -345,3 +361,54 @@ def test_unlesbare_antwort_kippt_nichts(capsys):
 
     assert notify.push("T", "B", topic="gueltig", opener=opener) is False
     assert "HTTP 503" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------------
+# VERDRAHTUNGSPROBE
+#
+# Die Frage, die sie beantwortet: kommt ueberhaupt etwas an? Deshalb muss
+# sie denselben Weg nehmen wie ein echter Push. Eine Probe mit eigenem
+# Sendeweg wuerde beweisen, dass der eigene Sendeweg geht -- und sonst
+# nichts.
+# --------------------------------------------------------------------------
+
+
+def test_die_probe_nimmt_denselben_weg_wie_ein_echter_push(monkeypatch):
+    """Kein zweiter Sende-Code: push_test ruft push() auf, sonst nichts."""
+    gerufen = []
+
+    def statt_push(*args, **kwargs):
+        gerufen.append((args, kwargs))
+        return True
+
+    monkeypatch.setattr(notify, "push", statt_push)
+    assert notify.push_test() is True
+    assert len(gerufen) == 1, "push() wurde nicht genau einmal gerufen"
+
+
+def test_die_probe_geht_ueber_die_gleiche_schnittstelle():
+    """Gleiches Ziel, gleiches Format, gleiche Thema-Pruefung."""
+    gesammelt = []
+    assert notify.push_test(topic="t", opener=_sammler(gesammelt)) is True
+    assert len(gesammelt) == 1
+    nachricht = _payload(gesammelt[0])
+    assert nachricht["topic"] == "t"
+    assert nachricht["title"] == "Momentum: Push-Verdrahtung ok"
+    # leise
+    assert nachricht["priority"] == notify.PRIORITIES["default"]
+    # und ohne jede Aussage ueber Kurse
+    for verboten in ("Score", "Ranking vom", "Top", "Rendite"):
+        assert verboten not in nachricht["message"], verboten
+    assert "sagt NICHTS" in nachricht["message"]
+
+
+def test_die_probe_faellt_unter_dieselbe_thema_pruefung(monkeypatch, capsys):
+    monkeypatch.setenv("NTFY_TOPIC", "mit leerzeichen")
+    assert notify.push_test() is False
+    assert "NTFY_TOPIC ungueltig" in capsys.readouterr().err
+
+
+def test_die_probe_ohne_secret_ist_ebenso_laut(monkeypatch, capsys):
+    monkeypatch.delenv("NTFY_TOPIC", raising=False)
+    assert notify.push_test() is False
+    assert "PUSH NICHT VERSCHICKT" in capsys.readouterr().err
