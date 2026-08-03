@@ -126,23 +126,32 @@ TOP5 = {
 # in den Top-5 steht (TICK2 -- zaehlt NICHT) und einen Long ausserhalb der
 # Top-5. DE enthaelt nur Titel ausserhalb der Top-5: der leere Zustand, also
 # der Regelfall, steht damit auf derselben Testseite wie der Treffer.
+#
+# Der Score heisst im echten Bericht `score_heuristic`. Genau so steht er
+# hier. NVDA traegt bewusst das alte `score` (die Rueckfallebene), BAYN.DE
+# traegt keins von beidem -- daraus muss ein Gedankenstrich werden.
 ELLIOTT = {
     "generated_at": "2026-08-02T22:10:00Z",
     "markets": {
         "US": {
             "candidates": [
                 {"ticker": "TICK1", "direction": "long", "company_name":
-                 "Arthur J. Gallagher & Co.", "close": 12.5, "score": 7.4},
+                 "Arthur J. Gallagher & Co.", "close": 12.5,
+                 "score_heuristic": 76.4},
                 {"ticker": "TICK2", "direction": "short", "company_name":
-                 "Beispielgesellschaft 2 AG", "close": 1234.56, "score": 8.9},
+                 "Beispielgesellschaft 2 AG", "close": 1234.56,
+                 "score_heuristic": 88.9},
                 {"ticker": "NVDA", "direction": "long", "company_name":
-                 "NVIDIA Corporation", "close": 180.0, "score": 6.1},
+                 "NVIDIA Corporation", "close": 180.0, "score": 61.2},
             ]
         },
         "DE": {
             "candidates": [
                 {"ticker": "DTE.DE", "direction": "long", "company_name":
-                 "Deutsche Telekom AG", "close": 30.1, "score": 5.5},
+                 "Deutsche Telekom AG", "close": 30.1,
+                 "score_heuristic": 76.95},
+                {"ticker": "BAYN.DE", "direction": "long", "company_name":
+                 "Bayer AG", "close": 24.0},
             ]
         },
     },

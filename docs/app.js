@@ -744,7 +744,10 @@
       raus.push({
         ticker: ticker,
         name: String(feld(k, ["company_name", "name", "firma"], "")),
-        score: feld(k, ["score", "confidence"], null),
+        // Der Elliott-Score heisst im Bericht `score_heuristic`. `score`
+        // steht als Rueckfallebene daneben, falls das Feld je umbenannt
+        // wird; fehlt beides, bleibt es beim Gedankenstrich.
+        score: feld(k, ["score_heuristic", "score", "confidence"], null),
         close: feld(k, ["close", "kurs", "price"], null)
       });
     }
