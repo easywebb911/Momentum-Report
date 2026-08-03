@@ -1,0 +1,410 @@
+{
+  "8TRA.DE": {
+    "name": "TRATON",
+    "sektor": "Industrie"
+  },
+  "ADS.DE": {
+    "name": "ADIDAS N AG",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "AFX.DE": {
+    "name": "CARL ZEISS MEDITEC AG",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "AG1.DE": {
+    "name": "AUTO1 GROUP",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "AIR.DE": {
+    "name": "AIRBUS",
+    "sektor": "Industrie"
+  },
+  "AIXA.DE": {
+    "name": "AIXTRON",
+    "sektor": "IT"
+  },
+  "ALV.DE": {
+    "name": "ALLIANZ",
+    "sektor": "Finanzwesen"
+  },
+  "AMV0.DE": {
+    "name": "AUMOVIO N",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "AOF.DE": {
+    "name": "ATOSS SOFTWARE",
+    "sektor": "IT"
+  },
+  "AT1.DE": {
+    "name": "AROUNDTOWN SA",
+    "sektor": "Immobilien"
+  },
+  "BAS.DE": {
+    "name": "BASF N",
+    "sektor": "Materialien"
+  },
+  "BAYN.DE": {
+    "name": "BAYER AG",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "BC8.DE": {
+    "name": "BECHTLE AG",
+    "sektor": "IT"
+  },
+  "BEI.DE": {
+    "name": "BEIERSDORF AG",
+    "sektor": "Nichtzyklische Konsumgüter"
+  },
+  "BMW.DE": {
+    "name": "BMW AG",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "BNR.DE": {
+    "name": "BRENNTAG",
+    "sektor": "Industrie"
+  },
+  "BOSS.DE": {
+    "name": "HUGO BOSS N AG",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "CBK.DE": {
+    "name": "COMMERZBANK AG",
+    "sektor": "Finanzwesen"
+  },
+  "COK.DE": {
+    "name": "CANCOM",
+    "sektor": "IT"
+  },
+  "CON.DE": {
+    "name": "CONTINENTAL AG",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "DB1.DE": {
+    "name": "DEUTSCHE BOERSE AG",
+    "sektor": "Finanzwesen"
+  },
+  "DBK.DE": {
+    "name": "DEUTSCHE BANK AG",
+    "sektor": "Finanzwesen"
+  },
+  "DEZ.DE": {
+    "name": "DEUTZ AG",
+    "sektor": "Industrie"
+  },
+  "DHER.DE": {
+    "name": "DELIVERY HERO",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "DHL.DE": {
+    "name": "DEUTSCHE POST AG",
+    "sektor": "Industrie"
+  },
+  "DRW3.DE": {
+    "name": "DRAEGERWERK PREF AG",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "DTE.DE": {
+    "name": "DEUTSCHE TELEKOM N AG",
+    "sektor": "Kommunikation"
+  },
+  "DTG.DE": {
+    "name": "DAIMLER TRUCK HOLDING E AG",
+    "sektor": "Industrie"
+  },
+  "DWS.DE": {
+    "name": "DWS GROUP & GMBH CO KGAA",
+    "sektor": "Finanzwesen"
+  },
+  "ELG.DE": {
+    "name": "ELMOS SEMICONDUCTOR",
+    "sektor": "IT"
+  },
+  "ENR.DE": {
+    "name": "SIEMENS ENERGY N AG",
+    "sektor": "Industrie"
+  },
+  "EOAN.DE": {
+    "name": "E.ON N",
+    "sektor": "Versorger"
+  },
+  "EUZ.DE": {
+    "name": "ECKERT & ZIEGLER",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "EVD.DE": {
+    "name": "CTS EVENTIM AG",
+    "sektor": "Kommunikation"
+  },
+  "EVK.DE": {
+    "name": "EVONIK INDUSTRIES AG",
+    "sektor": "Materialien"
+  },
+  "EVT.DE": {
+    "name": "EVOTEC",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "FME.DE": {
+    "name": "FRESENIUS MEDICAL CARE AG",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "FNTN.DE": {
+    "name": "FREENET AG",
+    "sektor": "Kommunikation"
+  },
+  "FPE3.DE": {
+    "name": "FUCHS PREF",
+    "sektor": "Materialien"
+  },
+  "FRA.DE": {
+    "name": "FRAPORT FRANKFURT AIRPORT SERVICES",
+    "sektor": "Industrie"
+  },
+  "FRE.DE": {
+    "name": "FRESENIUS SE AND CO KGAA",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "FTK.DE": {
+    "name": "FLATEXDEGIRO N",
+    "sektor": "Finanzwesen"
+  },
+  "G1A.DE": {
+    "name": "GEA GROUP AG",
+    "sektor": "Industrie"
+  },
+  "G24.DE": {
+    "name": "SCOUT24 N",
+    "sektor": "Kommunikation"
+  },
+  "GBF.DE": {
+    "name": "BILFINGER",
+    "sektor": "Industrie"
+  },
+  "HAG.DE": {
+    "name": "HENSOLDT AG",
+    "sektor": "Industrie"
+  },
+  "HEI.DE": {
+    "name": "HEIDELBERG MATERIALS AG",
+    "sektor": "Materialien"
+  },
+  "HEN3.DE": {
+    "name": "HENKEL & KGAA PREF AG",
+    "sektor": "Nichtzyklische Konsumgüter"
+  },
+  "HLE.DE": {
+    "name": "HELLA GMBH & CO KGAA",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "HNR1.DE": {
+    "name": "HANNOVER RUECK",
+    "sektor": "Finanzwesen"
+  },
+  "HOT.DE": {
+    "name": "HOCHTIEF AG",
+    "sektor": "Industrie"
+  },
+  "IFX.DE": {
+    "name": "INFINEON TECHNOLOGIES AG",
+    "sektor": "IT"
+  },
+  "IOS.DE": {
+    "name": "IONOS GROUP N",
+    "sektor": "IT"
+  },
+  "JEN.DE": {
+    "name": "JENOPTIK N AG",
+    "sektor": "IT"
+  },
+  "KBX.DE": {
+    "name": "KNORR BREMSE AG",
+    "sektor": "Industrie"
+  },
+  "KGX.DE": {
+    "name": "KION GROUP AG",
+    "sektor": "Industrie"
+  },
+  "KRN.DE": {
+    "name": "KRONES AG",
+    "sektor": "Industrie"
+  },
+  "KTN.DE": {
+    "name": "KONTRON AG",
+    "sektor": "IT"
+  },
+  "LEG.DE": {
+    "name": "LEG IMMOBILIEN N",
+    "sektor": "Immobilien"
+  },
+  "LHA.DE": {
+    "name": "DEUTSCHE LUFTHANSA AG",
+    "sektor": "Industrie"
+  },
+  "LXS.DE": {
+    "name": "LANXESS AG",
+    "sektor": "Materialien"
+  },
+  "MBG.DE": {
+    "name": "MERCEDES-BENZ GROUP N AG",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "MRK.DE": {
+    "name": "MERCK",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "MTX.DE": {
+    "name": "MTU AERO ENGINES HOLDING AG",
+    "sektor": "Industrie"
+  },
+  "MUV2.DE": {
+    "name": "MUENCHENER RUECKVERSICHERUNGS-GESE",
+    "sektor": "Finanzwesen"
+  },
+  "NDA.DE": {
+    "name": "AURUBIS AG",
+    "sektor": "Materialien"
+  },
+  "NDX1.DE": {
+    "name": "NORDEX",
+    "sektor": "Industrie"
+  },
+  "NEM.DE": {
+    "name": "NEMETSCHEK",
+    "sektor": "IT"
+  },
+  "OBCK.DE": {
+    "name": "OTTOBOCK",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "P911.DE": {
+    "name": "DR ING HC F PORSCHE PRF AG",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "PAH3.DE": {
+    "name": "PORSCHE AUTOMOBIL HOLDING PREF",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "PUM.DE": {
+    "name": "PUMA",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "QIA.DE": {
+    "name": "QIAGEN NV",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "R3NK.DE": {
+    "name": "RENK GROUP AG",
+    "sektor": "Industrie"
+  },
+  "RAA.DE": {
+    "name": "RATIONAL AG",
+    "sektor": "Industrie"
+  },
+  "RHM.DE": {
+    "name": "RHEINMETALL AG",
+    "sektor": "Industrie"
+  },
+  "RRTL.DE": {
+    "name": "RTL GROUP SA",
+    "sektor": "Kommunikation"
+  },
+  "RWE.DE": {
+    "name": "RWE AG",
+    "sektor": "Versorger"
+  },
+  "S92.DE": {
+    "name": "SMA SOLAR TECHNOLOGY AG",
+    "sektor": "Industrie"
+  },
+  "SAP.DE": {
+    "name": "SAP",
+    "sektor": "IT"
+  },
+  "SDF.DE": {
+    "name": "K+S N AG",
+    "sektor": "Materialien"
+  },
+  "SHA0.DE": {
+    "name": "SHAEFFLER N AG",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "SHL.DE": {
+    "name": "SIEMENS HEALTHINEERS AG",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "SIE.DE": {
+    "name": "SIEMENS N AG",
+    "sektor": "Industrie"
+  },
+  "SMHN.DE": {
+    "name": "SUSS MICROTEC N",
+    "sektor": "IT"
+  },
+  "SRT3.DE": {
+    "name": "SARTORIUS PREF AG",
+    "sektor": "Gesundheitsversorgung"
+  },
+  "SY1.DE": {
+    "name": "SYMRISE AG",
+    "sektor": "Materialien"
+  },
+  "SZG.DE": {
+    "name": "SALZGITTER AG",
+    "sektor": "Materialien"
+  },
+  "TEG.DE": {
+    "name": "TAG IMMOBILIEN AG",
+    "sektor": "Immobilien"
+  },
+  "TKA.DE": {
+    "name": "THYSSENKRUPP AG",
+    "sektor": "Materialien"
+  },
+  "TKMS.DE": {
+    "name": "TKMS AG",
+    "sektor": "Industrie"
+  },
+  "TLX.DE": {
+    "name": "TALANX AG",
+    "sektor": "Finanzwesen"
+  },
+  "TMV.DE": {
+    "name": "TEAMVIEWER",
+    "sektor": "IT"
+  },
+  "TPE.DE": {
+    "name": "PVA TEPLA AG",
+    "sektor": "IT"
+  },
+  "TUI1.DE": {
+    "name": "TUI N AG",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "UTDI.DE": {
+    "name": "UNITED INTERNET AG",
+    "sektor": "Kommunikation"
+  },
+  "VBK.DE": {
+    "name": "VERBIO",
+    "sektor": "Energie"
+  },
+  "VNA.DE": {
+    "name": "VONOVIA SE",
+    "sektor": "Immobilien"
+  },
+  "VOW3.DE": {
+    "name": "VOLKSWAGEN NON-VOTING PREF AG",
+    "sektor": "Zyklische Konsumgüter"
+  },
+  "WAF.DE": {
+    "name": "SILTRONIC N AG",
+    "sektor": "IT"
+  },
+  "WCH.DE": {
+    "name": "WACKER CHEMIE AG",
+    "sektor": "Materialien"
+  },
+  "ZAL.DE": {
+    "name": "ZALANDO",
+    "sektor": "Zyklische Konsumgüter"
+  }
+}

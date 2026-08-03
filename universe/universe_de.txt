@@ -1,8 +1,8 @@
 # Universum: HDAX (DAX + MDAX + TecDAX)
 # Herkunft: Taegliche Bestandslisten der iShares-ETFs EXS1 (DAX), EXS3 (MDAX) und EXS2 (TecDAX), physisch replizierend
-# Stand: 2026-08-02
+# Stand: 2026-08-03
 # STATUS: VERIFIED
-# Erzeugt von: .github/workflows/universum.yml (Lauf https://github.com/easywebb911/Momentum-Report/actions/runs/30766264076)
+# Erzeugt von: .github/workflows/universum.yml (Lauf https://github.com/easywebb911/Momentum-Report/actions/runs/30819295231)
 # Jeder Ticker wurde beim Erzeugen gegen echte Kursdaten geprueft.
 # Aktualisierung ist ein bewusster manueller Vorgang.
 #
