@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Wo Momentum-Top-5 und Elliott-Long-Kandidaten sich treffen.">
+<title>Konfluenz — Momentum-Report</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+<script>try{var f=localStorage.getItem("momentum-report:fs");if(f){document.documentElement.style.setProperty("--app-fs",f+"px");}}catch(e){}</script>
+</head>
+<body data-repo="easywebb911/Momentum-Report" data-workflow="lauf.yml">
+<header class="hdr hdr--sub">
+  <a class="back" href="./index.html">
+    <span class="back-arrow" aria-hidden="true">←</span>Zurück zur Übersicht
+  </a>
+  <div class="hdr-row">
+    <div class="hdr-main">
+      <h1>Momentum-Report</h1>
+      <p class="stand">Zwei Blickwinkel nebeneinander</p>
+    </div>
+    <button class="menu-btn" id="menu-btn" aria-label="Menü öffnen" aria-expanded="false">☰</button>
+  </div>
+</header>
+<div class="overlay" id="overlay" hidden>
+  <div class="overlay-backdrop" data-close></div>
+  <nav class="sheet" aria-label="Menü">
+    <a class="sheet-item" href="methodik.html">
+      <span class="sheet-icon" aria-hidden="true">▤</span>
+      <span><span class="sheet-title">Methodik</span><span class="sheet-sub">Jede Zutat mit Quelle</span></span>
+    </a>
+    <a class="sheet-item" href="konfluenz.html">
+      <span class="sheet-icon" aria-hidden="true">∩</span>
+      <span><span class="sheet-title">Konfluenz</span><span class="sheet-sub">Wo Momentum und Elliott sich treffen</span></span>
+    </a>
+    <button type="button" class="sheet-item sheet-item--btn" id="reload-btn">
+      <span class="sheet-icon" aria-hidden="true">⟳</span>
+      <span><span class="sheet-title">Neu laden</span><span class="sheet-sub">Daten frisch holen, ohne die Seite neu zu öffnen</span></span>
+    </button>
+    <button type="button" class="sheet-item sheet-item--btn" id="recalc-btn">
+      <span class="sheet-icon" aria-hidden="true">Σ</span>
+      <span><span class="sheet-title">Neu berechnen</span><span class="sheet-sub">Stößt den Momentum-Lauf bei GitHub an</span></span>
+    </button>
+    <button type="button" class="sheet-item sheet-item--btn" id="lock-btn" disabled>
+      <span class="sheet-icon" aria-hidden="true">⌧</span>
+      <span><span class="sheet-title">Sperren</span><span class="sheet-sub" id="lock-sub">Kein Token gespeichert</span></span>
+    </button>
+    <div class="sheet-item sheet-item--static">
+      <span class="sheet-icon" aria-hidden="true">A</span>
+      <span class="sheet-grow"><span class="sheet-title">Textgröße</span>
+        <span class="fs-row" role="group" aria-label="Textgröße">
+          <button type="button" class="fs-btn" data-fs="15">Klein</button>
+          <button type="button" class="fs-btn" data-fs="16">Normal</button>
+          <button type="button" class="fs-btn" data-fs="18">Groß</button>
+          <button type="button" class="fs-btn" data-fs="20">Sehr groß</button>
+        </span>
+      </span>
+    </div>
+    <button type="button" class="sheet-close" data-close>Schließen</button>
+  </nav>
+</div>
+<div class="overlay" id="tok-overlay" hidden>
+  <div class="overlay-backdrop" data-tok-close></div>
+  <div class="sheet tok-dlg" role="dialog" aria-modal="true" aria-labelledby="tok-title">
+    <h2 class="tok-title" id="tok-title">Zugriffs-Token nötig</h2>
+    <p class="tok-text">Die Neuberechnung startet den Lauf bei GitHub. Dafür braucht
+      diese Seite einen <strong>Fine-grained Personal Access Token</strong>, der nur
+      für dieses eine Repository gilt.</p>
+    <ol class="tok-steps">
+      <li>Auf GitHub: <strong>Settings → Developer settings → Personal access tokens
+        → Fine-grained tokens → Generate new token</strong>.
+        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Direkt dorthin →</a></li>
+      <li><em>Repository access</em>: <strong>Only select repositories</strong> →
+        <code>Momentum-Report</code>. Kein anderes.</li>
+      <li><em>Repository permissions</em>: <strong>Actions</strong> auf
+        <em>Read and write</em>, <strong>Contents</strong> auf <em>Read and write</em>.
+        Alles andere auf <em>No access</em> lassen.</li>
+      <li>Token erzeugen, kopieren, hier einsetzen.</li>
+    </ol>
+    <label class="tok-label" for="tok-input">Token</label>
+    <input class="tok-input" id="tok-input" type="password" autocomplete="off"
+           autocapitalize="off" spellcheck="false" placeholder="github_pat_…">
+    <p class="tok-note">Der Token bleibt <strong>auf diesem Gerät</strong> (IndexedDB),
+      28 Tage lang, danach wird erneut gefragt. Er geht ausschließlich an
+      <code>api.github.com</code>, steht in keiner Adresszeile und in keinem
+      Protokoll. Über <em>Sperren</em> im Menü ist er sofort wieder weg.</p>
+    <p class="tok-error" id="tok-error" role="alert" hidden></p>
+    <div class="tok-row">
+      <button type="button" class="tok-btn tok-btn--main" id="tok-save">Speichern und starten</button>
+      <button type="button" class="tok-btn" data-tok-close>Abbrechen</button>
+    </div>
+  </div>
+</div>
+<div class="runbar" id="runbar" hidden role="status" aria-live="polite">
+  <span class="runbar-dot" id="runbar-dot" aria-hidden="true"></span>
+  <span class="runbar-text" id="runbar-text"></span>
+  <a class="runbar-link" id="runbar-link" target="_blank" rel="noopener noreferrer" hidden>Protokoll →</a>
+  <button type="button" class="runbar-close" id="runbar-close" aria-label="Meldung schließen">✕</button>
+</div>
+<main>
+<p class="lead">Diese Seite stellt zwei getrennte Werkzeuge
+nebeneinander: die eingefrorenen <strong>Top-5 dieses Momentum-Reports</strong>
+und die <strong>Long-Kandidaten des Elliott-Reports</strong>. Steht ein Titel
+in beiden, wird er hervorgehoben.</p>
+<p class="konf-regel">Hier wird nichts verrechnet. Beide Werkzeuge messen Verschiedenes und stehen unabhängig nebeneinander: Momentum misst vergangene relative Stärke, Elliott beschreibt Kursmuster. Eine Überschneidung ist ein Zufall zweier Verfahren, kein doppelter Beleg und keine höhere Trefferwahrscheinlichkeit.</p>
+<div class="konf-stand" id="konf-stand">
+  <span class="konf-quelle"><span class="konf-quelle-name">Momentum</span>
+    <span class="konf-quelle-stand" id="stand-momentum">wird geladen …</span></span>
+  <span class="konf-quelle"><span class="konf-quelle-name">Elliott</span>
+    <span class="konf-quelle-stand" id="stand-elliott">wird geladen …</span></span>
+</div>
+<div class="konf-hinweis" id="konf-hinweis" role="status" hidden></div>
+<div id="konf-inhalt"></div>
+</main>
+<footer class="foot">
+  <p>Momentum-Report — Anwendungs-Werkzeug auf belegter Wissenschaft.
+     Keine Anlageberatung, keine Kauf- oder Verkaufsempfehlung.</p>
+  <p class="foot-dim">Kurse: Yahoo Finance, dividenden- und splitbereinigt.
+     Ohne Gewähr auf Richtigkeit oder Vollständigkeit.</p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

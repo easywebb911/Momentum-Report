@@ -755,3 +755,101 @@ main > h2::after {
 @media (min-width: 560px) {
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ---------------------------------------------------------- Konfluenz */
+/* Zwei Blickwinkel nebeneinander. Nichts hier deutet auf einen
+   gemeinsamen Wert hin -- es gibt keinen. */
+
+.konf-regel {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--brd);
+  border-left: 3px solid var(--disc);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--txt-sub);
+  font-size: 0.8125rem;
+}
+
+.konf-stand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+  font-size: 0.75rem;
+}
+.konf-quelle {
+  display: inline-flex;
+  gap: 0.375rem;
+  align-items: baseline;
+}
+.konf-quelle-name { color: var(--txt-sub); font-weight: 700; }
+.konf-quelle-stand { color: var(--txt-dim); font-variant-numeric: tabular-nums; }
+
+.konf-hinweis {
+  margin-bottom: 0.875rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--brd);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--txt-sub);
+  font-size: 0.8125rem;
+}
+.konf-hinweis[hidden] { display: none; }
+
+.konf-treffer { border-color: var(--grn); margin-bottom: 0.75rem; }
+.konf-kopf { margin-bottom: 0.5rem; min-width: 0; }
+.konf-kopf .ticker { display: block; }
+.konf-links { margin: 0.625rem 0 0; font-size: 0.75rem; color: var(--txt-dim); }
+
+.konf-leer {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px dashed var(--brd);
+  border-radius: 8px;
+  color: var(--txt-sub);
+  font-size: 0.8125rem;
+}
+
+.konf-spalten {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.konf-spalte {
+  background: var(--bg-card);
+  border: 1px solid var(--brd);
+  border-radius: 10px;
+  padding: 0.625rem 0.5rem;
+  min-width: 0;
+}
+.konf-spalte h4 {
+  margin: 0 0 0.375rem;
+  color: var(--txt-dim);
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.konf-liste { list-style: none; margin: 0; padding: 0; }
+.konf-zeile {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.375rem;
+  padding: 0.1875rem 0;
+  font-size: 0.75rem;
+  min-width: 0;
+}
+.konf-tick {
+  font-family: var(--mono);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.konf-wert { color: var(--txt-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.konf-zeile--treffer { color: var(--grn); font-weight: 700; }
+.konf-zeile--treffer .konf-wert { color: var(--grn); }
+.konf-zeile--leer { color: var(--txt-dim); }

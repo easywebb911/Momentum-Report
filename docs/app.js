@@ -691,6 +691,222 @@
 
   liveStarten();
 
+  // ============================================================== KONFLUENZ
+  //
+  // Zwei Werkzeuge nebeneinander. Es wird NICHTS verrechnet: kein
+  // gemeinsamer Score, keine Wahrscheinlichkeit, keine Rangfolge der
+  // Treffer. Die Treffer stehen alphabetisch -- eine Reihenfolge, die
+  // nichts behauptet.
+  //
+  // FAIL-SOFT: Die Elliott-Daten sind eine fremde Datei auf einer fremden
+  // Seite. Sind sie nicht da oder unlesbar, rendert die Momentum-Haelfte
+  // normal weiter und daneben steht ein Hinweis. Kein Fehlerbild.
+
+  var ELLIOTT_URL = "https://easywebb911.github.io/Elliott-Report/data/report.json";
+  var ELLIOTT_SEITE = "https://easywebb911.github.io/Elliott-Report/";
+
+  /** Elliott fuehrt die Maerkte gross, dieses Werkzeug klein. */
+  function elliottSchluessel(markt) { return String(markt).toUpperCase(); }
+
+  /** Erstes belegtes Feld aus einer Liste von Namen — tolerant. */
+  function feld(objekt, namen, ersatz) {
+    if (!objekt || typeof objekt !== "object") { return ersatz; }
+    for (var i = 0; i < namen.length; i++) {
+      var wert = objekt[namen[i]];
+      if (wert !== undefined && wert !== null && wert !== "") { return wert; }
+    }
+    return ersatz;
+  }
+
+  /**
+   * Die Long-Kandidaten eines Marktes aus dem Elliott-Bericht.
+   *
+   * Nur direction = long zaehlt: dieses Werkzeug ist long-only, ein
+   * Short-Kandidat ist keine Ueberschneidung, sondern das Gegenteil.
+   * Alles Uebrige wird tolerant gelesen; was fehlt, fehlt eben.
+   */
+  function elliottLong(bericht, markt) {
+    if (!bericht || typeof bericht !== "object") { return []; }
+    var maerkte = bericht.markets || bericht.maerkte;
+    if (!maerkte || typeof maerkte !== "object") { return []; }
+    var eintrag = maerkte[elliottSchluessel(markt)] || maerkte[markt];
+    if (!eintrag || typeof eintrag !== "object") { return []; }
+    var liste = eintrag.candidates || eintrag.kandidaten;
+    if (!Array.isArray(liste)) { return []; }
+    var raus = [];
+    for (var i = 0; i < liste.length; i++) {
+      var k = liste[i];
+      if (!k || typeof k !== "object") { continue; }
+      var ticker = feld(k, ["ticker", "symbol"], "");
+      if (typeof ticker !== "string" || !ticker) { continue; }
+      var richtung = String(feld(k, ["direction", "richtung"], "")).toLowerCase();
+      if (richtung !== "long") { continue; }
+      raus.push({
+        ticker: ticker,
+        name: String(feld(k, ["company_name", "name", "firma"], "")),
+        score: feld(k, ["score", "confidence"], null),
+        close: feld(k, ["close", "kurs", "price"], null)
+      });
+    }
+    return raus;
+  }
+
+  /**
+   * Der Abgleich. Rein, ohne Seiteneffekte, ohne Netz — und ohne jede
+   * Verrechnung: die beiden Scores werden NEBENEINANDER gelegt, nie
+   * zusammengefasst. Sortiert wird alphabetisch nach Ticker; jede andere
+   * Reihenfolge waere eine Aussage darueber, welcher Treffer "besser" ist,
+   * und die gibt es hier nicht.
+   */
+  function konfluenz(top5, longKandidaten) {
+    var nachTicker = {};
+    (longKandidaten || []).forEach(function (k) { nachTicker[k.ticker] = k; });
+    var treffer = [];
+    (top5 || []).forEach(function (m) {
+      var e = nachTicker[m.ticker];
+      if (!e) { return; }
+      treffer.push({
+        ticker: m.ticker,
+        name: e.name || "",
+        momentum_rang: m.rang,
+        momentum_score: m.score,
+        elliott_score: e.score
+      });
+    });
+    treffer.sort(function (a, b) { return a.ticker < b.ticker ? -1 : (a.ticker > b.ticker ? 1 : 0); });
+    return treffer;
+  }
+
+  function zahlOderStrich(wert, stellen) {
+    var n = zahl(wert);
+    return n === null ? "—" : deZahl(n, stellen);
+  }
+
+  function konfKarte(t) {
+    return '<article class="card konf-treffer">' +
+      '<div class="konf-kopf"><span class="ticker">' + sicher(t.ticker) + "</span>" +
+      '<span class="cname">' + sicher(t.name || "—") + "</span></div>" +
+      '<div class="metrics metrics--rang">' +
+      '<div class="metric-box"><span class="m-val">' + t.momentum_rang + ". · " +
+        zahlOderStrich(t.momentum_score, 1) + '</span>' +
+        '<span class="m-lbl">Momentum: Rang · Score</span></div>' +
+      '<div class="metric-box"><span class="m-val">' +
+        zahlOderStrich(t.elliott_score, 1) + '</span>' +
+        '<span class="m-lbl">Elliott: Score</span></div>' +
+      "</div>" +
+      '<p class="konf-links"><a href="./index.html">Momentum-Karte</a> · ' +
+      '<a href="' + ELLIOTT_SEITE + '" target="_blank" rel="noopener noreferrer">Elliott-Report ↗</a></p>' +
+      "</article>";
+  }
+
+  function sicher(text) {
+    return String(text)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function liste(titel, eintraege, trefferTicker, wieViel) {
+    var zeilen = (eintraege || []).map(function (x) {
+      var markiert = trefferTicker.indexOf(x.ticker) >= 0;
+      return '<li class="konf-zeile' + (markiert ? " konf-zeile--treffer" : "") + '">' +
+        '<span class="konf-tick">' + sicher(x.ticker) + "</span>" +
+        '<span class="konf-wert">' + wieViel(x) + "</span></li>";
+    });
+    if (!zeilen.length) { zeilen = ['<li class="konf-zeile konf-zeile--leer">—</li>']; }
+    return '<div class="konf-spalte"><h4>' + sicher(titel) + "</h4><ul class=\"konf-liste\">" +
+      zeilen.join("") + "</ul></div>";
+  }
+
+  function konfMarktBlock(markt, name, momentum, longs, stichtag) {
+    var treffer = konfluenz(momentum, longs);
+    var tickers = treffer.map(function (t) { return t.ticker; });
+    var kopf = '<h2><span class="flag" aria-hidden="true">' +
+      (markt === "us" ? "🇺🇸" : "🇩🇪") + "</span>" + sicher(name) + "</h2>";
+    var meta = '<p class="market-meta">Momentum-Stichtag ' + sicher(stichtag || "—") + "</p>";
+    var inhalt = treffer.length
+      ? treffer.map(konfKarte).join("")
+      : '<p class="konf-leer">' + sicher(LEER_TEXT) + "</p>";
+    var gegenueber = '<div class="konf-spalten">' +
+      liste("Momentum-Top-5", momentum, tickers, function (x) {
+        return x.rang + ". · " + zahlOderStrich(x.score, 1);
+      }) +
+      liste("Elliott: Long-Kandidaten", longs, tickers, function (x) {
+        return zahlOderStrich(x.score, 1);
+      }) +
+      "</div>";
+    return '<section class="market">' + kopf + meta + inhalt + gegenueber + "</section>";
+  }
+
+  var LEER_TEXT =
+    "Keine Überschneidung — das ist der Regelfall. Beide Werkzeuge messen " +
+    "Verschiedenes; ein gemeinsamer Treffer ist selten.";
+
+  function standText(objekt) {
+    var wert = feld(objekt, ["generated_at", "erzeugt_am", "stand", "timestamp",
+                             "as_of", "datum", "date"], null);
+    return wert === null ? "Stand unbekannt" : String(wert);
+  }
+
+  function konfluenzAufbauen() {
+    var ziel = document.getElementById("konf-inhalt");
+    if (!ziel) { return Promise.resolve("keine Konfluenz-Seite"); }
+
+    var eigenes = deps.netz("data/top5.json", { cache: "no-store" })
+      .then(function (a) { return a.ok ? a.json() : null; })
+      .catch(function () { return null; });
+    var fremdes = deps.netz(ELLIOTT_URL, { cache: "no-store" })
+      .then(function (a) { return a.ok ? a.json() : null; })
+      .catch(function () { return null; });
+
+    return Promise.all([eigenes, fremdes]).then(function (beide) {
+      var mine = beide[0];
+      var elliott = beide[1];
+
+      var standM = document.getElementById("stand-momentum");
+      var standE = document.getElementById("stand-elliott");
+      var hinweis = document.getElementById("konf-hinweis");
+
+      if (!mine || !mine.maerkte) {
+        ziel.innerHTML = '<p class="konf-leer">Noch keine Momentum-Daten. ' +
+          "Sie entstehen mit dem ersten Lauf.</p>";
+        if (standM) { standM.textContent = "noch keine Daten"; }
+        if (standE) { standE.textContent = elliott ? standText(elliott) : "nicht erreichbar"; }
+        return "ohne momentum";
+      }
+
+      // Der Stand BEIDER Quellen. Sie laufen zu verschiedenen Zeiten.
+      var staende = Object.keys(mine.maerkte).map(function (k) {
+        return mine.maerkte[k].stichtag;
+      });
+      if (standM) { standM.textContent = "Stichtag " + (staende[0] || "—"); }
+      if (standE) {
+        standE.textContent = elliott ? standText(elliott) : "nicht erreichbar";
+      }
+
+      if (!elliott && hinweis) {
+        hinweis.hidden = false;
+        hinweis.textContent =
+          "Elliott-Daten gerade nicht erreichbar. Die Momentum-Seite steht " +
+          "vollständig; sobald die andere Quelle wieder antwortet, erscheinen " +
+          "auch die Überschneidungen.";
+      }
+
+      var teile = [];
+      ["us", "de"].forEach(function (markt) {
+        var m = mine.maerkte[markt];
+        if (!m) { return; }
+        teile.push(konfMarktBlock(
+          markt, m.name || markt.toUpperCase(), m.top5 || [],
+          elliottLong(elliott, markt), m.stichtag
+        ));
+      });
+      ziel.innerHTML = teile.join("");
+      return elliott ? "fertig" : "ohne elliott";
+    });
+  }
+
+  konfluenzAufbauen();
+
   sitzungAnzeigen();
 
   // Nach aussen nur, was die Tests brauchen. Kein Token, keine Ablage.
@@ -709,6 +925,11 @@
     liveRunde: liveRunde,
     liveAnzeigen: liveAnzeigen,
     QUOTE_URL: QUOTE_URL,
-    TAKT_MS: TAKT_MS
+    TAKT_MS: TAKT_MS,
+    konfluenz: konfluenz,
+    elliottLong: elliottLong,
+    konfluenzAufbauen: konfluenzAufbauen,
+    ELLIOTT_URL: ELLIOTT_URL,
+    LEER_TEXT: LEER_TEXT
   };
 })();

@@ -23,10 +23,10 @@ from .conftest import BREITE, HOEHE
 
 pytestmark = pytest.mark.browser
 
-UNTERSEITEN = ["methodik.html"]
+UNTERSEITEN = ["methodik.html", "konfluenz.html"]
 
 
-@pytest.mark.parametrize("datei", ["index.html", "methodik.html"])
+@pytest.mark.parametrize("datei", ["index.html", "methodik.html", "konfluenz.html"])
 @pytest.mark.parametrize("schriftgroesse", [15, 16, 20])
 def test_kein_seitliches_scrollen(oeffne, datei, schriftgroesse):
     page = oeffne(datei, schriftgroesse)
@@ -36,7 +36,7 @@ def test_kein_seitliches_scrollen(oeffne, datei, schriftgroesse):
     )
 
 
-@pytest.mark.parametrize("datei", ["index.html", "methodik.html"])
+@pytest.mark.parametrize("datei", ["index.html", "methodik.html", "konfluenz.html"])
 @pytest.mark.parametrize("schriftgroesse", [16, 20])
 def test_kein_element_ragt_ueber_den_rand(oeffne, datei, schriftgroesse):
     page = oeffne(datei, schriftgroesse)
@@ -294,7 +294,7 @@ def test_der_ampel_verweis_ist_kein_toter_anker(oeffne):
 
 def test_kein_link_der_seiten_zeigt_ins_leere(oeffne):
     """Jeder Sprungmarken-Verweis muss auf ein vorhandenes Ziel zeigen."""
-    for datei in ("index.html", "methodik.html"):
+    for datei in ("index.html", "methodik.html", "konfluenz.html"):
         page = oeffne(datei)
         tot = page.evaluate(
             """() => [...document.querySelectorAll('a[href]')]
