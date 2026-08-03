@@ -62,6 +62,9 @@ import sys
 import urllib.request
 from dataclasses import dataclass, field
 
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent.parent / 'src'))
+from momentum.meta import dump_meta  # noqa: E402
+
 USER_AGENT = (
     "Momentum-Report/0.1 (+https://github.com/easywebb911/Momentum-Report) "
     "python-urllib"
@@ -193,6 +196,9 @@ MAX_ALTER_HANDELSTAGE = 10
 # Spaltennamen, unter denen die Quellen ihre Felder fuehren.
 SYMBOL_SPALTEN = ("symbol", "ticker", "ticker symbol", "emittententicker", "issuer ticker")
 NAME_SPALTEN = ("security", "company", "name", "company name", "bezeichnung")
+# Branche. Beide Quellen fuehren sie ohnehin mit -- sie wird nur
+# mitgeschrieben, nicht zusaetzlich beschafft.
+SEKTOR_SPALTEN = ("sektor", "sector", "gics sector", "gics sektor", "branche")
 ISIN_SPALTEN = ("isin",)
 ANLAGEKLASSE_SPALTEN = ("asset class", "anlageklasse")
 
@@ -234,6 +240,8 @@ class Kandidat:
     name: str
     herkunft: str = ""
     ueber_reserve: bool = False
+    # Rein beschreibend, geht in keine Rechnung ein (siehe momentum/meta.py).
+    sektor: str = ""
 
 
 @dataclass
@@ -299,18 +307,20 @@ def parse_us(html: str) -> Befund:
     for frame in tabellen(html):
         symbol_spalte = _spalte(frame, SYMBOL_SPALTEN)
         name_spalte = _spalte(frame, NAME_SPALTEN)
+        sektor_spalte = _spalte(frame, SEKTOR_SPALTEN)
         if symbol_spalte is None or name_spalte is None:
             continue
         lauf = Befund()
         for _, zeile in frame.iterrows():
             symbol = _text(zeile, symbol_spalte)
             name = _text(zeile, name_spalte)
+            sektor = _text(zeile, sektor_spalte)
             if not symbol:
                 if name:
                     lauf.ungeloest.append(f"S&P 500: {name} (kein Symbol)")
                 continue
             lauf.kandidaten.append(
-                Kandidat(symbol.replace(".", "-"), name or symbol, "S&P 500")
+                Kandidat(symbol.replace(".", "-"), name or symbol, "S&P 500", sektor=sektor)
             )
         # Die groesste passende Tabelle gewinnt -- Artikel enthalten daneben
         # kleinere Tabellen (Zu- und Abgaenge), die zufaellig dieselben
@@ -532,6 +542,7 @@ def parse_ishares_holdings(
 
     for roh in aktien:
         name = feld(roh, NAME_SPALTEN)
+        sektor = feld(roh, SEKTOR_SPALTEN)
         ticker = xetra_zu_yahoo(feld(roh, SYMBOL_SPALTEN))
         if ticker is None:
             isin = feld(roh, ISIN_SPALTEN).upper()
@@ -543,14 +554,17 @@ def parse_ishares_holdings(
                         f"ueber ISIN {isin} aufgeloest zu {ticker}"
                     )
                     befund.kandidaten.append(
-                        Kandidat(ticker, name, erwarteter_index, ueber_reserve=True)
+                        Kandidat(ticker, name, erwarteter_index, ueber_reserve=True,
+                                 sektor=sektor)
                     )
                     continue
             befund.ungeloest.append(
                 f"{erwarteter_index}: {name} (kein Ticker ermittelbar)"
             )
             continue
-        befund.kandidaten.append(Kandidat(ticker, name, erwarteter_index))
+        befund.kandidaten.append(
+            Kandidat(ticker, name, erwarteter_index, sektor=sektor)
+        )
 
     if not befund.kandidaten:
         raise QuelleUnbrauchbar(
@@ -581,6 +595,7 @@ def vereinige(befunde: list[Befund]) -> Befund:
                     kandidat.name,
                     kandidat.herkunft,
                     kandidat.ueber_reserve,
+                    kandidat.sektor,
                 )
                 continue
             # Doppelmitglied: nur die Herkunft ergaenzen, kein zweiter Eintrag.
@@ -593,6 +608,14 @@ def vereinige(befunde: list[Befund]) -> Befund:
     zusammen.bestand_stand = min(staende) if staende else None
     zusammen.kandidaten = sorted(nach_ticker.values(), key=lambda k: k.ticker)
     return zusammen
+
+
+def meta_aus_kandidaten(kandidaten: list[Kandidat]) -> dict[str, dict[str, str]]:
+    """Ticker -> {name, sektor}. Leere Angaben bleiben leer, nie geraten."""
+    return {
+        k.ticker: {"name": k.name or "", "sektor": k.sektor or ""}
+        for k in sorted(kandidaten, key=lambda k: k.ticker)
+    }
 
 
 def rendere_universum(
@@ -812,6 +835,18 @@ def verarbeite(markt: str, heute: _dt.date, lauf: str, stand: str) -> bool:  # p
     with open(pfad, "w", encoding="utf-8") as handle:
         handle.write(rendere_universum(bezeichnung, herkunft, stand, lauf, geprueft))
     zusammenfassung(f"\n`{pfad}` geschrieben, Status VERIFIED.")
+
+    # Beschreibende Angaben im GLEICHEN Vorgang und zum gleichen Zeitpunkt.
+    # Sie frieren damit zusammen mit dem Universum ein und koennen gar nicht
+    # auseinanderlaufen. Reine Anzeige -- kein Score, kein Ranking.
+    meta_pfad = f"universe/ticker_meta_{markt}.json"
+    with open(meta_pfad, "w", encoding="utf-8") as handle:
+        handle.write(dump_meta(meta_aus_kandidaten(geprueft)))
+    mit_sektor = sum(1 for k in geprueft if k.sektor)
+    zusammenfassung(
+        f"`{meta_pfad}` geschrieben: {len(geprueft)} Eintraege, "
+        f"davon {mit_sektor} mit Sektor."
+    )
     return True
 
 

@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as _dt
 import html
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .config import (
     LIQUIDITY_MIN_MEDIAN_TURNOVER,
@@ -69,6 +69,10 @@ class MarketView:
     price_asof: Date | None
     prices: dict[str, float]
     next_ranking_date: Date
+    # Firmenname und Sektor je Ticker, rein beschreibend (siehe meta.py).
+    # Mit Vorgabewert, damit jeder bestehende Aufruf unveraendert bleibt --
+    # ohne die Datei sieht die Karte aus wie vorher.
+    meta: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
 def de_date(day: Date) -> str:
@@ -474,6 +478,28 @@ def _trend_banner(view: MarketView) -> str:
   </div>"""
 
 
+CHART_BASIS = "https://stockanalysis.com"
+
+
+def chart_url(ticker: str) -> str:
+    """Adresse der Chart-Seite bei stockanalysis.com.
+
+    BEST-GUESS-MUSTER, ausdruecklich benannt: Es findet keine Pruefung
+    statt, ob die Seite existiert. Trifft das Muster daneben, landet man
+    dort auf einer Suchseite -- unschoen, aber harmlos. Eine Pruefung waere
+    ein Netzabruf je Titel bei jedem Seitenaufbau, und das waere der
+    schlechtere Handel.
+
+    Deutsche Titel tragen bei uns das Yahoo-Suffix ".DE"; stockanalysis
+    fuehrt sie unter der Xetra-Kennung ohne Suffix (etr/SAP). Genau diese
+    Endung wird abgeschnitten -- weitere Boersen kommen hier nicht vor,
+    weil das Universum nur Xetra-Titel enthaelt.
+    """
+    if ticker.endswith(".DE"):
+        return f"{CHART_BASIS}/quote/etr/{ticker[:-3]}"
+    return f"{CHART_BASIS}/stocks/{ticker}/"
+
+
 def _card(row: dict, view: MarketView) -> str:
     market = view.market
     price = view.prices.get(row["ticker"])
@@ -489,13 +515,25 @@ def _card(row: dict, view: MarketView) -> str:
     # Zutat sehr stark und in der anderen nur mittelmaessig ist. Das gehoert
     # auf die Karte, nicht in eine Fussnote.
     bewertet = view.ranking["abdeckung"]["bewertet"]
+    # Beschreibung aus der Meta-Datei. Fehlt sie oder der Eintrag, steht
+    # ein Gedankenstrich -- der Lauf scheitert daran NIE (siehe meta.py).
+    beschreibung = view.meta.get(row["ticker"], {})
+    firma = beschreibung.get("name") or row["name"] or "—"
+    sektor = beschreibung.get("sektor") or "—"
     return f"""      <article class="card">
         <div class="card-hd">
           <div class="card-id">
             <span class="rank">{row["rang"]}</span>
             <span class="id-text">
-              <span class="ticker">{e(row["ticker"])}</span>
-              <span class="cname">{e(row["name"])}</span>
+              <span class="ticker-zeile">
+                <span class="ticker">{e(row["ticker"])}</span>
+                <a class="chart-badge" href="{e(chart_url(row["ticker"]))}"
+                   target="_blank" rel="noopener noreferrer"
+                   aria-label="Chart für {e(row["ticker"])} bei stockanalysis.com (neuer Tab)"
+                   >CHART<span class="chart-icon" aria-hidden="true">↗</span></a>
+              </span>
+              <span class="cname">{e(firma)}</span>
+              <span class="csektor">{e(sektor)}</span>
             </span>
           </div>
           <div class="card-score">
@@ -513,8 +551,8 @@ def _card(row: dict, view: MarketView) -> str:
             <span class="m-lbl">52W-Hoch-Nähe</span>
           </div>
           <div class="metric-box">
-            <span class="m-val">{price_text}</span>
-            <span class="m-lbl">Kurs ({e(market.currency)})</span>
+            <span class="m-val" data-quote="{e(row["ticker"])}">{price_text}</span>
+            <span class="m-lbl"><span data-quote-change="{e(row["ticker"])}"></span>Kurs ({e(market.currency)})</span>
           </div>
         </div>
         <div class="metrics metrics--rang">
@@ -545,7 +583,10 @@ def _market_section(view: MarketView) -> str:
     return f"""<section class="market">
   <h2><span class="flag" aria-hidden="true">{market.flag}</span>{e(market.name)}</h2>
   <p class="market-meta">Ranking vom {de_date(stichtag)} · {price_line} ·
-     {cov["bewertet"]} von {cov["universum"]} Titeln bewertet</p>
+     {cov["bewertet"]} von {cov["universum"]} Titeln bewertet<span
+       class="live" data-live="{e(market.key)}" hidden
+       ><span class="live-dot" aria-hidden="true"></span
+       ><span class="live-txt">Live · —</span></span></p>
 {_trend_banner(view)}
   <div class="cards">
 {chr(10).join(_card(row, view) for row in rows)}

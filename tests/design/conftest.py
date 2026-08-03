@@ -77,6 +77,20 @@ def ranking(name: str, warnung: bool) -> dict:
     }
 
 
+# Beschreibende Angaben, wie sie der Bootstrap schreibt. TICK4 fehlt in der
+# DE-Fassung mit Absicht — der Gedankenstrich-Fall gehoert auf die Testseite.
+META = {
+    # Der lange Name bleibt beim ersten Titel — der Ellipsis-Fall soll auf
+    # der Testseite stehen bleiben, auch wenn der Name jetzt aus der
+    # Meta-Datei kommt statt aus dem Ranking.
+    "BRK-B": {"name": LANGER_NAME, "sektor": "Financials"},
+    "TICK1": {"name": "Arthur J. Gallagher & Co.", "sektor": "Informationstechnologie"},
+    "TICK2": {"name": "Beispielgesellschaft 2 AG", "sektor": "Health Care"},
+    "TICK3": {"name": "Beispielgesellschaft 3 AG", "sektor": "Industrials"},
+    "TICK4": {"name": "Beispielgesellschaft 4 AG", "sektor": "Consumer Staples"},
+}
+
+
 @pytest.fixture(scope="session")
 def seite(tmp_path_factory):
     """Vollstaendige Seite mit allen Kanten: langer Name, Warnlage, grosse Zahlen."""
@@ -90,6 +104,7 @@ def seite(tmp_path_factory):
             Date(2026, 8, 3),
             {"BRK-B": 987654.32, "TICK1": 12.5, "TICK2": 1234.56, "TICK3": 9.99, "TICK4": 100.0},
             Date(2026, 8, 31),
+            META,
         ),
         MarketView(
             MARKETS_BY_KEY["de"],
@@ -97,6 +112,8 @@ def seite(tmp_path_factory):
             Date(2026, 8, 3),
             {"BRK-B": 1.0, "TICK1": 2.0, "TICK2": 3.0, "TICK3": 4.0, "TICK4": 5.0},
             Date(2026, 8, 31),
+            # TICK4 fehlt ABSICHTLICH: die Karte muss dann "—" zeigen.
+            {t: e for t, e in META.items() if t != "TICK4"},
         ),
     ]
     (ziel / "index.html").write_text(render_index(views, Date(2026, 8, 3)), encoding="utf-8")
@@ -162,6 +179,12 @@ def oeffne(browser, seite):
             reduced_motion=bewegung,
         )
         offen.append(kontext)
+        # KEIN Test geht nach draussen. Die Seite startet ihre Live-Abfrage
+        # beim Aufbau von selbst -- ohne diese Sperre wuerde jeder
+        # Browser-Test den echten Kurs-Dienst anrufen, und das Ergebnis
+        # haenge davon ab, ob der Rechner gerade Netz hat. Genau daran ist
+        # der erste CI-Lauf gescheitert.
+        kontext.route("**/quote-proxy.easywebb.workers.dev/**", lambda route: route.abort())
         page = kontext.new_page()
         page.goto(f"{basis}/{datei}" if basis else (seite / datei).as_uri())
         if schriftgroesse:
