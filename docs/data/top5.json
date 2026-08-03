@@ -1,0 +1,77 @@
+{
+  "maerkte": {
+    "de": {
+      "name": "Deutschland",
+      "stichtag": "2026-07-31",
+      "top5": [
+        {
+          "rang": 1,
+          "score": 86.904762,
+          "stichtag": "2026-07-31",
+          "ticker": "DHL.DE"
+        },
+        {
+          "rang": 2,
+          "score": 85.119048,
+          "stichtag": "2026-07-31",
+          "ticker": "DWS.DE"
+        },
+        {
+          "rang": 3,
+          "score": 82.738095,
+          "stichtag": "2026-07-31",
+          "ticker": "ALV.DE"
+        },
+        {
+          "rang": 4,
+          "score": 82.738095,
+          "stichtag": "2026-07-31",
+          "ticker": "TKA.DE"
+        },
+        {
+          "rang": 5,
+          "score": 81.547619,
+          "stichtag": "2026-07-31",
+          "ticker": "SIE.DE"
+        }
+      ]
+    },
+    "us": {
+      "name": "USA",
+      "stichtag": "2026-07-31",
+      "top5": [
+        {
+          "rang": 1,
+          "score": 96.292585,
+          "stichtag": "2026-07-31",
+          "ticker": "VLO"
+        },
+        {
+          "rang": 2,
+          "score": 93.086172,
+          "stichtag": "2026-07-31",
+          "ticker": "DVA"
+        },
+        {
+          "rang": 3,
+          "score": 92.985972,
+          "stichtag": "2026-07-31",
+          "ticker": "MRK"
+        },
+        {
+          "rang": 4,
+          "score": 92.685371,
+          "stichtag": "2026-07-31",
+          "ticker": "VTRS"
+        },
+        {
+          "rang": 5,
+          "score": 92.38477,
+          "stichtag": "2026-07-31",
+          "ticker": "ROST"
+        }
+      ]
+    }
+  },
+  "schema": 1
+}
