@@ -351,3 +351,195 @@ def test_ohne_token_ist_sperren_gesperrt(app):
     app.click("#menu-btn")
     assert app.evaluate("document.querySelector('#lock-btn').disabled") is True
     assert "Kein Token gespeichert" in app.inner_text("#lock-sub")
+
+
+# ==========================================================================
+# LIVE-KURSE
+#
+# Der Kurs-Dienst wird gemockt — es geht kein einziger echter Abruf hinaus.
+# Geprueft wird das, worauf es ankommt: aktualisiert er die Kurszeile,
+# faellt er bei Stoerung sauber auf grau zurueck, und ruht er, wenn der
+# Tab nicht sichtbar ist.
+# ==========================================================================
+
+
+def live_zustand(page):
+    return page.evaluate(
+        """() => [...document.querySelectorAll('[data-live]')].map(el => ({
+             markt: el.getAttribute('data-live'),
+             versteckt: el.hidden,
+             aus: el.classList.contains('live--aus'),
+             text: el.querySelector('.live-txt').textContent,
+           }))"""
+    )
+
+
+def kurse(page):
+    return page.evaluate(
+        """() => [...document.querySelectorAll('[data-quote]')].map(el => ({
+             ticker: el.getAttribute('data-quote'),
+             wert: el.textContent,
+             aenderung: (document.querySelector(
+               '[data-quote-change="' + el.getAttribute('data-quote') + '"]') || {}).textContent,
+           }))"""
+    )
+
+
+def test_der_live_kurs_ersetzt_die_kurszeile(app):
+    vorher = kurse(app)
+    ruesten(app, [{"status": 200, "json": {"price": 42.5, "changePercent": -1.25}}])
+    app.evaluate("() => window.MR.liveRunde()")
+
+    nachher = kurse(app)
+    assert vorher != nachher
+    for eintrag in nachher:
+        assert "42,50" in eintrag["wert"], eintrag
+        assert "-1,3" in eintrag["aenderung"], eintrag
+    # Das Waehrungszeichen der Karte bleibt erhalten.
+    assert nachher[0]["wert"].strip()[0] in "$€", nachher[0]
+
+
+def test_live_ruehrt_score_und_rang_nicht_an(app):
+    """Die Trennung, auf die es ankommt — belegt am laufenden Objekt."""
+    vorher = app.evaluate(
+        """() => ({
+             score: [...document.querySelectorAll('.score-val')].map(e => e.textContent),
+             raenge: [...document.querySelectorAll('.metrics--rang .m-val')]
+               .map(e => e.textContent),
+             momentum: [...document.querySelectorAll('.metrics .metric-box:first-child .m-val')]
+               .map(e => e.textContent),
+           })"""
+    )
+    ruesten(app, [{"status": 200, "json": {"price": 999.99, "changePercent": 50}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    nachher = app.evaluate(
+        """() => ({
+             score: [...document.querySelectorAll('.score-val')].map(e => e.textContent),
+             raenge: [...document.querySelectorAll('.metrics--rang .m-val')]
+               .map(e => e.textContent),
+             momentum: [...document.querySelectorAll('.metrics .metric-box:first-child .m-val')]
+               .map(e => e.textContent),
+           })"""
+    )
+    assert nachher == vorher, "die Live-Schicht hat Rechenwerte veraendert"
+
+
+def test_der_punkt_wird_gruen_und_nennt_die_uhrzeit(app):
+    ruesten(app, [{"status": 200, "json": {"price": 42.5, "changePercent": 1.0}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    for eintrag in live_zustand(app):
+        assert eintrag["versteckt"] is False
+        assert eintrag["aus"] is False, eintrag
+        assert eintrag["text"].startswith("Live · "), eintrag
+        assert ":" in eintrag["text"], "die Uhrzeit fehlt"
+
+
+@pytest.mark.parametrize(
+    "antwort,warum",
+    [
+        ({"status": 503}, "Dienst nicht erreichbar"),
+        ({"status": 200, "json": {"unbekannt": True}}, "Format passt nicht"),
+        ({"status": 200, "json": {"price": "keine Zahl"}}, "Kurs unbrauchbar"),
+        ({"status": 200, "json": []}, "gar kein Objekt"),
+    ],
+)
+def test_bei_stoerung_wird_der_punkt_grau_und_die_karte_bleibt(app, antwort, warum):
+    """FAIL-SOFT: nie eine kaputte Karte, immer nur eine ehrliche Auskunft."""
+    vorher = kurse(app)
+    ruesten(app, [antwort])
+    app.evaluate("() => window.MR.liveRunde()")
+
+    for eintrag in live_zustand(app):
+        assert eintrag["aus"] is True, (warum, eintrag)
+        assert eintrag["text"] == "Live · —", (warum, eintrag)
+    assert kurse(app) == vorher, f"{warum}: die Kurse wurden angetastet"
+
+
+def test_der_zeitstempel_bleibt_nach_einer_stoerung_stehen(app):
+    ruesten(app, [{"status": 200, "json": {"price": 42.5}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    gut = live_zustand(app)[0]["text"]
+    assert gut != "Live · —"
+
+    ruesten(app, [{"status": 500}])
+    app.evaluate("() => window.MR.liveRunde()")
+    nach_stoerung = live_zustand(app)[0]
+    assert nach_stoerung["aus"] is True
+    assert nach_stoerung["text"] == gut, "der Zeitstempel muss stehen bleiben"
+
+
+def test_eine_stoerung_loest_keinen_anfragensturm_aus(app):
+    """Kein Nachfassen ausser der Reihe — der naechste Versuch kommt im Takt."""
+    ruesten(app, [{"status": 500}])
+    app.evaluate("() => window.MR.liveRunde()")
+    erste_runde = app.evaluate("window.__aufrufe.length")
+    # genau ein Abruf je sichtbarem Titel, kein zweiter Anlauf
+    sichtbare = app.evaluate("document.querySelectorAll('[data-quote]').length")
+    assert erste_runde == sichtbare, (erste_runde, sichtbare)
+
+
+def test_bei_verstecktem_tab_wird_nichts_abgefragt(app):
+    ruesten(app, [{"status": 200, "json": {"price": 42.5}}])
+    app.evaluate("Object.defineProperty(document, 'hidden', {value: true, configurable: true})")
+    ergebnis = app.evaluate("() => window.MR.liveRunde()")
+    assert ergebnis == "pausiert"
+    assert app.evaluate("window.__aufrufe") == [], "im Hintergrund wurde abgefragt"
+
+    # Sichtbar wieder da: es geht sofort weiter.
+    app.evaluate("Object.defineProperty(document, 'hidden', {value: false, configurable: true})")
+    app.evaluate("() => window.MR.liveRunde()")
+    assert app.evaluate("window.__aufrufe.length") > 0
+
+
+def test_der_abruf_geht_an_den_kurs_dienst(app):
+    ruesten(app, [{"status": 200, "json": {"price": 1.0}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    aufrufe = app.evaluate("window.__aufrufe")
+    assert aufrufe, "es wurde gar nichts abgefragt"
+    for aufruf in aufrufe:
+        assert aufruf["url"].startswith("https://quote-proxy.easywebb.workers.dev?ticker="), aufruf
+    gefragt = {a["url"].split("ticker=")[1] for a in aufrufe}
+    assert "BRK-B" in gefragt
+
+
+def test_de_ticker_werden_mit_endung_abgefragt(app):
+    """Der Dienst kann .DE-Symbole — sie werden unveraendert weitergereicht."""
+    app.evaluate(
+        """() => {
+             const el = document.querySelector('[data-quote]');
+             el.setAttribute('data-quote', 'SAP.DE');
+           }"""
+    )
+    ruesten(app, [{"status": 200, "json": {"price": 1.0}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    assert any("ticker=SAP.DE" in a["url"] for a in app.evaluate("window.__aufrufe"))
+
+
+@pytest.mark.parametrize(
+    "daten,preis,prozent",
+    [
+        ({"price": 42.5, "changePercent": -1.25}, 42.5, -1.25),
+        ({"regularMarketPrice": 7, "regularMarketChangePercent": 2}, 7, 2),
+        ({"c": 10, "dp": 0.5}, 10, 0.5),
+        ({"quote": {"price": 3.5, "changePercent": 1}}, 3.5, 1),
+        ({"data": {"last": 8, "previousClose": 4}}, 8, 100),
+        ({"price": "42,50", "changePercent": "-1,25 %"}, 42.5, -1.25),
+        ({"price": 5}, 5, None),
+    ],
+)
+def test_das_antwortformat_wird_tolerant_gelesen(app, daten, preis, prozent):
+    """Das Format ist nicht zugesichert — es wird aus der Antwort abgelesen."""
+    gelesen = app.evaluate("d => window.MR.leseKurs(d)", daten)
+    assert gelesen is not None, daten
+    assert gelesen["preis"] == pytest.approx(preis), daten
+    if prozent is None:
+        assert gelesen["prozent"] is None, daten
+    else:
+        assert gelesen["prozent"] == pytest.approx(prozent, abs=0.01), daten
+
+
+@pytest.mark.parametrize(
+    "daten", [None, [], "text", 5, {}, {"foo": "bar"}, {"price": None}, {"price": "abc"}]
+)
+def test_unverstaendliche_antworten_ergeben_null(app, daten):
+    assert app.evaluate("d => window.MR.leseKurs(d)", daten) is None, daten

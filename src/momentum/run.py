@@ -36,6 +36,7 @@ from .ranking import (
     resolve_asof,
     write_ranking,
 )
+from .meta import load_meta
 from .render import MarketView, last_weekday_of_month, render_index, render_methodik
 from .scoring import shift_month
 from .universe import UniverseNotReady, load_universe
@@ -163,6 +164,9 @@ def process_market(
         price_asof=price_asof,
         prices=prices,
         next_ranking_date=last_weekday_of_month(nxt_year, nxt_month),
+        # Beschreibende Angaben zur Anzeige. Fehlt die Datei, bleibt das
+        # Dict leer und die Karten zeigen "—" -- der Lauf laeuft weiter.
+        meta=load_meta(market.key),
     )
     return view, new_ranking, status
 

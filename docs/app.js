@@ -500,6 +500,197 @@
     });
   }
 
+  // ------------------------------------------------------------ Live-Kurse
+  //
+  // Die Karten zeigen die Kurse aus dem Lauf. Diese Schicht legt AKTUELLE
+  // Kurse darueber -- mehr nicht. Sie ruehrt Score, Rang und Ranking nicht
+  // an; die stehen im eingefrorenen Monats-Ranking und haben mit dem
+  // Tageskurs nichts zu tun.
+  //
+  // FAIL-SOFT ist hier die ganze Haltung: Ist der Dienst nicht erreichbar
+  // oder liefert er etwas Unverstaendliches, wird der Punkt grau, der
+  // Zeitstempel bleibt stehen, und die Karte zeigt weiter die Lauf-Kurse.
+  // Kein zweiter Versuch ausser der Reihe -- der naechste kommt im
+  // regulaeren Takt. Ein hakelnder Dienst darf keinen Anfragensturm ausloesen.
+
+  var QUOTE_URL = "https://quote-proxy.easywebb.workers.dev";
+  var TAKT_MS = 15000;
+
+  /** Zahl aus einem beliebig verschachtelten Feld holen, tolerant. */
+  function zahl(wert) {
+    if (typeof wert === "number" && isFinite(wert)) { return wert; }
+    if (typeof wert === "string") {
+      var geputzt = wert.replace(/[%\s]/g, "").replace(",", ".");
+      var n = parseFloat(geputzt);
+      return isFinite(n) ? n : null;
+    }
+    return null;
+  }
+
+  function erstesFeld(daten, namen) {
+    for (var i = 0; i < namen.length; i++) {
+      if (daten && Object.prototype.hasOwnProperty.call(daten, namen[i])) {
+        var n = zahl(daten[namen[i]]);
+        if (n !== null) { return n; }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Kurs und Tagesaenderung aus der Antwort lesen — ohne festes Format.
+   *
+   * Das Antwortformat des Dienstes ist NICHT vertraglich zugesichert;
+   * es wird aus der Antwort selbst abgelesen. Deshalb werden die
+   * gebraeuchlichen Feldnamen der Reihe nach probiert, und eine
+   * Verschachtelungsebene wird mitgenommen. Passt nichts, kommt null
+   * zurueck -- und null heisst grau, nicht kaputt.
+   */
+  function leseKurs(daten) {
+    if (!daten || typeof daten !== "object") { return null; }
+    var kern = daten;
+    var huellen = ["quote", "data", "result", "chart"];
+    for (var i = 0; i < huellen.length; i++) {
+      var innen = daten[huellen[i]];
+      if (innen && typeof innen === "object" && !Array.isArray(innen)) {
+        kern = innen;
+        break;
+      }
+    }
+    var preis = erstesFeld(kern, [
+      "price", "regularMarketPrice", "last", "lastPrice", "c", "close", "kurs"
+    ]);
+    if (preis === null) { preis = erstesFeld(daten, ["price", "regularMarketPrice", "c"]); }
+    if (preis === null) { return null; }
+
+    var prozent = erstesFeld(kern, [
+      "changePercent", "regularMarketChangePercent", "changesPercentage", "dp", "percent"
+    ]);
+    // Manche Dienste liefern nur den absoluten Vortagesschluss/Abstand.
+    if (prozent === null) {
+      var vortag = erstesFeld(kern, ["previousClose", "regularMarketPreviousClose", "pc"]);
+      var diff = erstesFeld(kern, ["change", "regularMarketChange", "d"]);
+      if (vortag !== null && vortag !== 0) {
+        if (diff !== null) { prozent = (diff / vortag) * 100; }
+        else { prozent = ((preis - vortag) / vortag) * 100; }
+      }
+    }
+    return { preis: preis, prozent: prozent };
+  }
+
+  function deZahl(wert, stellen) {
+    return wert.toFixed(stellen).replace(".", ",");
+  }
+
+  function uhrzeit(zeitpunkt) {
+    var d = new Date(zeitpunkt);
+    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+  }
+
+  var liveStand = {};   // Markt -> Zeitpunkt der letzten guten Antwort
+
+  function liveAnzeigen(markt, gut) {
+    var el = document.querySelector('[data-live="' + markt + '"]');
+    if (!el) { return; }
+    el.hidden = false;
+    if (gut) { liveStand[markt] = deps.jetzt(); }
+    var stand = liveStand[markt];
+    el.className = "live" + (gut ? "" : " live--aus");
+    el.querySelector(".live-txt").textContent =
+      "Live · " + (stand ? uhrzeit(stand) : "—");
+  }
+
+  // Gesucht wird IMMER innerhalb der Markt-Sektion, nie global. Derselbe
+  // Ticker kann in zwei Maerkten stehen; eine dokumentweite Suche wuerde
+  // dann zweimal dieselbe Karte treffen und die andere nie.
+  function kursSetzen(bereich, ticker, gelesen) {
+    var wert = bereich.querySelector('[data-quote="' + ticker + '"]');
+    if (!wert || !gelesen) { return false; }
+    var waehrung = (wert.textContent.match(/^\S+/) || [""])[0];
+    // Das Waehrungszeichen kommt aus der bestehenden Anzeige -- so bleibt
+    // die Karte in ihrer eigenen Waehrung, ohne dass der Dienst eine
+    // liefern muss.
+    if (!/^[^0-9-]+$/.test(waehrung)) { waehrung = ""; }
+    wert.textContent = waehrung + "\u00a0" + deZahl(gelesen.preis, 2);
+
+    var aend = bereich.querySelector('[data-quote-change="' + ticker + '"]');
+    if (aend) {
+      if (gelesen.prozent === null) {
+        aend.textContent = "";
+        aend.className = "";
+      } else {
+        var vz = gelesen.prozent > 0 ? "+" : "";
+        aend.textContent = vz + deZahl(gelesen.prozent, 1) + "\u00a0%";
+        aend.className = gelesen.prozent > 0 ? "pos" : (gelesen.prozent < 0 ? "neg" : "");
+      }
+    }
+    return true;
+  }
+
+  /** [{markt, bereich, tickers}] — je Markt-Sektion die sichtbaren Titel. */
+  function sichtbareMaerkte() {
+    var gefunden = [];
+    var sektionen = document.querySelectorAll("section.market");
+    for (var i = 0; i < sektionen.length; i++) {
+      var live = sektionen[i].querySelector("[data-live]");
+      if (!live) { continue; }
+      var werte = sektionen[i].querySelectorAll("[data-quote]");
+      var tickers = [];
+      for (var j = 0; j < werte.length; j++) {
+        tickers.push(werte[j].getAttribute("data-quote"));
+      }
+      gefunden.push({
+        markt: live.getAttribute("data-live"),
+        bereich: sektionen[i],
+        tickers: tickers
+      });
+    }
+    return gefunden;
+  }
+
+  /** Eine Runde: alle sichtbaren Titel je Markt einmal abfragen. */
+  function liveRunde() {
+    if (document.hidden) { return Promise.resolve("pausiert"); }
+    var maerkte = sichtbareMaerkte();
+    if (!maerkte.length) { return Promise.resolve("nichts zu tun"); }
+
+    return Promise.all(maerkte.map(function (eintrag) {
+      return Promise.all(eintrag.tickers.map(function (ticker) {
+        return deps.netz(QUOTE_URL + "?ticker=" + encodeURIComponent(ticker))
+          .then(function (antwort) {
+            if (!antwort.ok) { return null; }
+            return antwort.json();
+          })
+          .then(function (daten) {
+            return kursSetzen(eintrag.bereich, ticker, leseKurs(daten));
+          })
+          .catch(function () { return false; });   // fail-soft, kein Nachfassen
+      })).then(function (ergebnisse) {
+        var gut = ergebnisse.some(function (x) { return x === true; });
+        liveAnzeigen(eintrag.markt, gut);
+        return gut;
+      });
+    })).then(function () { return "fertig"; });
+  }
+
+  var liveUhr = null;
+
+  function liveStarten() {
+    if (!document.querySelector("[data-live]")) { return; }
+    liveRunde();
+    if (liveUhr === null) {
+      liveUhr = setInterval(liveRunde, TAKT_MS);
+    }
+  }
+
+  // Unsichtbarer Tab fragt nichts ab: das spart Akku und Anfragen, und beim
+  // Zurueckkommen wird sofort einmal aktualisiert statt bis zu 15 s zu warten.
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) { liveRunde(); }
+  });
+
+  liveStarten();
+
   sitzungAnzeigen();
 
   // Nach aussen nur, was die Tests brauchen. Kein Token, keine Ablage.
@@ -513,6 +704,11 @@
     sitzungLoeschen: sitzungLoeschen,
     sitzungAnzeigen: sitzungAnzeigen,
     dialogOeffnen: dialogOeffnen,
-    bannerZeigen: bannerZeigen
+    bannerZeigen: bannerZeigen,
+    leseKurs: leseKurs,
+    liveRunde: liveRunde,
+    liveAnzeigen: liveAnzeigen,
+    QUOTE_URL: QUOTE_URL,
+    TAKT_MS: TAKT_MS
   };
 })();
