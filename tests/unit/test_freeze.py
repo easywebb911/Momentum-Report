@@ -35,7 +35,7 @@ def _daten(spaetere_kurse: dict[str, float] | None = None):
         for ticker, kurs in spaetere_kurse.items():
             for tag in (Date(2026, 8, 3), Date(2026, 8, 4), Date(2026, 8, 5)):
                 serien[ticker][tag] = kurs
-    serien["^GSPC"] = index_series()
+    serien["^SP500TR"] = index_series()
     return serien
 
 
@@ -106,7 +106,7 @@ def test_anzeige_lauf_laedt_nur_die_top5_nicht_das_universum(tmp_path):
 
     assert len(angefragt) == 1, "Anzeige-Lauf darf genau einen Abruf machen"
     assert sorted(angefragt[0]) == ["AAA", "BBB", "CCC", "DDD", "EEE"]
-    assert "^GSPC" not in angefragt[0], "kein Indexabruf noetig, es wird nicht gerankt"
+    assert "^SP500TR" not in angefragt[0], "kein Indexabruf noetig, es wird nicht gerankt"
 
 
 def test_naechster_stichtag_bildet_ein_neues_ranking(tmp_path):
@@ -121,7 +121,7 @@ def test_naechster_stichtag_bildet_ein_neues_ranking(tmp_path):
     serien = _daten()
     for ticker in ("AAA", "BBB", "CCC", "DDD", "EEE"):
         serien[ticker][Date(2026, 8, 31)] = serien[ticker][Date(2026, 7, 31)] * 1.1
-    serien["^GSPC"][Date(2026, 8, 31)] = 4300.0
+    serien["^SP500TR"][Date(2026, 8, 31)] = 4300.0
 
     view, neu, _ = process_market(
         markt,

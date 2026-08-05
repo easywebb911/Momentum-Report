@@ -103,8 +103,10 @@ _ALL = [
         title="Time Series Momentum",
         claim=(
             "Die Vorzeichen-Richtung eines Marktes ueber die vergangenen "
-            "zwoelf Monate trug Information ueber die naechste Phase. Daraus "
-            "speist sich hier ausschliesslich eine Warnanzeige je Markt."
+            "zwoelf Monate trug Information ueber die naechste Phase -- "
+            "gemessen an der Rendite UEBER dem Geldmarktsatz, nicht am "
+            "reinen Kursgewinn. Daraus speist sich hier ausschliesslich eine "
+            "Warnanzeige je Markt."
         ),
     ),
     Source(

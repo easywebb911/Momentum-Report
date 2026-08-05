@@ -99,7 +99,7 @@ def test_kein_ranking_und_kein_einziger_kursabruf(tmp_path, monkeypatch, beschre
     monkeypatch.setattr(run_modul, "MARKETS", maerkte)
 
     abrufe: list[list[str]] = []
-    echt = make_downloader({**sample_series(), "^GSPC": index_series()})
+    echt = make_downloader({**sample_series(), "^SP500TR": index_series()})
 
     def mitschnitt(batch, start, end):
         abrufe.append(list(batch))
@@ -183,7 +183,7 @@ def test_nach_dem_universum_lauf_entsteht_das_ranking_rueckwirkend(tmp_path, mon
     monkeypatch.setattr(run_modul, "push_new_ranking", lambda *a, **k: True)
 
     serien = sample_series()
-    serien["^GSPC"] = index_series()
+    serien["^SP500TR"] = index_series()
     serien["^GDAXI"] = index_series()
 
     assert run_modul.main(["--today", "2026-08-05"], downloader=make_downloader(serien)) == 0
@@ -252,7 +252,7 @@ def test_zurueckgesetztes_universum_stoppt_AUCH_die_kursanzeige(tmp_path, monkey
         tmp_path / "universe" / "u.txt", ["AAA", "BBB", "CCC", "DDD", "EEE"]
     )
     markt = replace(MARKETS_BY_KEY["us"], universe_file=str(pfad))
-    serien = {**sample_series(), "^GSPC": index_series()}
+    serien = {**sample_series(), "^SP500TR": index_series()}
 
     # 1. Echtes Ranking entsteht
     view, neu, _ = run_modul.process_market(

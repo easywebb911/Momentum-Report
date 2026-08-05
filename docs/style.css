@@ -488,6 +488,15 @@ main > h2::after {
    zwei Woerter pro Zeile quetschen zu lassen. */
 .ampel-body { flex: 1 1 12rem; min-width: 0; }
 .ampel-src { display: block; color: var(--txt-dim); font-size: 0.6875rem; margin-top: 0.25rem; }
+/* Der Zins-Ausfall. Eigene Zeile, gedimmt, aber nicht versteckt: die Zahl
+   daneben ist dann eine Preisrendite und keine Ueberschussrendite -- wer
+   das nicht sieht, liest die Ampel falsch. */
+.ampel-hinweis {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--txt-dim);
+  font-size: 0.6875rem;
+}
 
 /* ------------------------------------------------------------ Karten */
 

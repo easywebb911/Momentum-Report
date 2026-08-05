@@ -583,3 +583,54 @@ def test_bei_reduzierter_bewegung_pulsiert_nichts(oeffne):
         """() => [...document.querySelectorAll('.tta .tta-nadel')]
              .map(el => getComputedStyle(el).animationName).join(',')"""
     )
+
+
+# ---------------------------------------------------- Ueberschuss-Kriterium
+#
+# Die Satz-Box ist mit dem Zins-Abzug laenger geworden ("... über
+# Geldmarkt") und traegt im Ausfall eine zusaetzliche Zeile. Beides wird
+# hier auf 390 px gemessen, nicht geschaetzt.
+
+
+def test_beide_zins_zustaende_stehen_auf_der_seite(oeffne):
+    page = oeffne("index.html")
+    boxen = page.evaluate(
+        """() => [...document.querySelectorAll('.ampel')].map(box => ({
+             text: box.querySelector('.ampel-body').innerText,
+             hinweis: box.querySelector('.ampel-hinweis')?.innerText ?? null,
+             label: box.querySelector('.tta').getAttribute('aria-label'),
+           }))"""
+    )
+    assert len(boxen) == 2, boxen
+
+    mit = [b for b in boxen if b["hinweis"] is None]
+    ohne = [b for b in boxen if b["hinweis"] is not None]
+    assert len(mit) == 1 and len(ohne) == 1, boxen
+
+    # Mit Zins-Abzug: die Zahl ist ausdruecklich eine Ueberschussrendite.
+    assert "über Geldmarkt" in mit[0]["text"], mit
+    assert "Geldmarkt" in mit[0]["label"], mit
+
+    # Ohne Zins-Abzug: sichtbarer Hinweis -- und dann darf NIRGENDS
+    # "über Geldmarkt" stehen, weder im Satz noch im Vorlesetext.
+    assert ohne[0]["hinweis"] == "ohne Zins-Abzug — Zinsquelle nicht erreichbar"
+    assert "über Geldmarkt" not in ohne[0]["text"], ohne
+    assert "Geldmarkt" not in ohne[0]["label"], ohne
+
+
+@pytest.mark.parametrize("schriftgroesse", [15, 16, 20])
+def test_der_zins_hinweis_bleibt_im_rahmen(oeffne, schriftgroesse):
+    page = oeffne("index.html", schriftgroesse)
+    masse = page.evaluate(
+        """() => [...document.querySelectorAll('.ampel-hinweis')].map(el => {
+             const r = el.getBoundingClientRect();
+             return {links: r.left, rechts: r.right, hoehe: r.height,
+                     sichtbar: getComputedStyle(el).display !== 'none'};
+           })"""
+    )
+    assert masse, "der Ausfall-Hinweis fehlt auf der Testseite"
+    for m in masse:
+        assert m["sichtbar"] is True, m
+        assert m["hoehe"] > 0, "ein Hinweis mit Hoehe 0 ist versteckt"
+        assert m["links"] >= -0.5 and m["rechts"] <= BREITE + 0.5, m
+    assert page.evaluate("document.documentElement.scrollWidth") <= BREITE

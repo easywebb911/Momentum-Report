@@ -91,7 +91,12 @@ MARKETS: tuple[Market, ...] = (
         flag="\U0001F1FA\U0001F1F8",
         currency="USD",
         currency_symbol="$",
-        index_ticker="^GSPC",
+        # Performance-Index (Total Return), symmetrisch zum DAX: der DAX
+        # rechnet Dividenden ein, ^GSPC nicht. Ein Kursindex gegen einen
+        # Performance-Index zu stellen, waere ein Vergleich zweier
+        # verschiedener Dinge -- und haette die US-Ampel systematisch zu
+        # gutmuetig gemacht.
+        index_ticker="^SP500TR",
         index_name="S&P 500",
         universe_file="universe/universe_us.txt",
     ),

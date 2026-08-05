@@ -40,7 +40,7 @@ def _ranking(*, warnung: bool, name: str = "Beispiel AG") -> dict:
         },
         "methode": {},
         "trend_ampel": {
-            "index_ticker": "^GSPC",
+            "index_ticker": "^SP500TR",
             "index_name": "S&P 500",
             "rendite_12m": -0.084 if warnung else 0.152,
             "warnung": warnung,
