@@ -68,6 +68,23 @@ def prices() -> dict[str, dict[Date, float]]:
     return sample_series()
 
 
+@pytest.fixture(autouse=True)
+def keine_zinsquelle_im_netz(monkeypatch):
+    """Sperre: kein Test ruft die EZB an.
+
+    Der Zins-Abruf haengt nicht am injizierten `downloader`, sondern an
+    einer eigenen HTTP-Verbindung. Ohne diese Sperre wuerde jeder Lauf-Test
+    still nach draussen telefonieren -- und das Ergebnis haenge davon ab, ob
+    der Rechner gerade Netz hat. Wer echte Zinsdaten braucht, spielt sie
+    ueber `zins_oeffner` ein.
+    """
+
+    def verboten(*_args, **_kwargs):
+        raise AssertionError("Test versucht, die EZB-Zinsquelle abzurufen")
+
+    monkeypatch.setattr("momentum.riskfree.urllib.request.urlopen", verboten)
+
+
 # --------------------------------------------------------------------------
 # Ersatz fuer yfinance
 # --------------------------------------------------------------------------

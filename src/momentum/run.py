@@ -37,6 +37,7 @@ from .ranking import (
     write_ranking,
 )
 from .meta import load_meta
+from .riskfree import IRX_TICKER, QUELLE_FEHLT, riskfree_12m
 from .render import (
     MarketView,
     last_weekday_of_month,
@@ -78,6 +79,22 @@ def _latest_common_date(bundle: PriceBundle, tickers: list[str]) -> Date | None:
     return max(common) if common else None
 
 
+def _zins_reihe(start: Date, end: Date, *, downloader=None) -> dict[Date, float]:
+    """Die ^IRX-Reihe holen — fail-soft, ohne den Lauf zu gefaehrden.
+
+    Der Abruf laeuft bewusst als EIGENER Aufruf, nicht zusammen mit dem
+    Index: der Einzelabruf ist die Form, die data._extract sicher zuordnen
+    kann. Faellt er aus, gibt es hier ein leeres Dict und die Ampel rechnet
+    sichtbar ohne Zins-Abzug.
+    """
+    try:
+        buendel = download_prices([IRX_TICKER], start, end, downloader=downloader)
+    except Exception as exc:  # noqa: BLE001 - die Ampel ist Anzeige, kein Gatter
+        log(f"[zins] {IRX_TICKER} nicht abrufbar ({type(exc).__name__}) — {QUELLE_FEHLT}")
+        return {}
+    return buendel.adjusted.get(IRX_TICKER) or {}
+
+
 def process_market(
     market: Market,
     today: Date,
@@ -85,6 +102,7 @@ def process_market(
     downloader=None,
     ranking_root: Path = RANKING_DIR,
     data_root: Path = DATA_DIR,
+    zins_oeffner=None,
 ) -> tuple[MarketView, dict | None, dict]:
     """Einen Markt verarbeiten. Gibt (Ansicht, neues Ranking oder None, Status)."""
     universe = load_universe(market.universe_file)
@@ -115,11 +133,28 @@ def process_market(
             )
         bundle = download_prices(list(universe.tickers), start, end, downloader=downloader)
         status["daten"] = bundle.stats.as_dict()
+        # Der Geldmarktsatz gehoert zur Waehrung; fuer USD kommt er aus
+        # derselben Kursquelle, fuer EUR aus der EZB (siehe riskfree.py).
+        irx = _zins_reihe(start, end, downloader=downloader) if market.currency == "USD" else {}
 
         for year, month in needed:
             asof = resolve_asof(index_series, year, month, today)
             log(f"[{market.key}] Ranking {year:04d}-{month:02d}, Stichtag {asof}")
-            ranking = build_ranking(market, universe, bundle, index_series, asof)
+            zins = riskfree_12m(
+                market.currency, index_series, asof,
+                irx_series=irx, oeffner=zins_oeffner,
+            )
+            if zins[0] is None:
+                # Niemals still: der Ausfall steht im Log UND im Report.
+                log(
+                    f"[{market.key}] Zinsquelle {QUELLE_FEHLT} — Trend-Kriterium "
+                    f"rechnet ohne Zins-Abzug (Rendite gegen null)."
+                )
+            else:
+                log(f"[{market.key}] Geldmarkt 12M {zins[0] * 100:.2f} % ({zins[1]})")
+            ranking = build_ranking(
+                market, universe, bundle, index_series, asof, riskfree=zins
+            )
             write_ranking(ranking, ranking_root)
             new_ranking = ranking
         current = new_ranking
@@ -226,8 +261,9 @@ def _github_output(key: str, value: str) -> None:
         handle.write(f"{key}={value}\n")
 
 
-def main(argv: list[str] | None = None, *, downloader=None) -> int:
-    """`downloader` ist die Test-Naht: ohne ihn laeuft der echte Abruf."""
+def main(argv: list[str] | None = None, *, downloader=None, zins_oeffner=None) -> int:
+    """`downloader` und `zins_oeffner` sind die Test-Naehte: ohne sie laufen
+    der echte Kursabruf und der echte EZB-Abruf."""
     parser = argparse.ArgumentParser(description="Momentum-Report Lauf")
     parser.add_argument("--today", help="Laufdatum JJJJ-MM-TT (nur fuer Tests)")
     parser.add_argument(
@@ -247,7 +283,9 @@ def main(argv: list[str] | None = None, *, downloader=None) -> int:
     statuses: list[dict] = []
 
     for market in MARKETS:
-        view, new_ranking, status = process_market(market, today, downloader=downloader)
+        view, new_ranking, status = process_market(
+            market, today, downloader=downloader, zins_oeffner=zins_oeffner
+        )
         views.append(view)
         statuses.append(status)
         if new_ranking:

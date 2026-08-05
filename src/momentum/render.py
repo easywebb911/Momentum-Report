@@ -434,16 +434,35 @@ def tacho_nadel(rendite: float, laenge: float = TACHO_NADEL_LAENGE) -> tuple[flo
     return round(x, 2), round(y, 2)
 
 
-def _trend_tacho(markt_key: str, index_name: str, rendite: float, warnung: bool) -> str:
+def _trend_tacho(
+    markt_key: str,
+    index_name: str,
+    rendite: float,
+    warnung: bool,
+    *,
+    mit_zins: bool = False,
+) -> str:
     """Der Tacho als eigenstaendiges SVG — inline, ohne Nachladen.
 
     Die id am Wurzelelement traegt den Markt (tta-us / tta-de). INNEN gibt
     es bewusst keine einzige id: was nichts referenziert, kann auch nicht
     kollidieren, wenn dieselbe Grafik zweimal auf der Seite steht.
+
+    `mit_zins` steuert NUR den Vorlesetext. Er muss zur danebenstehenden
+    Satz-Box passen: sagt die Box "ohne Zins-Abzug", darf die Grafik nicht
+    "unter Geldmarkt" vorlesen -- sonst behaupten Bild und Text
+    Verschiedenes.
     """
     nadel_x, nadel_y = tacho_nadel(rendite)
     zahl = de_pct(rendite)
-    lage = "Warnung: Markt im 12-Monats-Minus" if warnung else "kein Alarm"
+    if warnung:
+        lage = (
+            "Warnung: Markt unter dem Geldmarkt"
+            if mit_zins
+            else "Warnung: Markt im 12-Monats-Minus"
+        )
+    else:
+        lage = "kein Alarm"
     return f"""    <svg class="tta{" tta--warn" if warnung else ""}" id="tta-{e(markt_key)}"
          viewBox="0 0 120 72" role="img"
          aria-label="Trend-Kriterium {e(index_name)}: {zahl}, {lage}">
@@ -461,24 +480,62 @@ def _trend_tacho(markt_key: str, index_name: str, rendite: float, warnung: bool)
     </svg>"""
 
 
+# Zwei verschiedene Gruende, warum kein Zins abgezogen wurde -- und zwei
+# verschiedene Saetze dafuer. Sie zusammenzuwerfen waere bequem und falsch:
+# ein Ranking, das vor der Umstellung eingefroren wurde, hat KEINE
+# unerreichbare Quelle gesehen; es hat nie eine gesucht. Beide Texte stehen
+# je genau einmal hier.
+ZINS_FEHLT_HINWEIS = "ohne Zins-Abzug — Zinsquelle nicht erreichbar"
+ZINS_ALT_HINWEIS = "ohne Zins-Abzug — dieses Ranking entstand vor der Umstellung"
+
+
+def zins_hinweis(ampel: dict) -> str | None:
+    """Der passende Hinweis, oder None wenn der Abzug wirklich drinsteckt."""
+    if ampel.get("riskfree_12m") is not None:
+        return None
+    return ZINS_FEHLT_HINWEIS if "riskfree_quelle" in ampel else ZINS_ALT_HINWEIS
+
+
+def ampel_wert(ampel: dict) -> tuple[float, bool]:
+    """Angezeigte Zahl und ob der Zins-Abzug wirklich drinsteckt.
+
+    Aeltere, bereits eingefrorene Rankings kennen die neuen Felder nicht --
+    sie tragen ausschliesslich die Preisrendite. Dann wird genau die
+    gezeigt, samt sichtbarem Hinweis. Eine alte Zahl stillschweigend als
+    Ueberschussrendite auszugeben, waere die Art Beschoenigung, die dieses
+    Werkzeug nirgends duldet.
+    """
+    mit_zins = ampel.get("riskfree_12m") is not None
+    wert = ampel["ueberschuss_12m"] if mit_zins else ampel["rendite_12m"]
+    return float(wert), mit_zins
+
+
 def _trend_banner(view: MarketView) -> str:
     ampel = view.ranking["trend_ampel"]
-    ret = ampel["rendite_12m"]
+    wert, mit_zins = ampel_wert(ampel)
     src = source("momentum_crash")
-    tacho = _trend_tacho(view.market.key, ampel["index_name"], ret, ampel["warnung"])
+    tacho = _trend_tacho(
+        view.market.key, ampel["index_name"], wert, ampel["warnung"], mit_zins=mit_zins
+    )
+    ueber = " über Geldmarkt" if mit_zins else ""
+    text = zins_hinweis(ampel)
+    hinweis = "" if text is None else f'\n    <span class="ampel-hinweis">{e(text)}</span>'
     if ampel["warnung"]:
+        lage = (
+            "Markt unter dem Geldmarkt" if mit_zins else "Markt im 12-Monats-Minus"
+        )
         return f"""  <div class="ampel ampel--warn" role="status">
 {tacho}
-    <span class="ampel-body"><strong>Momentum-Gefahrenlage:</strong> Markt im 12-Monats-Minus
-    ({e(ampel["index_name"])} {de_pct(ret)}) — in solchen Phasen häufen sich historisch die
+    <span class="ampel-body"><strong>Momentum-Gefahrenlage:</strong> {lage}
+    ({e(ampel["index_name"])} {de_pct(wert)}{ueber}) — in solchen Phasen häufen sich historisch die
     Momentum-Einbrüche. <a href="methodik.html#trend-ampel">Was das heißt →</a>
-    <span class="ampel-src">{e(src.short)}</span></span>
+    <span class="ampel-src">{e(src.short)}</span>{hinweis}</span>
   </div>"""
     return f"""  <div class="ampel ampel--ok" role="status">
 {tacho}
-    <span class="ampel-body">{e(ampel["index_name"])} auf 12 Monate {de_pct(ret)} — das
+    <span class="ampel-body">{e(ampel["index_name"])} auf 12 Monate {de_pct(wert)}{ueber} — das
     Trendkriterium schlägt derzeit nicht an.
-    <a href="methodik.html#trend-ampel">Erklärung →</a></span>
+    <a href="methodik.html#trend-ampel">Erklärung →</a>{hinweis}</span>
   </div>"""
 
 
@@ -858,12 +915,31 @@ war.</p>""",
         _method_card(
             "Warnanzeige je Markt",
             ("trend_filter", "momentum_crash"),
-            """<p>Steht der Marktindex über die letzten zwölf Monate im Minus,
-erscheint eine deutliche Warnung. In genau solchen Phasen häuften sich
-historisch die schweren Momentum-Einbrüche.</p>
+            """<p>Bringt der Marktindex über die letzten zwölf Monate
+<strong>weniger als der Geldmarkt</strong>, erscheint eine deutliche
+Warnung. In genau solchen Phasen häuften sich historisch die schweren
+Momentum-Einbrüche.</p>
+<p><strong>Warum der Zins abgezogen wird:</strong> Die zugrunde liegende
+Arbeit misst nicht den Kursgewinn, sondern das, was <em>über</em> dem
+Geldmarkt übrig blieb. Ein Markt, der zwölf Monate lang 2&nbsp;% zulegt,
+während Tagesgeld 3&nbsp;% brachte, hat nichts verdient — vorher galt er
+hier als unauffällig, jetzt schlägt das Kriterium an. Das ist die einzige
+Änderung: gerechnet wird <em>Indexrendite minus Geldmarktsatz</em>.</p>
+<p><strong>Die Mittelung ist eine Näherung</strong>, und das soll so
+dastehen: Aus der täglichen, aufs Jahr gerechneten Rate wird der
+Durchschnitt über die zwölf Monate gebildet und einmal abgezogen. Das ist
+nicht dasselbe wie die exakt aufgezinste Geldmarkt-Rendite desselben
+Zeitraums; der Unterschied liegt im Bereich von Zehntel-Prozentpunkten.
+Quellen: für den Dollar der 13-Wochen-Satz auf US-Staatsanleihen (^IRX),
+für den Euro der €STR aus dem Datenportal der Europäischen Zentralbank.
+Ist eine dieser Quellen nicht erreichbar, rechnet das Kriterium wie
+zuvor ohne Abzug — und die Anzeige sagt genau das dazu.</p>
+<p>Beide Indizes rechnen Dividenden ein (Performance-Indizes): der DAX von
+Haus aus, für die USA wird der S&amp;P&nbsp;500 Total Return herangezogen.
+Ein Kursindex gegen einen Performance-Index zu stellen, wäre ein Vergleich
+zweier verschiedener Dinge.</p>
 <p>Die Ampel ist <strong>reine Anzeige</strong>. Sie greift nicht in die
-Rangliste ein, filtert nichts heraus und verändert keinen Score. Gemessen
-wird der S&amp;P 500 für die USA und der DAX für Deutschland.</p>""",
+Rangliste ein, filtert nichts heraus und verändert keinen Score.</p>""",
             anchor="trend-ampel",
         ),
         "<h2>Das Universum und der Handelbarkeits-Filter</h2>",

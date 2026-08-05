@@ -28,6 +28,7 @@ from .config import (
     Market,
 )
 from .data import PriceBundle
+from .riskfree import QUELLE_FEHLT
 from .scoring import (
     InsufficientHistory,
     combined_score,
@@ -134,8 +135,14 @@ def build_ranking(
     bundle: PriceBundle,
     index_series: dict[Date, float],
     asof: Date,
+    *,
+    riskfree: tuple[float | None, str] = (None, QUELLE_FEHLT),
 ) -> dict:
     """Das vollstaendige, eingefrorene Monats-Ranking eines Marktes.
+
+    `riskfree` ist (Satz oder None, Herkunftstext) und geht AUSSCHLIESSLICH
+    in die Trend-Ampel. Score, Perzentile und Rangfolge sehen den Zins nie
+    -- das haelt tests/unit/test_trend_ueberschuss.py fest.
 
     Reihenfolge der Schritte ist inhaltlich bedeutsam:
       1. Handelbarkeits-Filter (Liquiditaet) -- reduziert nur die Auswahl
@@ -215,6 +222,11 @@ def build_ranking(
         row["rang"] = position
 
     index_return = index_12m_return(index_series, asof)
+    # Ueberschuss statt Preisrendite (Beleg trend_filter): Fehlt der Zins,
+    # wird NICHTS geschaetzt -- dann ist der Abzug null und die Anzeige sagt
+    # das sichtbar. Der Ausfall wird nirgends still zu einem Zins von 0 %.
+    riskfree_satz, riskfree_quelle = riskfree
+    ueberschuss = index_return - (riskfree_satz if riskfree_satz is not None else 0.0)
 
     return {
         "schema": SCHEMA_VERSION,
@@ -238,8 +250,13 @@ def build_ranking(
         "trend_ampel": {
             "index_ticker": market.index_ticker,
             "index_name": market.index_name,
+            # Beide Zahlen bleiben nachlesbar: die reine Preisrendite und
+            # der Ueberschuss darueber hinaus. Gewarnt wird am Ueberschuss.
             "rendite_12m": round(index_return, 8),
-            "warnung": index_return <= 0,
+            "riskfree_12m": None if riskfree_satz is None else round(riskfree_satz, 8),
+            "riskfree_quelle": riskfree_quelle,
+            "ueberschuss_12m": round(ueberschuss, 8),
+            "warnung": ueberschuss < 0,
         },
         "abdeckung": {
             "universum": len(universe_tickers),

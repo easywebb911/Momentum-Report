@@ -49,10 +49,21 @@ def ranking(name: str, warnung: bool) -> dict:
             "stand": "2026-07-31",
             "titel_gesamt": 500,
         },
+        # Beide Zustaende des Zins-Abzugs stehen auf der Testseite: der
+        # Warnmarkt rechnet MIT Geldmarktsatz (laengster Satz), der ruhige
+        # ohne -- dort muss der Ausfall-Hinweis sichtbar sein. So messen die
+        # 390-px-Tests beide Textlaengen, ohne eine zweite Seite zu bauen.
         "trend_ampel": {
-            "index_ticker": "^GSPC",
+            "index_ticker": "^SP500TR",
             "index_name": "S&P 500",
             "rendite_12m": -0.084 if warnung else 0.152,
+            "riskfree_12m": 0.037 if warnung else None,
+            "riskfree_quelle": (
+                "^IRX (13-Wochen-T-Bill), Tagesmittel über 12 Monate"
+                if warnung
+                else "nicht erreichbar"
+            ),
+            "ueberschuss_12m": -0.121 if warnung else 0.152,
             "warnung": warnung,
         },
         "abdeckung": {

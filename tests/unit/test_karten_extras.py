@@ -34,7 +34,7 @@ def _ranking(ticker: str = "AAA", markt: str = "us") -> dict:
         "universum": {"bezeichnung": "S&P 500", "herkunft": "T", "stand": "2026-07-31",
                       "titel_gesamt": 500},
         "methode": {},
-        "trend_ampel": {"index_ticker": "^GSPC", "index_name": "S&P 500",
+        "trend_ampel": {"index_ticker": "^SP500TR", "index_name": "S&P 500",
                         "rendite_12m": 0.152, "warnung": False},
         "abdeckung": {"universum": 500, "mit_kursen": 498, "nach_handelbarkeit": 470,
                       "ohne_handelbarkeit": 28, "ohne_ausreichende_historie": [],

@@ -163,6 +163,25 @@ def combined_score(pct_momentum: float, pct_high_52w: float) -> float:
     )
 
 
+def index_12m_basis(prices: Series, asof: Date) -> Date:
+    """Der Nennertag der 12-Monats-Indexrendite: letzter Handelstag in M-12.
+
+    Eigene Funktion, weil das Zins-Fenster der Ueberschussrendite EXAKT
+    dasselbe Fenster sein muss wie das der Indexrendite. Waeren es zwei
+    getrennt gerechnete Zeitraeume, koennten sie auseinanderlaufen, ohne
+    dass es jemandem auffaellt.
+    """
+    if asof not in prices:
+        raise InsufficientHistory(f"kein Indexkurs am Stichtag {asof}")
+    base_year, base_month = shift_month(asof.year, asof.month, -MOMENTUM_LOOKBACK_MONTHS)
+    candidates = [
+        d for d in prices if d.year == base_year and d.month == base_month and d <= asof
+    ]
+    if not candidates:
+        raise InsufficientHistory(f"kein Indexkurs in {base_year}-{base_month:02d} bis {asof}")
+    return max(candidates)
+
+
 def index_12m_return(prices: Series, asof: Date) -> float:
     """12-Monats-Rendite des Marktindex fuer die Trend-Ampel.
 
@@ -174,11 +193,13 @@ def index_12m_return(prices: Series, asof: Date) -> float:
     Hier wird KEIN Monat uebersprungen: die Zeitreihen-Momentum-Arbeit misst
     die vollen zwoelf Monate bis zum Stichtag. Reine Anzeige, greift nie ins
     Ranking ein.
+
+    Das ist die PREIS-Rendite. Die Arbeit misst die Rendite UEBER dem
+    Geldmarkt; der Abzug passiert in riskfree.py und wird als eigenes Feld
+    (ueberschuss_12m) gefuehrt, damit beide Zahlen nachlesbar bleiben.
     """
-    if asof not in prices:
-        raise InsufficientHistory(f"kein Indexkurs am Stichtag {asof}")
-    base_year, base_month = shift_month(asof.year, asof.month, -MOMENTUM_LOOKBACK_MONTHS)
-    base = month_end_close(prices, base_year, base_month, asof)
+    base_day = index_12m_basis(prices, asof)
+    base = float(prices[base_day])
     if base <= 0:
         raise InsufficientHistory("Index-Basiskurs <= 0")
     return float(prices[asof]) / base - 1.0
