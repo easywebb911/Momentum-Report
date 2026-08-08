@@ -36,6 +36,7 @@ permissions:
 jobs:
   lauf:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       PYTHONPATH: src
       NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
