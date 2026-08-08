@@ -1,6 +1,7 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 08.08.2026** (Samstag). Repo `easywebb911/Momentum-Report`, Branch `main` bei `42b04a4`.
+**Stand: 08.08.2026** (Samstag), nach dem Probe-Push um 17:33 MESZ. Repo
+`easywebb911/Momentum-Report`, Branch `main` bei `1358eab`.
 
 Dieses Dokument ist der Übergabepunkt zwischen zwei Arbeits-Sitzungen. Es
 beantwortet drei Fragen: *Was läuft gerade?*, *Was ist offen?*, *Was darf
@@ -18,7 +19,7 @@ Der Beleg steht jeweils dabei. Was sich nicht belegen lässt, steht als
 | Sache | Zustand | Beleg |
 |---|---|---|
 | GitHub Pages | **aktiv** seit 02.08., 36 Deployments, letztes 07.08. erfolgreich | Workflow `pages-build-deployment` (`dynamic/pages/pages-build-deployment`), angelegt 02.08.2026 16:11 |
-| Momentum-Lauf | **18 Läufe, alle erfolgreich**, letzter am 07.08. 22:17 UTC | `git log` → `42b04a4 Lauf 18`; Actions-Liste `lauf.yml` |
+| Momentum-Lauf | **19 Läufe, alle erfolgreich**, letzter am 08.08. 15:33 UTC (Probe-Push) | `git log` → `1358eab Lauf 19`; Actions-Liste `lauf.yml` |
 | Ranking | eingefroren zum **31.07.2026**, beide Märkte | `data/rankings/us_2026-07.json`, `de_2026-07.json` |
 | US-Top-5 | VLO, DVA, MRK, VTRS, ROST — aus 500 bewerteten von 503 | `us_2026-07.json` → `top`, `abdeckung` |
 | DE-Top-5 | DHL.DE, DWS.DE, ALV.DE, TKA.DE, SIE.DE — aus 85 bewerteten von 102 | `de_2026-07.json` |
@@ -26,6 +27,7 @@ Der Beleg steht jeweils dabei. Was sich nicht belegen lässt, steht als
 | Beschreibende Angaben | vorhanden (Name + Sektor je Ticker) | `universe/ticker_meta_us.json`, `ticker_meta_de.json`, seit `c97e3f4` |
 | Konfluenz-Export | `docs/data/top5.json` vorhanden, seit `e695b54` (Lauf 9) unverändert — korrekt, das Ranking ist eingefroren | Datei + `git log -- docs/data/top5.json` |
 | Trend-Ampel auf der Seite | zeigt für **beide** Märkte die Preisrendite mit dem Hinweis *„ohne Zins-Abzug — dieses Ranking entstand vor der Umstellung"* | `docs/index.html`; erwartetes Verhalten, siehe §4 |
+| ntfy-Push | **verdrahtet und angekommen** — Probe am 08.08. 15:33 UTC (17:33 MESZ) auf dem Handy bestätigt | Lauf 19 (`workflow_dispatch`, `success`, Job 93120989543) |
 | Kurse | US vom 07.08., DE vom 06.08. | `data/status.json` |
 | Tests | 385 Unit + 120 Design, alle grün | `pytest tests/unit`, `pytest tests/design` (08.08.) |
 | Offene PRs | **keine**, 16 von 16 gemergt | GitHub-PR-Liste, Status `open` = leer |
@@ -75,7 +77,7 @@ nicht dokumentiert (bei #1–#3 deshalb „—").
 
 | Wann | Was | Warum |
 |---|---|---|
-| **31.08.2026** (Mo) | **Monats-Stichtag.** Der erste Lauf danach bildet das August-Ranking. | Erster Stichtag *nach* #16 — hier greift die Überschuss-Ampel zum ersten Mal mit echten Zahlen. Danach prüfen: Tragen beide Märkte `riskfree_12m ≠ null`? Steht auf der Seite „über Geldmarkt" statt des Umstellungs-Hinweises? Kam der ntfy-Push an (siehe §4)? |
+| **31.08.2026** (Mo) | **Monats-Stichtag.** Der erste Lauf danach bildet das August-Ranking. | Erster Stichtag *nach* #16 — hier greift die Überschuss-Ampel zum ersten Mal mit echten Zahlen. Danach prüfen: Tragen beide Märkte `riskfree_12m ≠ null`? Steht auf der Seite „über Geldmarkt" statt des Umstellungs-Hinweises? Kam der Ranking-Push an? Der Probe-Push vom 08.08. belegt Thema und Sendeweg — `push_new_ranking` baut aber eine andere Nachricht und ist bisher nur durch Unit-Tests gedeckt. |
 | **01.09.2026** | Erster Vergleich zweier Monats-Ranglisten (Juli → August). | Ab hier lässt sich zum ersten Mal sehen, wie stark die Top-5 wechseln. |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Vorher gibt es nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **laufend, montags** | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
@@ -84,26 +86,7 @@ nicht dokumentiert (bei #1–#3 deshalb „—").
 
 ## 4. Offene Punkte
 
-**1. ntfy-Push ist nie nachweislich angekommen.** *(offen, mit Belegen)*
-
-- Das Secret ist gesetzt: im Lauf-Protokoll steht `NTFY_TOPIC: ***` — GitHub
-  maskiert nur belegte Secrets.
-- Der Code ist gehärtet (#9): Topic wird `strip`-t und gegen
-  `\A[-_A-Za-z0-9]{1,64}\Z` geprüft, bevor gesendet wird; der Antwort-Body
-  landet redigiert im Protokoll.
-- Die Verdrahtungsprobe existiert (#13): `Momentum-Lauf` → `testpush`.
-- **Aber:** Ein echter Ranking-Push ging genau einmal raus — in Lauf 2 am
-  02.08., beim ersten Einfrieren (`git log --diff-filter=A -- data/rankings/`
-  → nur `07cbedd`, Lauf 2). Das war **vor** der Härtung aus #9, und dieser
-  Push scheiterte laut externem Befund mit `HTTP 400 topic invalid`.
-  Seither wurde kein neues Ranking gebildet, also auch kein Push versendet.
-  Im geprüften Lauf 13 (04.08.) steht keine Push-Zeile im Protokoll — die
-  Probe war dort nicht eingeschaltet.
-- **Nächster Schritt:** einmal `Momentum-Lauf` mit `testpush = true` starten
-  und im Protokoll nachsehen. Sonst fällt es erst am 31.08. auf, wenn die
-  einzige Benachrichtigung des Monats ausbleibt.
-
-**2. Der Umstellungs-Hinweis steht bis zum 31.08. auf der Seite.** *(erwartet, kein Fehler)*
+**1. Der Umstellungs-Hinweis steht bis zum 31.08. auf der Seite.** *(erwartet, kein Fehler)*
 
 Die Juli-Rankings sind eingefroren und tragen die Felder `riskfree_12m` /
 `ueberschuss_12m` nicht — sie entstanden vor #16. Die Anzeige sagt das
@@ -112,7 +95,7 @@ Der ehrliche Zwischenzustand verschwindet mit dem August-Ranking von selbst.
 **Nichts tun.** Insbesondere nicht die Juli-Dateien löschen, um „schöne"
 Zahlen zu erzwingen.
 
-**3. `^SP500TR`-Historientiefe im Ernstfall.** *(beobachten)*
+**2. `^SP500TR`-Historientiefe im Ernstfall.** *(beobachten)*
 
 Extern verifiziert waren 251 Tageskurse über das Jahr — genug. Reicht die
 Reihe an einem künftigen Stichtag nicht, greift der laute Abbruch
@@ -350,5 +333,6 @@ hier, damit niemand sie erneut aufmacht.
 | `docs/data/top5.json` auf die Seite bringen | Lauf 9 | `e695b54` |
 | Tacho, Chart-Verweise, Sektorzeilen, Live-Anker live | Läufe ab 03.08. | `docs/index.html`: 6 × `tta-`, 20 × `stockanalysis.com`, 20 × `data-quote` |
 | Konfluenz-Seite ausgeliefert | #14/#15 | `docs/konfluenz.html`, ☰-Eintrag in `docs/index.html` |
-| `NTFY_TOPIC` gesetzt | Easy | `NTFY_TOPIC: ***` im Lauf-Protokoll (nur belegte Secrets werden maskiert) — **aber** siehe §4.1: der Versand selbst ist unbelegt |
+| `NTFY_TOPIC` gesetzt | Easy | `NTFY_TOPIC: ***` im Lauf-Protokoll (nur belegte Secrets werden maskiert) |
+| ntfy-Versand nachgewiesen | Probe-Push, Lauf 19 am 08.08. 15:33 UTC | Lauf 19 `success`; Easy hat den Empfang auf dem Gerät bestätigt. Die Probe geht durch **denselben** `push()` wie jeder echte Push (`notify.push_test`) — sie belegt damit Thema, Sendeweg und Fehlerbehandlung, nicht nur einen Sonderpfad. Damit ist der `HTTP 400 topic invalid` aus Lauf 2 (02.08., vor der Härtung aus #9) abgehakt. |
 | Score auf 50/50 vor dem ersten Lauf | #8, gemergt 20:39 UTC, Ranking entstand 20:47 UTC | `f10dad9` vs. `07cbedd` |
