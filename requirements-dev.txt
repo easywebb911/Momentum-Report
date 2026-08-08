@@ -1,0 +1,16 @@
+# Werkzeuge fuer die Tests -- feste Versionen, aus demselben Grund wie in
+# requirements.txt: ein unbemerkter Bibliotheks-Sprung waere ein stiller
+# Wechsel der Messgrundlage.
+#
+# Das gilt hier besonders fuer playwright: die 390-px-Pruefung ist eine
+# MESSUNG im echten Browser. Springt der Browser oder die Steuerbibliothek
+# unbemerkt, aendert sich, was "passt auf 390 px" ueberhaupt bedeutet --
+# und der Test wuerde weiter gruen melden, nur eben etwas anderes.
+#
+# pyyaml brauchen ausschliesslich die Workflow-Tests, die die YAML-Dateien
+# selbst einlesen. Bewusst hier und nicht als importorskip im Test: ein
+# Test, der sich bei fehlender Abhaengigkeit still ueberspringt, ist genau
+# der stille Rueckfall, den dieses Projekt nirgends duldet.
+pytest==9.1.1
+pyyaml==6.0.1
+playwright==1.62.0

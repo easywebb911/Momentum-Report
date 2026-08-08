@@ -217,7 +217,7 @@ aktuellen Betriebszustand führt `SESSION_HANDOVER.md`.
 ## Lokal
 
 ```bash
-pip install -r requirements.txt pytest
+pip install -r requirements.txt -r requirements-dev.txt
 PYTHONPATH=src python -m pytest                            # ohne Netz
 PYTHONPATH=src python -m pytest tests/design               # Layout im Browser
 PYTHONPATH=src python -m pytest -m network tests/network   # braucht Netz
