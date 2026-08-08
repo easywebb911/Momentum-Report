@@ -5,13 +5,15 @@ Deutschland) die fünf Titel mit dem stärksten Momentum nach einer
 veröffentlichten, nachgerechneten Methode — und sagt gleichzeitig deutlich,
 was es damit **nicht** behauptet.
 
+Betriebszustand, offene Punkte und Wiedervorlagen stehen in
+[`SESSION_HANDOVER.md`](SESSION_HANDOVER.md).
+
 **Tragendes Prinzip: Literaturtreue ersetzt Validierung.** Jede Zutat des
 Scores hat eine Primärquelle — im Code-Kommentar *und* auf der
 Methodik-Seite. Die Tests beweisen „rechnet exakt die dokumentierte Formel",
 niemals „trifft es".
 
-Seite: `https://easywebb911.github.io/Momentum-Report/` (nach Aktivierung
-von GitHub Pages, siehe unten)
+Seite: `https://easywebb911.github.io/Momentum-Report/`
 
 ## Was gerechnet wird
 
@@ -33,9 +35,15 @@ wäre eine unbelegte Setzung. Damit die Mischung sichtbar bleibt, führt jeder
 Titel **zusätzlich beide Teil-Ränge** (`rank_12_1`, `rank_52w`) — auf der
 Karte als „3. von 470".
 
-Dazu je Markt eine **Trend-Ampel** (Moskowitz/Ooi/Pedersen 2012): steht der
-Index über zwölf Monate im Minus, erscheint eine Warnung (Daniel &
-Moskowitz 2016). Reine Anzeige — sie greift nie ins Ranking ein.
+Dazu je Markt eine **Trend-Ampel** (Moskowitz/Ooi/Pedersen 2012): brachte
+der Index über zwölf Monate **weniger als der Geldmarkt**, erscheint eine
+Warnung (Daniel & Moskowitz 2016). Gemessen wird die Rendite *über* dem
+kurzfristigen Zins — für den Dollar aus `^IRX`, für den Euro aus dem
+€STR-Datenportal der EZB; das Tagesmittel über die zwölf Monate ist eine
+ausdrücklich benannte Näherung. Ist eine Zinsquelle nicht erreichbar,
+rechnet das Kriterium ohne Abzug weiter und die Anzeige sagt genau das.
+Beide Indizes sind Performance-Indizes (DAX, S&P 500 Total Return). Reine
+Anzeige — sie greift nie ins Ranking ein.
 
 ## Der monatliche Stichtag
 
@@ -121,13 +129,18 @@ src/momentum/
   config.py      alle Stellschrauben als benannte Konstanten
   scoring.py     die Rechenkerne (reine Funktionen, kein Netz)
   ranking.py     Stichtags-Mechanik, Handelbarkeits-Filter, Einfrieren
-  data.py        einzige Stelle mit Netzzugriff (yfinance)
+  data.py        Kursabruf (yfinance)
+  riskfree.py    Geldmarktsatz fuer die Trend-Ampel (^IRX, EZB-CSV)
+  universe.py    Universums-Datei lesen und pruefen (default-deny)
+  meta.py        beschreibende Angaben je Ticker (fail-soft)
+  build_pages.py Methodik- und Konfluenz-Seite erzeugen
   render.py      HTML für docs/ — Methodik-Seite wird aus sources.py erzeugt
   notify.py      ntfy-Push
   run.py         Einstiegspunkt des Laufs
 universe/        committete statische Listen, Status VERIFIED + Herkunft
 data/rankings/   die eingefrorenen Monats-Rankings (JSON, ohne Zeitstempel)
 docs/            die veröffentlichte Seite (GitHub Pages)
+docs/data/top5.json  die eingefrorenen Top-5 als eigene Datei (additiv)
 tools/           Bootstrap für die Universums-Listen
 tests/unit       ohne Netz, mit von Hand nachgerechneten Sollwerten
 tests/design     Layout-Messung im echten Browser bei 390 px
@@ -155,6 +168,7 @@ des Browsers — ohne diesen Link wäre die Methodik-Seite eine Sackgasse.
 | **Neu laden** | holt dieselbe Seite frisch (Cache-Brecher am Zeitstempel) und tauscht den Inhalt aus — ohne die Seite neu zu öffnen |
 | **Neu berechnen** | stößt den `Momentum-Lauf` per `workflow_dispatch` auf `main` an und verfolgt ihn bis zum Ende |
 | **Sperren** | verwirft den gespeicherten Zugriffs-Token sofort |
+| **Konfluenz** | zeigt die eigenen Top-5 neben den Long-Kandidaten des Elliott-Reports — **ohne** irgendetwas zu verrechnen |
 
 **Neu berechnen** braucht einen **Fine-grained Personal Access Token** —
 nur für dieses Repository, mit *Actions: Read and write* und *Contents:
@@ -176,7 +190,11 @@ Während der Lauf läuft, zeigt ein Banner unten die Sekunden. Es zählt
 das Actions-Protokoll; nach 10 Minuten ohne Ergebnis sagt es genau das.
 Läuft der Lauf durch, werden die Daten geholt und die Seite aktualisiert.
 
-## Einrichtung (einmalig, in der GitHub-Oberfläche)
+## Einrichtung (einmalig, in der GitHub-Oberfläche) — erledigt
+
+Diese vier Schritte sind seit dem 02./03.08.2026 abgeschlossen; sie stehen
+hier als Bauanleitung für den Wiederaufbau, nicht als offene Aufgabe. Den
+aktuellen Betriebszustand führt `SESSION_HANDOVER.md`.
 
 1. **GitHub Pages aktivieren** — Settings → Pages → Source:
    *Deploy from a branch* → Branch `main`, Ordner `/docs`.
