@@ -28,6 +28,7 @@ from .config import (
     Market,
 )
 from .data import PriceBundle
+from .kursvergleich import NICHT_VORGESEHEN, Vergleich
 from .riskfree import QUELLE_FEHLT
 from .scoring import (
     InsufficientHistory,
@@ -137,12 +138,18 @@ def build_ranking(
     asof: Date,
     *,
     riskfree: tuple[float | None, str] = (None, QUELLE_FEHLT),
+    kursvergleich: Vergleich | None = None,
 ) -> dict:
     """Das vollstaendige, eingefrorene Monats-Ranking eines Marktes.
 
     `riskfree` ist (Satz oder None, Herkunftstext) und geht AUSSCHLIESSLICH
     in die Trend-Ampel. Score, Perzentile und Rangfolge sehen den Zins nie
     -- das haelt tests/unit/test_trend_ueberschuss.py fest.
+
+    `kursvergleich` ist das Verdikt der zweiten Kursquelle und wird hier
+    NUR mitgeschrieben. Es geht in keine Kennzahl ein -- weder in Score,
+    Perzentil, Rang, Kurs noch Trend-Ampel. Ein bereits verweigerter
+    Vergleich kommt hier gar nicht erst an: der Lauf bricht vorher ab.
 
     Reihenfolge der Schritte ist inhaltlich bedeutsam:
       1. Handelbarkeits-Filter (Liquiditaet) -- reduziert nur die Auswahl
@@ -258,6 +265,13 @@ def build_ranking(
             "ueberschuss_12m": round(ueberschuss, 8),
             "warnung": ueberschuss < 0,
         },
+        # Additiv: das Verdikt der zweiten, unabhaengigen Kursquelle. Rein
+        # beschreibend -- keine Zahl darueber speist irgendetwas. Fehlt der
+        # Vergleich (US), steht hier ein "entfallen" mit dem Grund, nie ein
+        # stilles Nichts.
+        "kursvergleich": (
+            kursvergleich or Vergleich.entfaellt(NICHT_VORGESEHEN)
+        ).als_report(),
         "abdeckung": {
             "universum": len(universe_tickers),
             "mit_kursen": len(delivered),

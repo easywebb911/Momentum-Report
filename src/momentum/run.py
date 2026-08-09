@@ -25,6 +25,15 @@ from pathlib import Path
 
 from .config import HISTORY_DAYS, MARKETS, TOP_N, Market
 from .data import PriceBundle, download_prices
+from .ishares import ISHARES_DE, QuelleUnbrauchbar, lade_bestandsliste, parse_ishares_holdings
+from .kursvergleich import (
+    ABGESCHALTET,
+    NICHT_VORGESEHEN,
+    Vergleich,
+    abbruchtext,
+    kurzfassung_aus_report,
+    vergleiche,
+)
 from .notify import push_new_ranking, push_run_failed, push_test
 from .ranking import (
     RANKING_DIR,
@@ -95,6 +104,57 @@ def _zins_reihe(start: Date, end: Date, *, downloader=None) -> dict[Date, float]
     return buendel.adjusted.get(IRX_TICKER) or {}
 
 
+def _bestandslisten(heute: Date, *, oeffner=None) -> list:
+    """Die drei iShares-Bestandslisten holen und mit dem ECHTEN Parser lesen.
+
+    Derselbe Parser samt Gattern, aus dem auch das Universum entsteht
+    (momentum/ishares.py) -- ein zweiter Leser wuerde einen anderen
+    Vertrag pruefen als den, der zaehlt.
+
+    Die ISIN-Reserve bleibt bewusst AUS: sie loeste je Zeile eine
+    Yahoo-Suche aus, und fuer den Kursvergleich ist ein Titel ohne Ticker
+    ohnehin nicht vergleichbar.
+    """
+    oeffner = oeffner or lade_bestandsliste
+    return [
+        parse_ishares_holdings(oeffner(quelle), quelle.index_name, heute=heute)
+        for quelle in ISHARES_DE
+    ]
+
+
+def _kursvergleich(
+    market: Market,
+    bundle: PriceBundle,
+    universum: tuple[str, ...],
+    heute: Date,
+    *,
+    oeffner=None,
+    aktiv: bool = True,
+) -> Vergleich:
+    """Das Verdikt der zweiten Kursquelle -- fail-soft, aber nie still.
+
+    Jeder Fehlschlag auf dem Weg (Datei nicht abrufbar, Format geaendert,
+    Gatter gerissen) wird zu "entfallen" MIT Grund, nicht zu einem stillen
+    Durchwinken und nicht zu einem Abbruch: dass die zweite Quelle heute
+    nicht antwortet, sagt nichts ueber die Richtigkeit der ersten.
+    Verweigert wird nur, wenn beide Quellen antworten und sich
+    widersprechen.
+    """
+    if market.key != "de":
+        return Vergleich.entfaellt(NICHT_VORGESEHEN)
+    if not aktiv:
+        return Vergleich.entfaellt(ABGESCHALTET)
+    try:
+        befunde = _bestandslisten(heute, oeffner=oeffner)
+    except QuelleUnbrauchbar as exc:
+        return Vergleich.entfaellt(f"Bestandsliste unbrauchbar — {exc}")
+    except Exception as exc:  # noqa: BLE001 - die Zweitquelle darf nie der Grund sein
+        return Vergleich.entfaellt(
+            f"Bestandslisten nicht lesbar ({type(exc).__name__}: {exc})"
+        )
+    return vergleiche(befunde, bundle.close, universum=set(universum))
+
+
 def process_market(
     market: Market,
     today: Date,
@@ -103,6 +163,8 @@ def process_market(
     ranking_root: Path = RANKING_DIR,
     data_root: Path = DATA_DIR,
     zins_oeffner=None,
+    bestand_oeffner=None,
+    kursvergleich_aktiv: bool = True,
 ) -> tuple[MarketView, dict | None, dict]:
     """Einen Markt verarbeiten. Gibt (Ansicht, neues Ranking oder None, Status)."""
     universe = load_universe(market.universe_file)
@@ -133,6 +195,21 @@ def process_market(
             )
         bundle = download_prices(list(universe.tickers), start, end, downloader=downloader)
         status["daten"] = bundle.stats.as_dict()
+
+        # --- Das Vergleichsgatter, VOR jeder Ranking-Bildung --------------
+        # Die Reihenfolge ist nicht Geschmack: verweigert der Vergleich,
+        # darf kein Ranking entstanden und erst recht keins geschrieben
+        # worden sein.
+        vergleich = _kursvergleich(
+            market, bundle, universe.tickers, today,
+            oeffner=bestand_oeffner, aktiv=kursvergleich_aktiv,
+        )
+        for zeile in vergleich.protokoll():
+            log(f"[{market.key}] {zeile}")
+        status["kursvergleich"] = vergleich.als_status()
+        if vergleich.verweigert:
+            raise RankingNotPossible(abbruchtext(vergleich, market.key))
+
         # Der Geldmarktsatz gehoert zur Waehrung; fuer USD kommt er aus
         # derselben Kursquelle, fuer EUR aus der EZB (siehe riskfree.py).
         irx = _zins_reihe(start, end, downloader=downloader) if market.currency == "USD" else {}
@@ -153,7 +230,8 @@ def process_market(
             else:
                 log(f"[{market.key}] Geldmarkt 12M {zins[0] * 100:.2f} % ({zins[1]})")
             ranking = build_ranking(
-                market, universe, bundle, index_series, asof, riskfree=zins
+                market, universe, bundle, index_series, asof,
+                riskfree=zins, kursvergleich=vergleich,
             )
             write_ranking(ranking, ranking_root)
             new_ranking = ranking
@@ -261,9 +339,16 @@ def _github_output(key: str, value: str) -> None:
         handle.write(f"{key}={value}\n")
 
 
-def main(argv: list[str] | None = None, *, downloader=None, zins_oeffner=None) -> int:
-    """`downloader` und `zins_oeffner` sind die Test-Naehte: ohne sie laufen
-    der echte Kursabruf und der echte EZB-Abruf."""
+def main(
+    argv: list[str] | None = None,
+    *,
+    downloader=None,
+    zins_oeffner=None,
+    bestand_oeffner=None,
+) -> int:
+    """`downloader`, `zins_oeffner` und `bestand_oeffner` sind die
+    Test-Naehte: ohne sie laufen der echte Kursabruf, der echte EZB-Abruf
+    und der echte Abruf der iShares-Bestandslisten."""
     parser = argparse.ArgumentParser(description="Momentum-Report Lauf")
     parser.add_argument("--today", help="Laufdatum JJJJ-MM-TT (nur fuer Tests)")
     parser.add_argument(
@@ -273,6 +358,16 @@ def main(argv: list[str] | None = None, *, downloader=None, zins_oeffner=None) -
         "--testpush",
         action="store_true",
         help="Zusaetzlich EINEN leisen Probe-Push verschicken (Verdrahtung pruefen)",
+    )
+    parser.add_argument(
+        "--ohne-kursvergleich",
+        action="store_true",
+        help=(
+            "Das DE-Vergleichsgatter aussetzen. NOTAUS von Hand: falls das "
+            "Gatter am Stichtag faelschlich verweigert, kommt der Monat so "
+            "trotzdem zustande. Der Verzicht steht sichtbar im Report und "
+            "im Push — still ausgesetzt wird nie."
+        ),
     )
     args = parser.parse_args(argv)
     today = Date.fromisoformat(args.today) if args.today else Date.today()
@@ -284,7 +379,11 @@ def main(argv: list[str] | None = None, *, downloader=None, zins_oeffner=None) -
 
     for market in MARKETS:
         view, new_ranking, status = process_market(
-            market, today, downloader=downloader, zins_oeffner=zins_oeffner
+            market, today,
+            downloader=downloader,
+            zins_oeffner=zins_oeffner,
+            bestand_oeffner=bestand_oeffner,
+            kursvergleich_aktiv=not args.ohne_kursvergleich,
         )
         views.append(view)
         statuses.append(status)
@@ -314,6 +413,7 @@ def main(argv: list[str] | None = None, *, downloader=None, zins_oeffner=None) -
 
     if new_rankings and not args.no_push:
         entries = []
+        hinweise = []
         for ranking in new_rankings:
             top_row = ranking["rangliste"][0]
             entries.append(
@@ -325,7 +425,18 @@ def main(argv: list[str] | None = None, *, downloader=None, zins_oeffner=None) -
                     "score": top_row["score"],
                 }
             )
-        push_new_ranking(entries)
+            # Ein entfallener oder nur knapp bestandener Kursvergleich
+            # gehoert in dieselbe Nachricht, nicht in eine zweite: sonst
+            # steht die gute Nachricht ohne ihre Einschraenkung da.
+            # "entfallen, weil fuer diesen Markt nicht vorgesehen" waere
+            # dagegen bei jedem Push dieselbe Zeile -- also weglassen.
+            block = ranking.get("kursvergleich") or {}
+            if block.get("grund") == NICHT_VORGESEHEN:
+                continue
+            satz = kurzfassung_aus_report(block) if block else None
+            if satz:
+                hinweise.append(f"{ranking['markt_name']}: {satz}")
+        push_new_ranking(entries, hinweise=hinweise)
 
     # Verdrahtungsprobe. Sie kommt NUR auf ausdrueckliche Anforderung, laeuft
     # zusaetzlich zum normalen Lauf und ruehrt keine Daten an. --no-push hat

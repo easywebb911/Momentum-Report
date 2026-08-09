@@ -247,11 +247,17 @@ def push(
     return ok
 
 
-def push_new_ranking(entries: list[dict], **kwargs) -> bool:
+def push_new_ranking(entries: list[dict], *, hinweise: list[str] | None = None, **kwargs) -> bool:
     """Push (1): neues Monats-Ranking, mit Top-Titel je Markt.
 
     entries: [{"markt": "USA", "stichtag": "2026-07-31", "top": "NVDA",
                "top_name": "NVIDIA", "score": 100.0}, ...]
+
+    `hinweise` sind Einschraenkungen zu genau DIESEM Ranking -- heute: ein
+    entfallener oder nur knapp bestandener Kursvergleich. Sie stehen
+    bewusst in DIESER Nachricht und nicht in einer zweiten: die gute
+    Nachricht ohne ihre Einschraenkung zu verschicken hiesse, die
+    Einschraenkung zu verstecken.
     """
     if not entries:
         return False
@@ -262,6 +268,9 @@ def push_new_ranking(entries: list[dict], **kwargs) -> bool:
             f"{entry['markt']}: {entry['top']} — {entry['top_name']} "
             f"(Score {entry['score']:.1f})"
         )
+    if hinweise:
+        lines.append("")
+        lines.extend(hinweise)
     lines += [
         "",
         "Rangfolge bleibt bis zum naechsten Stichtag eingefroren.",

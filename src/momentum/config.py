@@ -11,7 +11,12 @@ from dataclasses import dataclass
 
 from .sources import SCORE_COMPONENT_SOURCES
 
-SCHEMA_VERSION = 1
+# 1 -> 2: die Ranking-Datei traegt zusaetzlich den Block "kursvergleich"
+# (Verdikt der zweiten, unabhaengigen Kursquelle). Rein additiv -- kein
+# bestehendes Feld hat sich geaendert. Die Zahl wird trotzdem erhoeht: ein
+# Leser, der Monate vergleicht, soll am Wert sehen koennen, ab wann es den
+# Block gibt, statt sein Fehlen als "kein Vergleich gelaufen" zu deuten.
+SCHEMA_VERSION = 2
 
 # --- Score-Zusammensetzung ------------------------------------------------
 # 50/50 = Konvention der Komposit-Literatur; ein belegtes optimales

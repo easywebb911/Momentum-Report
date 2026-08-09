@@ -572,6 +572,59 @@ def test_alle_zwoelf_deutschen_monatsnamen_ohne_leerzeichen(monat, nummer):
     assert bu._datum_aus_text(f'"15.{monat}2026"') == Date(2026, nummer, 15)
 
 
+# ------------------------------------------- Die ABGEKUERZTE Schreibweise
+#
+# Am 08.08.2026 extern verifiziert: die EXS1-Datei trug an diesem Tag den
+# Vorspann `Fondsposition per,"06.Aug.2026"` — abgekuerzter deutscher
+# Monatsname MIT Punkten. Beim Bau des Parsers gab es nur die
+# ausgeschriebene Form ("31.Juli2026").
+#
+# BEFUND ZUR EINORDNUNG: Der Parser liest diese Form BEREITS richtig, und
+# das ist nicht Theorie — der Vertragstest hat am 09.08.2026 auf dem
+# Runner alle drei echten Dateien gelesen und fuer jede "Stichtag
+# 2026-08-06" gemeldet. Der Grund ist die Aufloesung ueber die ersten drei
+# Zeichen des Monatsnamens: sie trifft die abgekuerzte Form genauso wie
+# die ausgeschriebene.
+#
+# Die Tests unten aendern daran also nichts — sie nageln es fest. Genau
+# das ist ihr Wert: die Zeile darunter im Parser ist eine, die man beim
+# naechsten Umbau fuer eine Vereinfachung halten koennte.
+
+VORSPANN_ABGEKUERZT = 'Fondsposition per,"06.Aug.2026"'
+
+DEUTSCHE_KUERZEL = [
+    "Jan", "Feb", "Mrz", "Apr", "Mai", "Jun",
+    "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
+]
+
+
+def test_die_echte_zeile_vom_08_08_2026_wird_gelesen():
+    """Woertlich so, wie iShares sie an diesem Tag ausgeliefert hat."""
+    assert bu._datum_aus_text(VORSPANN_ABGEKUERZT) == Date(2026, 8, 6)
+
+
+def test_die_echte_zeile_traegt_auch_eine_ganze_datei():
+    """Nicht nur die Zeile — die vollstaendige Datei mit diesem Vorspann."""
+    datei = echte_datei(
+        [("SAP", "SAP SE")], vorspann=f'{VORSPANN_ABGEKUERZT}\n \n'
+    )
+    befund = _de_lade(datei, heute=Date(2026, 8, 10))
+    assert befund.bestand_stand == Date(2026, 8, 6)
+    assert [k.ticker for k in befund.kandidaten] == ["SAP.DE"]
+
+
+@pytest.mark.parametrize("nummer,kuerzel", list(enumerate(DEUTSCHE_KUERZEL, 1)))
+@pytest.mark.parametrize("punkt", ["", "."], ids=["ohne-Punkt", "mit-Punkt"])
+def test_alle_zwoelf_monate_abgekuerzt_mit_und_ohne_punkt(nummer, kuerzel, punkt):
+    assert bu._datum_aus_text(f'"06.{kuerzel}{punkt}2026"') == Date(2026, nummer, 6)
+
+
+@pytest.mark.parametrize("schreibweise,nummer", [("Mär", 3), ("März", 3), ("Sept", 9)])
+def test_die_umlaut_und_vier_zeichen_kuerzel_greifen_auch(schreibweise, nummer):
+    """März wird mal "Mrz", mal "Mär" abgekuerzt; September mal "Sept"."""
+    assert bu._datum_aus_text(f'"06.{schreibweise}.2026"') == Date(2026, nummer, 6)
+
+
 def test_wochenenden_zaehlen_nicht_als_handelstage():
     # Freitag -> Montag ist EIN Handelstag, nicht drei Kalendertage
     assert bu.handelstage_zwischen(Date(2026, 7, 31), Date(2026, 8, 3)) == 1

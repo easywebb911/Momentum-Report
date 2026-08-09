@@ -43,18 +43,43 @@ def us_html(zeilen: int = 503, symbol_spalte: str = "Symbol") -> str:
     return f"<html><body><table>{kopf}{koerper}</table></body></html>"
 
 
-def ishares_csv(index: str, zeilen: int, stand: Date | None) -> str:
-    kopfzeile = (
-        "Emittententicker;Name;Sektor;Anlageklasse;Marktwert;Gewichtung (%);"
-        "Nominalwert;Nominale;ISIN;Kurs;Standort;Boerse;Waehrung\n"
-    )
+def ishares_csv(
+    index: str,
+    zeilen: int,
+    stand: Date | None,
+    *,
+    kurs: str = "10,00",
+    ohne_kurs_spalte: bool = False,
+) -> str:
+    """Eine Bestandsliste im deutschen Format.
+
+    `kurs` setzt die Kurs-Spalte (ein String, damit auch unlesbare
+    Schreibweisen pruefbar sind); `ohne_kurs_spalte` laesst sie ganz weg --
+    der Fall, den der Vertragstest seit dem DE-Vergleichsgatter fangen soll.
+    """
+    spalten = ["Emittententicker", "Name", "Sektor", "Anlageklasse", "Marktwert",
+               "Gewichtung (%)", "Nominalwert", "Nominale", "ISIN"]
+    if not ohne_kurs_spalte:
+        spalten.append("Kurs")
+    spalten += ["Standort", "Boerse", "Waehrung"]
+    kopfzeile = ";".join(spalten) + "\n"
+
     vorspann = f"Fondsposition per {stand.strftime('%d.%b%Y')}\n\n" if stand else "\n\n"
+
+    def zeile(kennung, name, sektor, klasse, marktwert, gewicht, isin, preis, ort, boerse):
+        felder = [kennung, name, sektor, klasse, marktwert, gewicht, "1", "1", isin]
+        if not ohne_kurs_spalte:
+            felder.append(preis)
+        felder += [ort, boerse, "EUR"]
+        return ";".join(felder) + "\n"
+
     reihen = "".join(
-        f"AKT{i:03d};Firma {i};Industrie;Aktien;1.000,00;1,00;1;1;DE000{i:07d};"
-        f"10,00;Deutschland;Xetra;EUR\n"
+        zeile(f"AKT{i:03d}", f"Firma {i}", "Industrie", "Aktien", "1.000,00", "1,00",
+              f"DE000{i:07d}", kurs, "Deutschland", "Xetra")
         for i in range(zeilen)
     )
-    bargeld = "XEUR;EUR CASH;Bargeld;Bargeld und/oder Derivate;1,00;0,01;1;1;-;1;-;-;EUR\n"
+    bargeld = zeile("XEUR", "EUR CASH", "Bargeld", "Bargeld und/oder Derivate",
+                    "1,00", "0,01", "-", "1", "-", "-")
     return vorspann + kopfzeile + reihen + bargeld
 
 
@@ -143,6 +168,46 @@ def test_ishares_leer_ist_rot(dax):
     Verdikt weichzuspuelen."""
     v = vt.pruefe_ishares(ishares_csv("DAX", 0, None), dax, HEUTE)
     assert not v.ok
+
+
+# ------------------------------------------------- 2b. Die Kurs-Spalte
+#
+# Seit dem DE-Vergleichsgatter ist sie tragend: ohne sie gibt es am
+# Stichtag keine zweite Meinung. Sie hier zu pruefen ist genau der Zweck
+# dieses Tests -- der Ausfall wird angekuendigt statt am Stichtag entdeckt.
+
+
+def test_ishares_ohne_kurs_spalte_ist_rot(dax):
+    v = vt.pruefe_ishares(
+        ishares_csv("DAX", 40, Date(2026, 8, 26), ohne_kurs_spalte=True), dax, HEUTE
+    )
+    assert not v.ok
+    assert "Kurs" in v.vertrag
+    assert "0 von 40" in v.befund
+
+
+def test_ishares_mit_unlesbarer_zahlenschreibweise_ist_rot(dax):
+    """"1,234" ist im deutschen Format 1,234 und im englischen 1234. Der
+    Parser raet nicht — und der Vertragstest meldet, dass er nicht kann."""
+    v = vt.pruefe_ishares(
+        ishares_csv("DAX", 40, Date(2026, 8, 26), kurs="1,234"), dax, HEUTE
+    )
+    assert not v.ok
+    assert "NICHT eindeutig" in v.befund
+
+
+def test_ishares_gesund_zaehlt_die_kurse_mit(dax):
+    v = vt.pruefe_ishares(ishares_csv("DAX", 40, Date(2026, 8, 26)), dax, HEUTE)
+    assert v.ok and "40 Kurse" in v.befund
+
+
+def test_ein_einzelner_titel_ohne_kurs_bricht_den_vertrag_nicht(dax):
+    """Eine ausgesetzte Position darf keinen Alarm ausloesen — der Vertrag
+    haengt an der SPALTE, nicht an jeder einzelnen Zelle."""
+    csv = ishares_csv("DAX", 40, Date(2026, 8, 26))
+    csv = csv.replace(";10,00;Deutschland;Xetra;EUR\n", ";-;Deutschland;Xetra;EUR\n", 1)
+    v = vt.pruefe_ishares(csv, dax, HEUTE)
+    assert v.ok and "39 Kurse" in v.befund
 
 
 # ---------------------------------------------------------- 3. Kursquelle
@@ -238,17 +303,30 @@ def gesunde_naehte():
     }
 
 
-def _kurs_stub(*, alle: bool):
+def _kurs_stub(*, alle: bool, close: float = 10.0):
+    """Kursquelle ohne Netz.
+
+    Sie liefert das gesamte angefragte Fenster und nicht nur den letzten
+    Tag: der Kursvergleich braucht den Kurs am STICHTAG DER BESTANDSLISTE,
+    und der liegt regelmaessig ein bis zwei Handelstage vor dem Lauftag.
+    Mit einer Ein-Tages-Reihe waere der Vergleich in jedem Test still
+    "nicht moeglich" -- also nie wirklich geprueft.
+    """
     import pandas as pd
 
     def downloader(batch, start, end):
+        tage = [start + _dt.timedelta(days=i) for i in range((end - start).days + 1)]
         frames = {}
         for ticker in batch:
             if not alle and ticker not in vt.TRAGENDE_REIHEN:
                 continue
             frames[ticker] = pd.DataFrame(
-                {"Close": [10.0], "Adj Close": [10.0], "Volume": [1000.0]},
-                index=pd.DatetimeIndex([pd.Timestamp(end)]),
+                {
+                    "Close": [close] * len(tage),
+                    "Adj Close": [close] * len(tage),
+                    "Volume": [1000.0] * len(tage),
+                },
+                index=pd.DatetimeIndex([pd.Timestamp(d) for d in tage]),
             )
         if not frames:
             return pd.DataFrame()
@@ -292,6 +370,61 @@ def test_auch_ein_gescheiterter_push_laesst_den_lauf_rot_enden():
     naehte = gesunde_naehte()
     naehte["hole_estr"] = lambda: ""
     assert vt.main(["--heute", HEUTE.isoformat()], melder=lambda _t: False, **naehte) == 1
+
+
+def test_der_kursvergleich_wird_vor_dem_stichtag_mitgeprueft():
+    """Der ganze Sinn: Widersprechen sich die beiden Kursquellen, erfaehrt
+    man es am 27. — nicht am 31., wenn kein Ranking mehr entsteht."""
+    verdikte = vt.sammle_verdikte(HEUTE, **gesunde_naehte())
+    vergleich = [v for v in verdikte if v.quelle == "Kursvergleich DE"]
+    assert len(vergleich) == 1, "der Kursvergleich fehlt in der Pruefliste"
+    assert vergleich[0].ok
+    assert "Titel verglichen" in vergleich[0].befund
+    assert "0 ueber der Toleranz" in vergleich[0].befund
+
+
+def test_ein_widerspruch_zwischen_den_kursquellen_ist_rot():
+    """Bestandsliste sagt 10,00, die Kursquelle sagt 20,00 — bei jedem
+    Titel. Genau der Fall, der den Stichtag verweigern wuerde."""
+    naehte = gesunde_naehte()
+    naehte["downloader"] = _kurs_stub(alle=True, close=20.0)
+    verdikte = vt.sammle_verdikte(HEUTE, **naehte)
+    vergleich = next(v for v in verdikte if v.quelle == "Kursvergleich DE")
+    assert not vergleich.ok
+    assert "iShares 10.0000 vs. Kursquelle 20.0000" in vergleich.befund
+    # Und die Handreichung nennt den Notausgang.
+    assert "ohne_kursvergleich" in vt.handreichung("Kursvergleich DE")
+
+
+def test_ein_nicht_moeglicher_vergleich_ist_kein_bruch():
+    """Fehlt die Kurs-Spalte, ist das ein Bruch der EINZELNEN Datei (oben
+    geprueft) — der Vergleich selbst meldet dann "nicht durchfuehrbar" und
+    nicht "die Quellen widersprechen sich". Zwei verschiedene Aussagen."""
+    naehte = gesunde_naehte()
+    naehte["hole_ishares"] = lambda q: ishares_csv(
+        q.index_name, {"DAX": 40, "MDAX": 50, "TecDAX": 30}[q.index_name],
+        Date(2026, 8, 26), ohne_kurs_spalte=True,
+    )
+    verdikte = vt.sammle_verdikte(HEUTE, **naehte)
+    vergleich = next(v for v in verdikte if v.quelle == "Kursvergleich DE")
+    assert vergleich.ok
+    assert "nicht durchfuehrbar" in vergleich.befund
+
+
+def test_die_bestandslisten_werden_genau_einmal_geholt():
+    """Zwei Abrufe derselben Datei koennten zwei verschiedene Staende
+    erwischen — dann verglichen wir gegen etwas, das wir nie geprueft haben."""
+    naehte = gesunde_naehte()
+    gerufen = []
+    echt = naehte["hole_ishares"]
+
+    def zaehlend(quelle):
+        gerufen.append(quelle.index_name)
+        return echt(quelle)
+
+    naehte["hole_ishares"] = zaehlend
+    vt.sammle_verdikte(HEUTE, **naehte)
+    assert gerufen == ["DAX", "MDAX", "TecDAX"]
 
 
 def test_ein_abrufaussetzer_ist_selbst_ein_bruch():

@@ -64,6 +64,15 @@ class PriceBundle:
     # Ticker -> {Datum: Umsatz in Heimatwaehrung (Kurs wie gehandelt x Stueck)}
     turnover: dict[str, dict[Date, float]]
     stats: FetchStats
+    # Ticker -> {Datum: Schlusskurs WIE GEHANDELT, unbereinigt}
+    #
+    # Geht in KEINE Rechnung ein -- weder Score noch Rang noch Anzeige. Er
+    # existiert allein fuer den DE-Kursvergleich (siehe kursvergleich.py):
+    # die Bewertungskurse der iShares-Bestandslisten sind nicht
+    # dividendenbereinigt, und nur Gleiches darf gegen Gleiches gestellt
+    # werden. Der bereinigte Kurs laege nach jeder Dividende systematisch
+    # daneben und wuerde einen Bruch melden, wo keiner ist.
+    close: dict[str, dict[Date, float]] = field(default_factory=dict)
 
     def tickers(self) -> list[str]:
         return sorted(self.adjusted)
@@ -125,6 +134,7 @@ def download_prices(
     stats = FetchStats(requested=len(tickers))
     adjusted: dict[str, dict[Date, float]] = {}
     turnover: dict[str, dict[Date, float]] = {}
+    roh: dict[str, dict[Date, float]] = {}
 
     for batch in _chunks(sorted(set(tickers)), DOWNLOAD_CHUNK_SIZE):
         frame = None
@@ -151,6 +161,7 @@ def download_prices(
                 continue
             series_adj: dict[Date, float] = {}
             series_turnover: dict[Date, float] = {}
+            series_roh: dict[Date, float] = {}
             for stamp, row in sub.iterrows():
                 stats.rows_total += 1
                 day = stamp.date() if hasattr(stamp, "date") else stamp
@@ -161,13 +172,16 @@ def download_prices(
                     stats.rows_dropped_nonfinite += 1
                     continue
                 series_adj[day] = float(adj)
-                if is_finite(close) and is_finite(volume) and close > 0 and volume >= 0:
-                    series_turnover[day] = float(close) * float(volume)
+                if is_finite(close) and close > 0:
+                    series_roh[day] = float(close)
+                    if is_finite(volume) and volume >= 0:
+                        series_turnover[day] = float(close) * float(volume)
             if not series_adj:
                 stats.empty_tickers.append(ticker)
                 continue
             adjusted[ticker] = series_adj
             turnover[ticker] = series_turnover
+            roh[ticker] = series_roh
 
     stats.delivered = len(adjusted)
-    return PriceBundle(adjusted=adjusted, turnover=turnover, stats=stats)
+    return PriceBundle(adjusted=adjusted, turnover=turnover, stats=stats, close=roh)

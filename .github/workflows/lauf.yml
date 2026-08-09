@@ -23,6 +23,17 @@ on:
         required: false
         default: false
         type: boolean
+      # NOTAUSGANG fuer das DE-Vergleichsgatter. Es kann den Stichtags-Lauf
+      # verweigern, wenn sich Bestandsliste und Kursquelle widersprechen --
+      # richtig so, solange der Widerspruch echt ist. Sollte es sich am
+      # Stichtag als Fehlalarm erweisen, kommt der Monat mit diesem Feld
+      # trotzdem zustande. Der Verzicht wird NICHT verschwiegen: er steht
+      # im Report und im Push.
+      ohne_kursvergleich:
+        description: "DE-Kursvergleich aussetzen (Notausgang bei Fehlalarm)"
+        required: false
+        default: false
+        type: boolean
 
 # Laeufe nie parallel und nie abwuergen: ein halb geschriebenes Ranking
 # waere schlimmer als ein spaeter Lauf.
@@ -86,7 +97,8 @@ jobs:
           python -m momentum.run \
             ${{ inputs.datum && format('--today {0}', inputs.datum) || '' }} \
             ${{ inputs.ohne_push && '--no-push' || '' }} \
-            ${{ inputs.testpush && '--testpush' || '' }}
+            ${{ inputs.testpush && '--testpush' || '' }} \
+            ${{ inputs.ohne_kursvergleich && '--ohne-kursvergleich' || '' }}
 
       # --------------------------------------------------------------
       # Ergebnisse zurueckschreiben. Nur auf main, und mit
