@@ -80,6 +80,28 @@ def keine_zinsquelle_im_netz(monkeypatch):
     monkeypatch.setattr("momentum.riskfree.urllib.request.urlopen", verboten)
 
 
+@pytest.fixture(autouse=True)
+def keine_bestandsliste_im_netz(monkeypatch):
+    """Sperre: kein Test ruft iShares an.
+
+    Seit dem DE-Kursvergleich holt der STICHTAGS-Lauf die drei
+    Bestandslisten selbst. Ohne diese Sperre telefonierte jeder Lauf-Test
+    still nach draussen, und sein Ergebnis haenge am Netz. Wer den
+    Vergleich wirklich pruefen will, spielt die Dateien ueber
+    `bestand_oeffner` ein.
+
+    Die Sperre laesst den Lauf NICHT scheitern -- sie fuehrt genau in den
+    Fail-soft-Pfad ("Kursvergleich entfiel"), und dass der wirklich
+    fail-soft ist, ist selbst eine Zusage (siehe
+    tests/unit/test_kursvergleich.py).
+    """
+
+    def verboten(*_args, **_kwargs):
+        raise AssertionError("Test versucht, die iShares-Bestandslisten abzurufen")
+
+    monkeypatch.setattr("momentum.ishares.urllib.request.urlopen", verboten)
+
+
 # --------------------------------------------------------------------------
 # Ersatz fuer yfinance
 # --------------------------------------------------------------------------

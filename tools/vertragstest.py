@@ -57,6 +57,11 @@ from build_universe import (  # noqa: E402
 )
 from momentum.config import MARKETS_BY_KEY  # noqa: E402
 from momentum.data import download_prices  # noqa: E402
+from momentum.kursvergleich import (  # noqa: E402
+    TOLERANZ,
+    ZULASS_ABWEICHLER,
+    vergleiche,
+)
 from momentum.notify import push_vertrag_gebrochen  # noqa: E402
 from momentum.riskfree import EZB_URL, IRX_TICKER, parse_ezb_csv  # noqa: E402
 
@@ -94,6 +99,13 @@ ESTR_MAX_HANDELSTAGE = 5
 # Wie weit zurueck die Kursstichprobe geholt wird. Kurz genug, um schnell
 # zu sein; lang genug, dass Feiertage kein leeres Fenster ergeben.
 KURS_FENSTER_TAGE = 14
+
+# So viele Titel einer Bestandsliste muessen einen lesbaren Kurs tragen,
+# damit die Kurs-Spalte als vorhanden gilt. Nicht 100 %: eine einzelne
+# ausgesetzte oder frisch aufgenommene Position kann leer bleiben, ohne
+# dass der Vertrag gebrochen waere. Faellt die Spalte dagegen weg oder
+# wechselt ihre Zahlenschreibweise, sind es auf einen Schlag null.
+KURS_QUOTE_MINDESTENS = 0.90
 
 
 @dataclass(frozen=True)
@@ -163,25 +175,79 @@ def pruefe_ishares(inhalt: str, quelle: Bestandsquelle, heute: Date) -> Verdikt:
     unten, oben = ANZAHL_ERWARTET[quelle.index_name]
     vertrag = (
         f"Stichtag ≤ {MAX_ALTER_HANDELSTAGE} Handelstage alt, "
-        f"{unten}–{oben} Aktien-Zeilen, Ticker-Spalte traegt"
+        f"{unten}–{oben} Aktien-Zeilen, Ticker- und Kurs-Spalte tragen"
     )
+    wer = f"iShares {quelle.xetra} ({quelle.index_name})"
     try:
         befund = parse_ishares_holdings(inhalt, quelle.index_name, heute=heute)
     except QuelleUnbrauchbar as exc:
-        return Verdikt(f"iShares {quelle.xetra} ({quelle.index_name})", vertrag, False,
+        return Verdikt(wer, vertrag, False,
                        f"erwartet: {vertrag} — vorgefunden: {exc}")
     if not befund.kandidaten:
         return Verdikt(
-            f"iShares {quelle.xetra} ({quelle.index_name})", vertrag, False,
+            wer, vertrag, False,
             f"erwartet: aufloesbare Ticker — vorgefunden: {befund.aktien_zeilen} "
             f"Aktien-Zeilen, aber kein einziger Ticker lesbar",
         )
+    # Die Kurs-Spalte ist seit dem DE-Vergleichsgatter tragend: ohne sie
+    # gibt es am Stichtag keine zweite Meinung. Sie hier zu pruefen ist
+    # der ganze Zweck dieses Tests -- der Ausfall wird angekuendigt,
+    # statt am Stichtag aufzufallen.
+    mit_kurs = [k for k in befund.kandidaten if k.kurs is not None]
+    quote = len(mit_kurs) / len(befund.kandidaten)
+    if quote < KURS_QUOTE_MINDESTENS:
+        return Verdikt(
+            wer, vertrag, False,
+            f"erwartet: ≥ {KURS_QUOTE_MINDESTENS:.0%} der Titel mit lesbarem Kurs "
+            f"— vorgefunden: {len(mit_kurs)} von {len(befund.kandidaten)} "
+            f"({quote:.0%}), Zahlenschreibweise erkannt als "
+            f"{befund.kurs_konvention or 'NICHT eindeutig'}",
+        )
     stand = befund.bestand_stand.isoformat() if befund.bestand_stand else "—"
     return Verdikt(
-        f"iShares {quelle.xetra} ({quelle.index_name})", vertrag, True,
+        wer, vertrag, True,
         f"Stichtag {stand}, {befund.aktien_zeilen} Aktien-Zeilen, "
-        f"{len(befund.kandidaten)} Ticker",
+        f"{len(befund.kandidaten)} Ticker, {len(mit_kurs)} Kurse",
     )
+
+
+def pruefe_kursvergleich(befunde: list, roh_kurse: dict) -> Verdikt:
+    """Vertrag: Der DE-Kursvergleich wuerde den Stichtag NICHT verweigern.
+
+    Das ist der eigentliche Sinn dieses Tests, auf das neue Gatter
+    angewandt: Wenn sich die beiden Kursquellen widersprechen, soll man es
+    am 27. erfahren und nicht am 31., wenn kein Ranking entsteht.
+
+    Geprueft wird mit der ECHTEN Vergleichsfunktion des Laufs -- gleiche
+    Toleranz, gleicher Zulass, gleiche Waehrungs- und Stichtagsregeln.
+    Ein "entfallen" ist hier KEIN Bruch: es sagt, dass der Vergleich heute
+    nicht moeglich war, nicht dass eine Quelle luegt. Der Grund steht im
+    Befund und ist damit sichtbar.
+    """
+    vertrag = (
+        f"hoechstens {ZULASS_ABWEICHLER} Titel ueber {TOLERANZ * 100:.1f} % "
+        f"Abweichung zwischen Bestandsliste und Kursquelle"
+    )
+    vergleich = vergleiche(befunde, roh_kurse)
+    if vergleich.verdikt == "entfallen":
+        return Verdikt("Kursvergleich DE", vertrag, True,
+                       f"nicht durchfuehrbar: {vergleich.grund}")
+    groesste = max(
+        (abs(a.abweichung) for a in vergleich.abweichler), default=0.0
+    )
+    befund = (
+        f"Stichtag {vergleich.stichtag}, {len(vergleich.verglichen)} Titel "
+        f"verglichen, {len(vergleich.ohne_vergleich)} ohne Vergleich, "
+        f"{len(vergleich.abweichler)} ueber der Toleranz "
+        f"(groesste {groesste * 100:.2f} %)"
+    )
+    if vergleich.verweigert:
+        return Verdikt(
+            "Kursvergleich DE", vertrag, False,
+            f"erwartet: {vertrag} — vorgefunden: {befund}; "
+            + "; ".join(a.zeile() for a in vergleich.abweichler),
+        )
+    return Verdikt("Kursvergleich DE", vertrag, True, befund)
 
 
 def pruefe_kurse(geliefert: set[str]) -> list[Verdikt]:
@@ -254,6 +320,11 @@ WAS_TUN = {
     "Kursquelle": "yfinance-Fassung oder Yahoo-Format geaendert? "
                   "requirements.txt und momentum/data.py pruefen.",
     "EZB": "Reihe oder Spaltennamen geaendert? momentum/riskfree.py pruefen.",
+    "Kursvergleich": "Zwei Quellen widersprechen sich. Erst die genannten "
+                     "Titel von Hand nachsehen (Kapitalmassnahme? falsche "
+                     "Gattung?). Bleibt es systematisch, verweigert der "
+                     "Stichtags-Lauf — Notausgang ist das Feld "
+                     "'ohne_kursvergleich' am Momentum-Lauf.",
 }
 
 
@@ -318,22 +389,42 @@ def sammle_verdikte(
                                 f"erwartet: HTTP-Antwort — vorgefunden: "
                                 f"{type(exc).__name__}: {exc}"))
 
+    # Jede Bestandsliste wird GENAU EINMAL geholt: einmal fuer ihr eigenes
+    # Formverdikt, und derselbe Inhalt noch einmal geparst fuer den
+    # Kursvergleich weiter unten. Zwei Abrufe derselben Datei koennten
+    # zwei verschiedene Staende erwischen.
+    befunde: list = []
     for quelle in ISHARES_DE:
         try:
-            verdikte.append(pruefe_ishares(hole_ishares(quelle), quelle, heute))
+            inhalt = hole_ishares(quelle)
         except Exception as exc:  # noqa: BLE001
             verdikte.append(Verdikt(
                 f"iShares {quelle.xetra} ({quelle.index_name})", "Datei abrufbar", False,
                 f"erwartet: CSV-Download — vorgefunden: {type(exc).__name__}: {exc}",
             ))
+            continue
+        verdikte.append(pruefe_ishares(inhalt, quelle, heute))
+        try:
+            befunde.append(
+                parse_ishares_holdings(inhalt, quelle.index_name, heute=heute)
+            )
+        except QuelleUnbrauchbar:
+            # Der Bruch steht schon im Verdikt darueber; hier faellt die
+            # Datei nur aus dem Kursvergleich heraus.
+            pass
 
     alle_ticker = list(TRAGENDE_REIHEN) + [t for ts in STICHPROBE.values() for t in ts]
+    de_ticker = sorted(
+        {k.ticker for b in befunde for k in b.kandidaten if k.kurs is not None}
+    )
     try:
         buendel = download_prices(
-            alle_ticker, heute - _dt.timedelta(days=KURS_FENSTER_TAGE), heute,
+            alle_ticker + de_ticker,
+            heute - _dt.timedelta(days=KURS_FENSTER_TAGE), heute,
             downloader=downloader,
         )
         verdikte.extend(pruefe_kurse(set(buendel.adjusted)))
+        verdikte.append(pruefe_kursvergleich(befunde, buendel.close))
     except Exception as exc:  # noqa: BLE001
         verdikte.append(Verdikt("Kursquelle (yfinance)", "Abruf moeglich", False,
                                 f"erwartet: Kursdaten — vorgefunden: "
