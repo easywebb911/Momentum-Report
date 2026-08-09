@@ -5,6 +5,15 @@ name: Datenquelle pruefen
 # ankommen, obwohl nichts kaputt ist. Hier laufen sie woechentlich und auf
 # Zuruf — und sie schlagen an, wenn sich die Annahmen ueber die Quelle
 # aendern (z. B. wenn 'Adj Close' verschwindet).
+#
+# ABGRENZUNG zum "Vertragstest" (vertrag.yml): Hier steht die BEDEUTUNG
+# auf dem Pruefstand -- traegt die bereinigte Reihe wirklich die
+# Gesamtrendite? Das ist eine langsame, inhaltliche Frage, deshalb
+# woechentlich. Der Vertragstest fragt dagegen die FORM: kommt ueberhaupt
+# noch an, was der Lauf braucht -- und der fragt im Fenster vor dem
+# Stichtag. Zwei Fragen, zwei Zeitpunkte, kein doppelter Alarm: faellt
+# Yahoo ganz aus, ueberspringt sich dieser Nachweis hier bewusst
+# (pytest.skip), waehrend der Vertragstest rot wird.
 on:
   schedule:
     - cron: "15 6 * * 1"
@@ -36,8 +45,7 @@ jobs:
       - name: Abhaengigkeiten
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Netz-Nachweise
         run: python -m pytest tests/network -v -m network

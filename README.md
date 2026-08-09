@@ -156,6 +156,7 @@ tests/network    Nachweise gegen die echte Kursquelle (wöchentlich)
 | `Universum aktualisieren` | **nur manuell** | Universums-Listen neu ziehen und prüfen |
 | `Tests` | jeder Push / PR | Wert-, Mutations-, Determinismus- und Layout-Tests |
 | `Datenquelle prüfen` | montags + manuell | Netz-Nachweise gegen Yahoo |
+| `Vertragstest` | werktags 25.–31. + manuell | prüft mit den **echten** Parsern, ob Wikipedia, die drei iShares-Listen, die Kursquelle und die EZB noch die zugesagte Form liefern — Tage **vor** dem Stichtag statt an ihm |
 | `Wächter` | montags + manuell | Totmannschalter: Alarm-Push, wenn der Lauf selbst ausbleibt — Fehlschläge meldet der Lauf, sein Ausbleiben kann nur ein anderer melden |
 
 ## Die Seite bedienen
