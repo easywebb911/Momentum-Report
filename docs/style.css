@@ -475,14 +475,6 @@ main > h2::after {
   .tta--warn .tta-nadel { animation: none; }
 }
 
-.ampel-dot {
-  flex: none;
-  width: 0.5rem;
-  height: 0.5rem;
-  margin-top: 0.4375rem;
-  border-radius: 50%;
-  background: var(--ora);
-}
 /* 12rem Mindestbreite: reicht der Platz neben dem Tacho nicht, rutscht
    der Text in eine eigene Zeile UNTER die Grafik, statt sich auf
    zwei Woerter pro Zeile quetschen zu lassen. */

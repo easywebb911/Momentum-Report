@@ -705,6 +705,10 @@
   var ELLIOTT_URL = "https://easywebb911.github.io/Elliott-Report/data/report.json";
   var ELLIOTT_SEITE = "https://easywebb911.github.io/Elliott-Report/";
 
+  // Der Stand-Text, wenn die fremde Quelle schweigt. Einmal hier, damit
+  // nicht zwei Stellen denselben Zustand verschieden benennen koennen.
+  var ELLIOTT_STAND_FEHLT = "nicht erreichbar";
+
   /** Elliott fuehrt die Maerkte gross, dieses Werkzeug klein. */
   function elliottSchluessel(markt) { return String(markt).toUpperCase(); }
 
@@ -873,7 +877,9 @@
         ziel.innerHTML = '<p class="konf-leer">Noch keine Momentum-Daten. ' +
           "Sie entstehen mit dem ersten Lauf.</p>";
         if (standM) { standM.textContent = "noch keine Daten"; }
-        if (standE) { standE.textContent = elliott ? standText(elliott) : "nicht erreichbar"; }
+        if (standE) {
+          standE.textContent = elliott ? standText(elliott) : ELLIOTT_STAND_FEHLT;
+        }
         return "ohne momentum";
       }
 
@@ -883,7 +889,7 @@
       });
       if (standM) { standM.textContent = "Stichtag " + (staende[0] || "—"); }
       if (standE) {
-        standE.textContent = elliott ? standText(elliott) : "nicht erreichbar";
+        standE.textContent = elliott ? standText(elliott) : ELLIOTT_STAND_FEHLT;
       }
 
       if (!elliott && hinweis) {
@@ -917,22 +923,15 @@
     deps: deps,
     neuLaden: neuLaden,
     laufStarten: laufStarten,
-    verfolgen: verfolgen,
     sitzungLesen: sitzungLesen,
     sitzungSchreiben: sitzungSchreiben,
-    sitzungLoeschen: sitzungLoeschen,
     sitzungAnzeigen: sitzungAnzeigen,
     dialogOeffnen: dialogOeffnen,
     bannerZeigen: bannerZeigen,
     leseKurs: leseKurs,
     liveRunde: liveRunde,
-    liveAnzeigen: liveAnzeigen,
-    QUOTE_URL: QUOTE_URL,
-    TAKT_MS: TAKT_MS,
     konfluenz: konfluenz,
     elliottLong: elliottLong,
-    konfluenzAufbauen: konfluenzAufbauen,
-    ELLIOTT_URL: ELLIOTT_URL,
-    LEER_TEXT: LEER_TEXT
+    konfluenzAufbauen: konfluenzAufbauen
   };
 })();

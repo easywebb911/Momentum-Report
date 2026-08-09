@@ -760,8 +760,6 @@ def _method_card(title: str, keys: tuple[str, ...], body_html: str, anchor: str 
 # jeweils andere Werkzeug zuletzt gelaufen ist.
 # --------------------------------------------------------------------------
 
-ELLIOTT_REPORT_URL = "https://easywebb911.github.io/Elliott-Report/"
-
 # Der feste Satz. Er steht auf der Seite und in einem Test -- damit er nicht
 # im Laufe der Zeit weichgespuelt wird.
 KONFLUENZ_SATZ = (

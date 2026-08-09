@@ -1,7 +1,8 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 08.08.2026** (Samstag), nach dem Probe-Push um 17:33 MESZ. Repo
-`easywebb911/Momentum-Report`, Branch `main` bei `1358eab`.
+**Stand: 09.08.2026** (Sonntag), nach dem Kosmetik-Durchgang. Repo
+`easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand nennt
+`git log -1`, er steht hier bewusst nicht als Zahl.
 
 Dieses Dokument ist der Übergabepunkt zwischen zwei Arbeits-Sitzungen. Es
 beantwortet drei Fragen: *Was läuft gerade?*, *Was ist offen?*, *Was darf
@@ -12,14 +13,20 @@ nachprüfbar — durch einen Commit-Hash, eine Datei oder ein Lauf-Protokoll.
 Der Beleg steht jeweils dabei. Was sich nicht belegen lässt, steht als
 *ungeprüft* markiert und nicht als Tatsache.
 
+**Und eine zweite Regel, aus Schaden klug:** Zahlen, die sich von selbst
+ändern — Lauf-Zähler, Deployment-Zähler, Kurs-Stände, der Kopf-Commit —
+stehen hier NICHT wörtlich, sondern als Verweis auf ihre Quelle. Ein
+abgeschriebener Zähler ist am Tag nach dem Schreiben falsch, und ein
+Dokument mit falschen Zahlen wird nicht mehr gelesen.
+
 ---
 
-## 1. Betriebszustand (08.08.2026)
+## 1. Betriebszustand (09.08.2026)
 
 | Sache | Zustand | Beleg |
 |---|---|---|
-| GitHub Pages | **aktiv** seit 02.08., 36 Deployments, letztes 07.08. erfolgreich | Workflow `pages-build-deployment` (`dynamic/pages/pages-build-deployment`), angelegt 02.08.2026 16:11 |
-| Momentum-Lauf | **19 Läufe, alle erfolgreich**, letzter am 08.08. 15:33 UTC (Probe-Push) | `git log` → `1358eab Lauf 19`; Actions-Liste `lauf.yml` |
+| GitHub Pages | **aktiv** seit 02.08., deployt bei jedem Push auf `main` | Workflow `pages-build-deployment` (`dynamic/pages/pages-build-deployment`), angelegt 02.08.2026 16:11 — Zähler und letzter Lauf in Actions |
+| Momentum-Lauf | läuft werktäglich, **bisher kein Fehlschlag** | Actions-Liste `lauf.yml`; der jeweils letzte Lauf steht als Commit „Lauf N" im `git log` |
 | Ranking | eingefroren zum **31.07.2026**, beide Märkte | `data/rankings/us_2026-07.json`, `de_2026-07.json` |
 | US-Top-5 | VLO, DVA, MRK, VTRS, ROST — aus 500 bewerteten von 503 | `us_2026-07.json` → `top`, `abdeckung` |
 | DE-Top-5 | DHL.DE, DWS.DE, ALV.DE, TKA.DE, SIE.DE — aus 85 bewerteten von 102 | `de_2026-07.json` |
@@ -27,10 +34,10 @@ Der Beleg steht jeweils dabei. Was sich nicht belegen lässt, steht als
 | Beschreibende Angaben | vorhanden (Name + Sektor je Ticker) | `universe/ticker_meta_us.json`, `ticker_meta_de.json`, seit `c97e3f4` |
 | Konfluenz-Export | `docs/data/top5.json` vorhanden, seit `e695b54` (Lauf 9) unverändert — korrekt, das Ranking ist eingefroren | Datei + `git log -- docs/data/top5.json` |
 | Trend-Ampel auf der Seite | zeigt für **beide** Märkte die Preisrendite mit dem Hinweis *„ohne Zins-Abzug — dieses Ranking entstand vor der Umstellung"* | `docs/index.html`; erwartetes Verhalten, siehe §4 |
-| ntfy-Push | **verdrahtet und angekommen** — Probe am 08.08. 15:33 UTC (17:33 MESZ) auf dem Handy bestätigt | Lauf 19 (`workflow_dispatch`, `success`, Job 93120989543) |
-| Kurse | US vom 07.08., DE vom 06.08. | `data/status.json` |
-| Tests | 385 Unit + 120 Design, alle grün | `pytest tests/unit`, `pytest tests/design` (08.08.) |
-| Offene PRs | **keine**, 16 von 16 gemergt | GitHub-PR-Liste, Status `open` = leer |
+| ntfy-Push | **verdrahtet und angekommen** — Probe am 08.08. auf dem Handy bestätigt | Lauf 19 (`workflow_dispatch`, `success`, Job 93120989543) |
+| Kurse | Stand je Markt in `kurse_vom` | `data/status.json` |
+| Tests | vollständig grün | `pytest` (Zähler bewusst nicht abgeschrieben — er wächst mit jedem PR) |
+| Offene PRs | **keine** | GitHub-PR-Liste, Status `open` = leer |
 
 **Cron-Fahrplan** (`.github/workflows/`):
 
@@ -41,12 +48,12 @@ Der Beleg steht jeweils dabei. Was sich nicht belegen lässt, steht als
 | Universum aktualisieren | **nur manuell** | `universum.yml` |
 | Tests | jeder Push und jeder PR | `tests.yml` |
 
-Am Wochenende läuft nichts — deshalb ist der letzte Lauf vom Freitag, den
-07.08., und nicht von heute. Das ist kein Ausfall.
+Am Wochenende läuft nichts. Ist der letzte Lauf von Freitag, ist das
+kein Ausfall, sondern der Fahrplan.
 
 ---
 
-## 2. Gemergte Arbeit (#1–#16)
+## 2. Gemergte Arbeit (#1–#21)
 
 Alle Merge-Commits liegen auf `main`. Die Merge-Klasse steht ab #14 im
 PR-Titel; davor wurde sie je Auftrag im Chat vereinbart und ist im Repo
@@ -70,6 +77,14 @@ nicht dokumentiert (bei #1–#3 deshalb „—").
 | #14 | `d0925b5` | 03.08. | Konfluenz-Sicht: zwei Blickwinkel, nichts verrechnet | MANUAL |
 | #15 | `6fe3a40` | 03.08. | Konfluenz: Elliott-Score aus `score_heuristic` | SELF |
 | #16 | `22cc559` | 05.08. | Trend-Kriterium: Überschuss statt Preisrendite | MANUAL |
+| #17 | `5058831` | 08.08. | Handover angelegt, README entstaubt | SELF |
+| #18 | `c7a8bf7` | 08.08. | Handover: ntfy-Push belegt angekommen | SELF |
+| #19 | `b7abc81` | 09.08. | Wegwerf-Probe: Zins-Pfad und Korrekturweg | MANUAL |
+| #20 | `42f5653` | 09.08. | Rückbau der Wegwerf-Probe | SELF |
+| #21 | `645401e` | 09.08. | CI-Hygiene: Pins, beide Seiten geprüft, Zeit-Deckel | SELF |
+
+#19–#21 fielen in die Nacht zum 09.08. (MESZ); in UTC tragen sie noch den
+08.08. — deshalb die Uhrzeiten in den Belegen.
 
 ---
 
@@ -109,18 +124,24 @@ Stichtag verschieben (ja).
 
 Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
 
-1. **Testkontext auf default-deny umstellen.** Heute blockieren die
+1. **Testkontext auf default-deny umstellen — bewusst erst NACH dem
+   31.08.**, weil er die Testinfrastruktur anfasst und die vor dem ersten
+   scharfen Stichtag unbewegt bleiben soll. Heute blockieren die
    Browser-Tests *namentlich* zwei Hosts (`quote-proxy.easywebb.workers.dev`,
-   `easywebb911.github.io/Elliott-Report`) und die EZB-Verbindung über eine
-   autouse-Fixture (`tests/conftest.py:85`). Das ist default-allow: ein
+   `easywebb911.github.io/Elliott-Report`); die EZB-Verbindung sperrt eine
+   autouse-Fixture in `tests/conftest.py`. Das ist default-allow: ein
    künftiger externer Host wäre stillschweigend erlaubt. Richtig wäre
    `kontext.route("**/*", …)` mit einer Ausnahme für `127.0.0.1` — also
-   alles gesperrt, was nicht der Testserver ist. Belegstellen:
-   `tests/design/conftest.py:270` und `:275`.
+   alles gesperrt, was nicht der Testserver ist. Belegstelle: die beiden
+   `kontext.route(...)`-Aufrufe in `tests/design/conftest.py`.
 2. **`Node.js 20 is deprecated`-Warnung** in jedem Lauf: `actions/checkout@v4`
    und `actions/setup-python@v5` auf aktuelle Fassungen heben.
-3. **README-Aufbau-Liste** vollständig halten — sie zählt Module auf und
-   veraltet bei jedem neuen Modul (zuletzt bei `riskfree.py` passiert).
+
+Erledigt und deshalb nicht mehr aufgeführt: die Kosmetik-Punkte (tote
+CSS-Regel, tote Symbole, verwaiste Fixture, doppeltes Literal, zu breite
+`window.MR`-Ausfuhr, liegengebliebene Branches, `.gitignore`) sowie die
+Doku-Drift durch abgeschriebene Zähler. Die README-Modulliste ist kein
+Backlog-Punkt mehr, sondern eine Daueraufgabe — sie steht in den Lessons.
 
 ---
 
@@ -326,7 +347,7 @@ hier, damit niemand sie erneut aufmacht.
 
 | Punkt | Erledigt durch | Beleg |
 |---|---|---|
-| GitHub Pages aktivieren | Easy, 02.08. | Workflow `pages-build-deployment` seit 02.08. 16:11, 36 erfolgreiche Deployments |
+| GitHub Pages aktivieren | Easy, 02.08. | Workflow `pages-build-deployment` seit 02.08. 16:11, seither erfolgreiche Deployments bei jedem Push |
 | Universum befüllen (beide Märkte) | `Universum aktualisieren`, Lauf 7 | `c97e3f4`, beide Dateien `# STATUS: VERIFIED`, Stand 03.08. |
 | Erstes Ranking bilden | `Momentum-Lauf` Lauf 2, 02.08. | `07cbedd`, `data/rankings/*_2026-07.json` |
 | `ticker_meta_*.json` erzeugen (Sektor + Name auf den Karten) | Lauf 7 | `universe/ticker_meta_us.json`, `ticker_meta_de.json` |
@@ -334,5 +355,10 @@ hier, damit niemand sie erneut aufmacht.
 | Tacho, Chart-Verweise, Sektorzeilen, Live-Anker live | Läufe ab 03.08. | `docs/index.html`: 6 × `tta-`, 20 × `stockanalysis.com`, 20 × `data-quote` |
 | Konfluenz-Seite ausgeliefert | #14/#15 | `docs/konfluenz.html`, ☰-Eintrag in `docs/index.html` |
 | `NTFY_TOPIC` gesetzt | Easy | `NTFY_TOPIC: ***` im Lauf-Protokoll (nur belegte Secrets werden maskiert) |
-| ntfy-Versand nachgewiesen | Probe-Push, Lauf 19 am 08.08. 15:33 UTC | Lauf 19 `success`; Easy hat den Empfang auf dem Gerät bestätigt. Die Probe geht durch **denselben** `push()` wie jeder echte Push (`notify.push_test`) — sie belegt damit Thema, Sendeweg und Fehlerbehandlung, nicht nur einen Sonderpfad. Damit ist der `HTTP 400 topic invalid` aus Lauf 2 (02.08., vor der Härtung aus #9) abgehakt. |
+| ntfy-Versand nachgewiesen | Probe-Push, Lauf 19 am 08.08. | Lauf 19 `success`; Easy hat den Empfang auf dem Gerät bestätigt. Die Probe geht durch **denselben** `push()` wie jeder echte Push (`notify.push_test`) — sie belegt damit Thema, Sendeweg und Fehlerbehandlung, nicht nur einen Sonderpfad. Damit ist der `HTTP 400 topic invalid` aus Lauf 2 (02.08., vor der Härtung aus #9) abgehakt. |
 | Score auf 50/50 vor dem ersten Lauf | #8, gemergt 20:39 UTC, Ranking entstand 20:47 UTC | `f10dad9` vs. `07cbedd` |
+| **Zins-Pfad live bewiesen** (war S1 der Pflege-Inventur) | Wegwerf-Probe #19, [Lauf 1 am 08.08. 23:15 UTC](https://github.com/easywebb911/Momentum-Report/actions/runs/31283577911) | Beide Proben grün. US: Rendite +19,56 %, Geldmarkt **+3,71 %** (`^IRX`), Überschuss +15,86 %. DE: +6,50 %, **+1,96 %** (€STR über die EZB), +4,54 %. **Kein fail-soft** — die EZB antwortet aus dem Runner heraus. |
+| **Korrekturweg + Determinismus live bewiesen** | dieselbe Probe, Teil B | `de_2026-07.json` gelöscht und neu gebaut: Rangliste, Top-5, Abdeckung, Methode, Stichtag **bitgleich**; `rendite_12m` +6,4980 % alt wie neu; Wiederherstellung bitgleich, `git status` leer. |
+| Wegwerf-Probe wieder entfernt | #20 | `42f5653` — Workflow, Skript und Test raus; der Lauf bleibt als Protokoll in Actions |
+| Test-Werkzeuge gepinnt, beide erzeugten Seiten in der CI-Frischeprüfung, Zeit-Deckel in allen vier Workflows | #21 (S2/S3/S4 der Inventur) | `645401e`, `requirements-dev.txt`, `tests/unit/test_workflow_hygiene.py` |
+| Kosmetik: tote CSS-Regel, tote Symbole, verwaiste Fixture, doppeltes Literal, zu breite `window.MR`-Ausfuhr, alte Branches, `.gitignore` | dieser PR | siehe PR-Text; Suite grün als Nachweis der Verhaltens-Neutralität |
