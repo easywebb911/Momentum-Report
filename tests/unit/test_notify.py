@@ -150,6 +150,11 @@ def test_kein_herzschlag_push_vorhanden():
         "push_new_ranking",
         "push_run_failed",
         "push_test",
+        # Auch kein Herzschlag: der Vertragstest laeuft zwar nach
+        # Zeitplan, meldet sich aber ausschliesslich, wenn ein Vertrag
+        # gebrochen ist (tests/unit/test_vertragstest.py haelt fest, dass
+        # er im Normalfall schweigt).
+        "push_vertrag_gebrochen",
     ]
     quelle = Path("src/momentum/notify.py").read_text(encoding="utf-8")
     assert "schedule" not in quelle and "cron" not in quelle

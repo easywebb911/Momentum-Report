@@ -334,6 +334,26 @@ def push_lauf_ueberfaellig(grund: str, **kwargs) -> bool:
     )
 
 
+def push_vertrag_gebrochen(bericht: str, **kwargs) -> bool:
+    """Push (5): mindestens eine Fremdquelle haelt ihre Form nicht mehr.
+
+    EIN Push mit allen Bruechen als Liste, nicht einer je Bruch: verhagelt
+    ein Anbieter mehrere Dateien gleichzeitig, ist das EIN Ereignis. Ein
+    Push-Gewitter wuerde nur dazu erziehen, sie wegzuwischen.
+
+    Prioritaet bewusst "default", nicht "high": Es ist noch nichts kaputt.
+    Es ist eine Ankuendigung mit Vorlauf -- genau dafuer laeuft der Test
+    im Fenster vor dem Stichtag und nicht an ihm.
+    """
+    return push(
+        "Vertragstest: Fremdquelle haelt ihre Form nicht mehr",
+        bericht,
+        priority="default",
+        tags="warning",
+        **kwargs,
+    )
+
+
 def push_test(**kwargs) -> bool:
     """Push (3): Verdrahtungsprobe. Leise, ohne jede Aussage ueber Kurse.
 

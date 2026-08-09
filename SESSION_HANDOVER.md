@@ -45,6 +45,7 @@ Dokument mit falschen Zahlen wird nicht mehr gelesen.
 |---|---|---|
 | Momentum-Lauf | `45 21 * * 1-5` (werktags 21:45 UTC) + manuell | `lauf.yml` |
 | Datenquelle prüfen | `15 6 * * 1` (montags 06:15 UTC) + manuell | `datenquelle.yml` |
+| Vertragstest | `0 8 25-31 * *` + Wochentag-Riegel im Job (Cron kann Tag-des-Monats und Wochentag nur mit ODER) + manuell | `vertrag.yml` — schweigt im Normalfall, ein Push mit allen Brüchen |
 | Wächter (Totmannschalter) | `30 7 * * 1` (montags 07:30 UTC) + manuell | `waechter.yml` — schweigt im Normalfall, Alarm-Push + roter Lauf ab > 4 Tagen Stille |
 | Universum aktualisieren | **nur manuell** | `universum.yml` |
 | Tests | jeder Push und jeder PR | `tests.yml` |
@@ -167,7 +168,7 @@ sich selbst wartet"; die Maschine arbeitet, Easy behält den Ein-Tipp-Veto):
 | Stufe | Was | Stand |
 |---|---|---|
 | 0 | Totmannschalter (`waechter.yml`) | **gebaut** |
-| 1 | Vertragstests je Fremdquelle, täglich in der letzten Monatswoche | offen |
+| 1 | Vertragstests je Fremdquelle, werktags im Fenster 25.–31. | **gebaut** |
 | 2 | Zweite Kursquelle mit **Vergleichsgatter** (kein stiller Fallback; Muster: `riskfree_quelle`) | offen — MANUAL-MERGE, fasst Score-Pfad an |
 | 3 | Reparatur-Agent: liest rote Läufe, öffnet einen PR, CI beweist, Easy merged | offen — zuletzt, braucht 0–2 als Fundament |
 

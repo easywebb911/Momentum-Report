@@ -34,6 +34,10 @@ def test_es_gibt_die_erwarteten_workflows():
         # Der Totmannschalter (siehe waechter.py) -- er meldet das
         # Ausbleiben des Laufs, das kein Lauf selbst melden kann.
         "waechter.yml",
+        # Der Vertragstest (siehe tools/vertragstest.py) -- er fragt im
+        # Fenster vor dem Stichtag, ob die Fremdquellen noch ihre Form
+        # halten.
+        "vertrag.yml",
     }
 
 
