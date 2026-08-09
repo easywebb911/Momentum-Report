@@ -98,6 +98,34 @@ def test_vorzugsaktien_brauchen_keine_sonderbehandlung():
     assert bu.xetra_zu_yahoo("VOW3") == "VOW3.DE"
 
 
+def test_seite_ohne_tabelle_ist_ein_sauberer_quellen_abbruch():
+    """Gefunden beim Bau des Vertragstests (#24): ohne Tabelle kam aus
+    pandas eine nackte ImportError-Meldung ueber eine fehlende OPTIONALE
+    Bibliothek -- eine Spur, die in die voellig falsche Richtung fuehrt.
+    Schlimmer noch: weder die Markt-Isolierung im Lauf noch der
+    Vertragstest erkennen so etwas als Quellen-Bruch, weil beide auf
+    QuelleUnbrauchbar hoeren.
+    """
+    for html in (
+        "<html><body><p>Nur Text, keine Tabelle</p></body></html>",
+        "",
+        "\x00 kein HTML",
+    ):
+        with pytest.raises(bu.QuelleUnbrauchbar, match="Quelle US"):
+            bu.parse_us(html)
+
+
+def test_die_meldung_zeigt_auf_die_seite_und_nicht_auf_ein_paket():
+    """Der Sinn der Uebersetzung: Wer sie liest, sucht an der richtigen
+    Stelle."""
+    with pytest.raises(bu.QuelleUnbrauchbar) as fehler:
+        bu.parse_us("<html><body>ohne Tabelle</body></html>")
+    text = str(fehler.value)
+    assert "Enthaelt der Artikel ueberhaupt noch eine Tabelle?" in text
+    assert "NICHTS geschrieben" in text
+    assert "html5lib" not in text, "die irrefuehrende Paket-Spur ist zurueck"
+
+
 # --------------------------------------------------------------------------
 # DE: iShares-Bestandslisten
 # --------------------------------------------------------------------------

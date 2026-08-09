@@ -267,9 +267,21 @@ class Befund:
 
 
 def tabellen(html: str):
+    """Alle HTML-Tabellen einer Seite -- oder ein sprechender Abbruch.
+
+    `flavor="lxml"` ist bewusst festgelegt und nicht dem Zufall ueberlassen:
+    ohne Angabe probiert pandas der Reihe nach mehrere Parser durch und
+    meldet, wenn KEINER greift, die fehlende OPTIONALE Bibliothek des
+    letzten Versuchs ("Import html5lib failed"). Diese Meldung schickt
+    jeden, der sie liest, in die falsche Richtung -- nach einem fehlenden
+    Paket zu suchen, wo in Wahrheit die Fremdseite keine Tabelle mehr
+    enthaelt. lxml steht fest in requirements.txt; damit ist die Festlegung
+    nur das Aussprechen dessen, was ohnehin gilt, und der Fehlerfall meldet
+    endlich die Wahrheit.
+    """
     import pandas as pd
 
-    return pd.read_html(io.StringIO(html))
+    return pd.read_html(io.StringIO(html), flavor="lxml")
 
 
 def _spalte(frame, kandidaten: tuple[str, ...]):
@@ -304,7 +316,22 @@ def parse_us(html: str) -> Befund:
     BRK.B -> BRK-B, BF.B -> BF-B.
     """
     bester: Befund | None = None
-    for frame in tabellen(html):
+    try:
+        gefundene = tabellen(html)
+    except QuelleUnbrauchbar:
+        raise
+    except Exception as exc:  # noqa: BLE001 - siehe Begruendung
+        # Uebersetzen statt durchreichen. Eine nackte Bibliotheks-Ausnahme
+        # aus dem HTML-Parser wuerde an der Markt-Isolierung im Lauf und am
+        # Vertragstest vorbeirauschen: beide erkennen QuelleUnbrauchbar,
+        # nicht "irgendeinen Fehler aus pandas". Der US-Markt wuerde damit
+        # nicht sauber ausfallen, sondern den ganzen Vorgang mitreissen.
+        raise QuelleUnbrauchbar(
+            f"Quelle US: die Seite liess sich nicht als Tabelle lesen "
+            f"({type(exc).__name__}: {exc}). Enthaelt der Artikel ueberhaupt "
+            f"noch eine Tabelle? Es wurde NICHTS geschrieben."
+        ) from exc
+    for frame in gefundene:
         symbol_spalte = _spalte(frame, SYMBOL_SPALTEN)
         name_spalte = _spalte(frame, NAME_SPALTEN)
         sektor_spalte = _spalte(frame, SEKTOR_SPALTEN)
