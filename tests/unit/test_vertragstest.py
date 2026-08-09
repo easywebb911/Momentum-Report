@@ -92,6 +92,20 @@ def test_us_leer_ist_rot():
     assert not vt.pruefe_us_tabelle("<html><body></body></html>").ok
 
 
+def test_die_tabellenlose_seite_ergibt_ein_sauberes_verdikt():
+    """Dieselbe Fixture, die den Parser frueher mit einer nackten
+    Bibliotheks-Ausnahme verlassen liess (#24-Nebenbefund, behoben): Sie
+    muss ein ordentliches Verdikt ergeben -- und die Begruendung darf nicht
+    auf ein fehlendes Paket zeigen."""
+    v = vt.pruefe_us_tabelle("<html><body><p>Nur Text</p></body></html>")
+    assert not v.ok
+    assert "QuelleUnbrauchbar" in v.befund, "der Parser lehnt jetzt sauber ab"
+    assert "html5lib" not in v.befund
+    # Und der Push-Text traegt es weiter, mit Handreichung.
+    text = vt.bericht([v], HEUTE)
+    assert "Wikipedia S&P 500" in text and "Was tun:" in text
+
+
 # ------------------------------------------------------------- 2. iShares
 
 
