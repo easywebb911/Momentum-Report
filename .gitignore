@@ -3,3 +3,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 *.egg-info/
+
+# Lokale Werkzeug-Einstellungen (Berechtigungen je Rechner). Sie gehoeren
+# niemandem ausser dem Geraet, auf dem sie entstanden sind.
+.claude/

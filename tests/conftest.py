@@ -63,11 +63,6 @@ def index_series(values: list[float] | None = None) -> dict[Date, float]:
     return dict(zip(MONTH_ENDS, values if values is not None else _INDEX))
 
 
-@pytest.fixture
-def prices() -> dict[str, dict[Date, float]]:
-    return sample_series()
-
-
 @pytest.fixture(autouse=True)
 def keine_zinsquelle_im_netz(monkeypatch):
     """Sperre: kein Test ruft die EZB an.

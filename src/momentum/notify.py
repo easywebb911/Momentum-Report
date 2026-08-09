@@ -334,8 +334,3 @@ def push_test(**kwargs) -> bool:
         tags="white_check_mark",
         **kwargs,
     )
-
-
-def summary_line(payload: dict) -> str:
-    """Kompakte Zeile fuer das Lauf-Protokoll."""
-    return json.dumps(payload, ensure_ascii=False, sort_keys=True)
