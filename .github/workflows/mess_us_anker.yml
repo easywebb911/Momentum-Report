@@ -1,0 +1,77 @@
+# =========================================================================
+# WEGWERF-MESSUNG — nach zwei bis drei Mess-Tagen wieder loeschen
+# (Rueckbau-PR, wie bei der Probe US-Quelle).
+#
+# Sie beantwortet die eine Frage, die vor Stufe 2b offen ist: WELCHEN
+# Handelstag bewertet ein europaeischer S&P-500-ETF eigentlich, und wie
+# weit liegen zwei richtige Quellen normalerweise auseinander? Anker und
+# Toleranz eines spaeteren US-Gatters werden aus diesen Zahlen
+# HERGELEITET statt gesetzt.
+#
+# Das ist Kalibrierung eines Messinstruments, kein Strategie-Tuning: sie
+# veraendert keinen Score und keinen Rang, sie schaerft nur den Vergleich.
+#
+# AN MEHREREN WERKTAGEN ANTIPPEN. Ein einzelner Tag kann durch einen
+# Feiertag, eine Indexumstellung oder einen ruhigen Markt taeuschen; erst
+# zwei bis drei Tage zeigen, ob der Anker STABIL derselbe ist.
+#
+# Sie schreibt nichts (contents: read), schickt keinen ntfy-Push -- das
+# Secret wird hier bewusst gar nicht erst gereicht -- und beruehrt keinen
+# Lauf. Der letzte Schritt weist nach, dass das Arbeitsverzeichnis
+# unveraendert ist (Lehre aus dem Probelauf).
+#
+# ROT ist hier ein gueltiges Ergebnis mit Ansage: liefert eine der beiden
+# Quellen nicht, endet der Lauf rot statt gruen. Eine Messung ohne Daten
+# ist keine Messung, und ein gruener Haken ohne Zahlen waere die
+# schlechteste aller Ausgaben.
+# =========================================================================
+name: Mess-Probe US-Anker (Wegwerf)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mess-us-anker
+  cancel-in-progress: false
+
+jobs:
+  messen:
+    runs-on: ubuntu-latest
+    # Grosszuegiger als die uebrigen Proben: es werden rund 500 Kursreihen
+    # in Bloecken geholt, und die Kursquelle darf dabei langsam sein.
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Abhaengigkeiten
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Messen
+        run: python tools/mess_us_anker.py
+
+      # Der Nachweis, nicht die Behauptung: nach der Messung muss das
+      # Arbeitsverzeichnis Zeichen fuer Zeichen unveraendert sein.
+      - name: Nachweis, dass nichts geschrieben wurde
+        if: always()
+        run: |
+          echo "git status --porcelain:"
+          git status --porcelain
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error title=Die Messung hat geschrieben::Sie darf nichts anfassen."
+            exit 1
+          fi
+          echo "Arbeitsverzeichnis unveraendert — es wurde nichts geschrieben."
