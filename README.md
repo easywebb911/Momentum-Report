@@ -136,6 +136,7 @@ src/momentum/
   build_pages.py Methodik- und Konfluenz-Seite erzeugen
   render.py      HTML für docs/ — Methodik-Seite wird aus sources.py erzeugt
   notify.py      ntfy-Push
+  waechter.py    Totmannschalter (meldet ausbleibende Laeufe)
   run.py         Einstiegspunkt des Laufs
 universe/        committete statische Listen, Status VERIFIED + Herkunft
 data/rankings/   die eingefrorenen Monats-Rankings (JSON, ohne Zeitstempel)
@@ -155,6 +156,7 @@ tests/network    Nachweise gegen die echte Kursquelle (wöchentlich)
 | `Universum aktualisieren` | **nur manuell** | Universums-Listen neu ziehen und prüfen |
 | `Tests` | jeder Push / PR | Wert-, Mutations-, Determinismus- und Layout-Tests |
 | `Datenquelle prüfen` | montags + manuell | Netz-Nachweise gegen Yahoo |
+| `Wächter` | montags + manuell | Totmannschalter: Alarm-Push, wenn der Lauf selbst ausbleibt — Fehlschläge meldet der Lauf, sein Ausbleiben kann nur ein anderer melden |
 
 ## Die Seite bedienen
 

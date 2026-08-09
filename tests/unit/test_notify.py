@@ -139,8 +139,14 @@ def test_kein_herzschlag_push_vorhanden():
     NICHT bestellt hat.
     """
     funktionen = [name for name in dir(notify) if name.startswith("push_")]
+    # push_lauf_ueberfaellig ist ebenfalls KEIN Herzschlag: sie kommt zwar
+    # aus einem Zeitplan (waechter.yml), aber ausschliesslich im ALARMFALL.
+    # Ein Herzschlag waere die Gegenrichtung -- eine Nachricht, die kommt,
+    # wenn alles gut ist. Genau die gibt es weiterhin nicht; der Waechter
+    # schweigt im Normalfall (tests/unit/test_waechter.py haelt das fest).
     assert sorted(funktionen) == [
         "push_data_conflict",
+        "push_lauf_ueberfaellig",
         "push_new_ranking",
         "push_run_failed",
         "push_test",

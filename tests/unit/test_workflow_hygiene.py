@@ -30,7 +30,10 @@ DEV_ANFORDERUNGEN = Path("requirements-dev.txt")
 
 def test_es_gibt_die_erwarteten_workflows():
     assert {p.name for p in ALLE} == {
-        "lauf.yml", "universum.yml", "tests.yml", "datenquelle.yml"
+        "lauf.yml", "universum.yml", "tests.yml", "datenquelle.yml",
+        # Der Totmannschalter (siehe waechter.py) -- er meldet das
+        # Ausbleiben des Laufs, das kein Lauf selbst melden kann.
+        "waechter.yml",
     }
 
 

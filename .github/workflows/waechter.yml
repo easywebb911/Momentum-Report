@@ -1,0 +1,47 @@
+# TOTMANNSCHALTER. Der Momentum-Lauf meldet Fehlschlaege selbst -- aber
+# nicht sein eigenes Ausbleiben. Dieser Workflow prueft woechentlich das
+# Alter von data/status.json und schlaegt Alarm (Push mit Sirene + roter
+# Lauf), wenn der letzte Lauf aelter ist als jede normale Luecke.
+#
+# Bewusst ein EIGENER Workflow und nicht ein Schritt im Lauf: ein Schritt
+# im Lauf kann das Ausbleiben des Laufs nicht bemerken.
+#
+# Kein Herzschlag: solange alles laeuft, schweigt er.
+name: Waechter
+
+on:
+  schedule:
+    # Montagmorgen, VOR dem ersten Werktags-Lauf der Woche: die laengste
+    # normale Luecke (Wochenende) ist gerade vorbei -- misst der Waechter
+    # jetzt mehr als SCHWELLE_TAGE, war die Woche davor etwas still.
+    - cron: "30 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: waechter
+  cancel-in-progress: false
+
+jobs:
+  wache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: waechter.py und notify.py sind reine
+      # Standardbibliothek. Je weniger dieser Workflow braucht, desto
+      # weniger Gruende hat er, selbst auszufallen.
+      - name: Alter des letzten Laufs pruefen
+        run: python -m momentum.waechter
