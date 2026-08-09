@@ -99,6 +99,41 @@ MIN_VERGLEICHSQUOTE = 0.80
 # erscheinen und den Lauf grundlos verweigern.
 ERWARTETE_WAEHRUNG = "EUR"
 
+# --------------------------------------------------------------------------
+# BEFUND ZUR US-SEITE, gemessen am 09.08.2026 auf einem GitHub-Runner
+# (Wegwerf-Probe, danach wieder entfernt). Er steht hier und nicht in einem
+# Protokoll, weil hier gesucht wird, wer den Satz "gibt es nicht" eines
+# Tages ersetzen will.
+#
+#   * Der amerikanische Endpunkt (IVV, .../us/products/239726/...
+#     1467271812596.ajax) liefert HTTP 200 und den Content-Type
+#     "text/csv;charset=UTF-8" -- und im Koerper 2,2 MB HTML, die
+#     Zustimmungs-Seite. Merke: der Content-Type LUEGT. Dass
+#     `lade_bestandsliste` in den Koerper schaut statt auf die Kopfzeile,
+#     ist damit kein Uebereifer, sondern gemessen noetig.
+#
+#   * Der DEUTSCHE Endpunkt-Typ (1478358465952.ajax) liefert dagegen fuer
+#     zwei europaeische S&P-500-ETFs eine echte CSV im vertrauten Format,
+#     mit Kurs-Spalte, deutscher Zahlenschreibweise und demselben
+#     Vorspann:
+#         Produkt 253743 (SXR8/CSPX): Stichtag 07.08., 504 Aktien-Zeilen,
+#             494 Ticker, 494 Kurse
+#         Produkt 251900 (IUSA):      Stichtag 06.08., 504 Aktien-Zeilen,
+#             494 Ticker, 494 Kurse
+#
+# Eine zweite US-Kursquelle ist damit ERREICHBAR. Was fehlt, sind drei
+# Dinge, und jedes davon ist eine bewusste Entscheidung, kein Handgriff:
+#   1. Waehrung: diese Dateien fuehren USD und Boerse NASDAQ/NYSE. Die
+#      Erwartung unten ist auf EUR festgenagelt und muesste je Markt
+#      gelten.
+#   2. Ticker: `xetra_zu_yahoo` haengt stumpf ".DE" an. Fuer eine
+#      US-Liste braucht es die Uebersetzung aus `parse_us`
+#      (BRK.B -> BRK-B) -- 10 der 504 Zeilen ergaben ueberhaupt keinen
+#      Ticker, vermutlich genau die Klassen-Titel.
+#   3. Bewertungszeitpunkt: ein UCITS-Fonds bewertet US-Aktien nicht
+#      zwingend zum US-Schluss. Das waere vor dem Scharfschalten zu
+#      messen -- so, wie es der Vertragstest fuer DE tut.
+# --------------------------------------------------------------------------
 NICHT_VORGESEHEN = (
     "fuer diesen Markt gibt es keine zweite, unabhaengige Kursquelle "
     "(der Vergleich existiert bisher nur fuer Deutschland)"
