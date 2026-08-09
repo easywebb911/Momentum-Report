@@ -309,6 +309,31 @@ def push_run_failed(detail: str, **kwargs) -> bool:
     )
 
 
+def push_lauf_ueberfaellig(grund: str, **kwargs) -> bool:
+    """Push (4): der Totmannschalter hat angeschlagen (siehe waechter.py).
+
+    Das ist die EINE Nachricht, die kein Lauf je selbst schicken kann:
+    sie sagt, dass der Lauf gar nicht mehr stattfindet. Deshalb kommt sie
+    aus einem eigenen, unabhaengigen Workflow -- und deshalb mit Sirene:
+    ohne diesen Push wuerde der Stillstand erst auffallen, wenn jemand
+    zufaellig auf die Seite schaut.
+    """
+    return push(
+        "Momentum-Lauf ueberfaellig",
+        (
+            "Der werktaegliche Momentum-Lauf hat laenger nicht geschrieben "
+            "als jede normale Luecke erklaert.\n\n"
+            f"{grund}\n\n"
+            "Die Seite friert derweil auf dem letzten guten Stand ein. "
+            "Nachsehen: Actions -> Momentum-Lauf (laeuft der Zeitplan "
+            "noch? Ist der Workflow deaktiviert?)."
+        ),
+        priority="high",
+        tags="rotating_light",
+        **kwargs,
+    )
+
+
 def push_test(**kwargs) -> bool:
     """Push (3): Verdrahtungsprobe. Leise, ohne jede Aussage ueber Kurse.
 
