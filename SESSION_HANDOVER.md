@@ -96,6 +96,7 @@ nicht dokumentiert (bei #1–#3 deshalb „—").
 |---|---|---|
 | **31.08.2026** (Mo) | **Monats-Stichtag.** Der erste Lauf danach bildet das August-Ranking. | Erster Stichtag *nach* #16 — hier greift die Überschuss-Ampel zum ersten Mal mit echten Zahlen. Danach prüfen: Tragen beide Märkte `riskfree_12m ≠ null`? Steht auf der Seite „über Geldmarkt" statt des Umstellungs-Hinweises? Kam der Ranking-Push an? Der Probe-Push vom 08.08. belegt Thema und Sendeweg — `push_new_ranking` baut aber eine andere Nachricht und ist bisher nur durch Unit-Tests gedeckt. |
 | **01.09.2026** | Erster Vergleich zweier Monats-Ranglisten (Juli → August). | Ab hier lässt sich zum ersten Mal sehen, wie stark die Top-5 wechseln. |
+| **Anfang September 2026** | **Monatsende auswerten → Hygiene-Block → Stufe 3.** In dieser Reihenfolge: erst das erste scharfe Monatsende (31.08.) auswerten, dann den Hygiene-Backlog (§5: default-deny, Node-20), dann den Reparatur-Agenten bauen. | Easys Termin-Entscheid vom 09.08. Die Auswertung liefert die Bau-Grundlage für Stufe 3 — bis dahin wüsste ein Reparatur-Agent gar nicht, welche Sorten Rot es überhaupt gibt. Begründung im Stufenplan (§6). |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Vorher gibt es nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **laufend, montags** | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
 
@@ -119,6 +120,10 @@ Reihe an einem künftigen Stichtag nicht, greift der laute Abbruch
 (`Keine Indexdaten … ohne Handelskalender kein Stichtag`), kein stiller
 Rückfall. Träte das ein, wäre die Frage: Kursindex als Notnagel (nein) oder
 Stichtag verschieben (ja).
+
+**3. Stufe 3 (Reparatur-Agent) hat jetzt einen Termin.** *(nichts tun bis September)*
+
+Easy hat am 09.08. entschieden: **Anfang September**, nach Auswertung des ersten scharfen Monatsendes. Die datierte Wiedervorlage steht in §3, die Begründung und die unveränderte harte Grenze im Stufenplan (§6). Hier steht sie nur, damit sie auch von den offenen Punkten aus auffindbar ist — es gibt bis dahin nichts zu tun.
 
 ---
 
@@ -169,8 +174,13 @@ sich selbst wartet"; die Maschine arbeitet, Easy behält den Ein-Tipp-Veto):
 |---|---|---|
 | 0 | Totmannschalter (`waechter.yml`) | **gebaut** |
 | 1 | Vertragstests je Fremdquelle, werktags im Fenster 25.–31. | **gebaut** |
-| 2 | Zweite Kursquelle mit **Vergleichsgatter** (kein stiller Fallback; Muster: `riskfree_quelle`) | offen — MANUAL-MERGE, fasst Score-Pfad an |
-| 3 | Reparatur-Agent: liest rote Läufe, öffnet einen PR, CI beweist, Easy merged | offen — zuletzt, braucht 0–2 als Fundament |
+| 2a | Zweite Kursquelle **DE** mit Vergleichsgatter (kein stiller Fallback; Muster: `riskfree_quelle`) | **gebaut** — erstmals scharf am 31.08. |
+| 2b | Zweite Kursquelle **US** (S&P-500-UCITS-Bestandslisten) | in Kalibrierung — Anker und Toleranz werden gemessen, nicht gesetzt |
+| 3 | Reparatur-Agent: liest rote Läufe, öffnet einen PR, CI beweist, Easy merged | offen — **entschieden 09.08.: Anfang September**, nach Auswertung des ersten scharfen Monatsendes (31.08.) |
+
+*Warum der September und nicht früher:* Bis dahin ist das Fundament 0–2 komplett (2b in Kalibrierung), das erste scharfe Monatsende liefert die echten Rot-Sorten als Bau-Grundlage statt ausgedachter, und der Termin fällt in denselben September-Block wie default-deny und Node-20.
+
+Die harte Grenze der Stufe 3 gilt **unverändert weiter**: Der Agent öffnet PRs, die CI beweist, **Easy merged**. Kein Auto-Merge agentengeschriebener Fixes — der Termin ändert daran nichts.
 
 Nicht automatisieren, ausdrücklich: Auto-Merge agentengeschriebener
 Fixes, Selbstreparatur des Universums (default-deny ist das Kronjuwel),
