@@ -38,12 +38,6 @@ def test_es_gibt_die_erwarteten_workflows():
         # Fenster vor dem Stichtag, ob die Fremdquellen noch ihre Form
         # halten.
         "vertrag.yml",
-        # WEGWERF, gehoert nach dem Befund wieder geloescht: die Probe nach
-        # einer zweiten US-Kursquelle. Sie laesst sich nur auf einem Runner
-        # beantworten -- der Egress-Proxy der Bau-Sitzung blockt
-        # ishares.com vollstaendig. Sobald das Ergebnis da ist, faellt
-        # dieser Eintrag mit dem Rueckbau-PR wieder heraus.
-        "probe_us_quelle.yml",
     }
 
 
