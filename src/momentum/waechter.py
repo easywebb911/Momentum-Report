@@ -19,10 +19,22 @@ einzelner Freitags-Lauf fehl (das meldet er selbst), steht der letzte
 Stand vom Donnerstag: vier Tage. Ab MEHR als vier Kalendertagen ist die
 Stille durch nichts Normales mehr erklaerbar.
 
-KEIN HERZSCHLAG: Der Waechter schweigt, solange alles laeuft. Ein
-woechentlicher "alles ok"-Push wuerde nur abstumpfen -- und ein
-ausbleibender "alles ok"-Push faellt genauso wenig auf wie ein
-ausbleibender Lauf.
+DER GESUND-BEFUND, seit Easys Produktentscheid vom 10.08.2026: Der
+Waechter meldet auch, wenn alles in Ordnung ist -- aber LAUTLOS, mit
+ntfy-Prioritaet "min" (ohne Ton, ohne Banner, nur in der Liste der App).
+
+Die urspruengliche Sorge war eine andere und bleibt richtig: ein
+woechentliches "alles ok" MIT TON stumpft ab, und was man vier Wochen
+lang wegwischt, wischt man am Tag des echten Alarms auch weg. Genau
+dieser Schaden kann hier nicht entstehen, weil die Nachricht nie
+klingelt. Die Trennung zwischen "ich habe nachgesehen" und "es ist etwas
+kaputt" laeuft ab jetzt ueber die PRIORITAETSSTUFE statt ueber das
+Schweigen -- der klingelnde Kanal behaelt damit genau eine Bedeutung.
+
+Der ALARM-Pfad ist davon in jeder Hinsicht unberuehrt: gleiche
+Prioritaet, gleicher Ton, gleicher Text, gleicher roter Lauf. Und der
+Status-Push ist NIE wichtiger als das Wachen selbst: geht er nicht raus,
+steht das im Protokoll und der Waechter endet trotzdem gruen.
 
 GRENZE, ehrlich benannt: Der Waechter ist selbst ein geplanter Workflow.
 Faellt GitHub Actions als Ganzes aus oder deaktiviert GitHub nach 60
@@ -41,7 +53,7 @@ import json
 import sys
 from pathlib import Path
 
-from .notify import push_lauf_ueberfaellig
+from .notify import push_lauf_ueberfaellig, push_waechter_ok
 
 Date = _dt.date
 
@@ -89,8 +101,31 @@ def befund(status_pfad: Path, heute: Date) -> tuple[int | None, str | None]:
     return alter, None
 
 
-def main(argv: list[str] | None = None, *, melder=push_lauf_ueberfaellig) -> int:
-    """`melder` ist die Test-Naht -- Tests ersetzen ihn durch einen Zaehler."""
+def stand_text(alter: int, heute: Date) -> str:
+    """Der geprueffte Stand als Satz -- die Nutzlast des Gesund-Pushes.
+
+    Das Datum wird aus dem Alter zurueckgerechnet statt die Datei ein
+    zweites Mal zu lesen: `befund` hat `alter` genau als
+    (heute - lauf_datum).days bestimmt, die Rueckrechnung trifft deshalb
+    exakt denselben Tag. Ein zweiter Lesevorgang koennte dagegen etwas
+    anderes vorfinden als das, was gerade geprueft wurde.
+    """
+    letzter = heute - _dt.timedelta(days=alter)
+    return (
+        f"Letzter Lauf-Stand: {letzter.isoformat()} (vor {alter} "
+        f"Kalendertag(en)), Schwelle {SCHWELLE_TAGE} Tage nicht gerissen."
+    )
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    melder=push_lauf_ueberfaellig,
+    status_melder=push_waechter_ok,
+) -> int:
+    """`melder` und `status_melder` sind die Test-Naehte -- Tests ersetzen
+    sie durch Zaehler. `melder` ist der Alarm, `status_melder` der
+    lautlose Gesund-Befund."""
     parser = argparse.ArgumentParser(description="Totmannschalter des Momentum-Laufs")
     parser.add_argument("--heute", help="Pruefdatum JJJJ-MM-TT (nur fuer Tests)")
     parser.add_argument("--status", default=str(STATUS_PFAD), help="Pfad zur Status-Datei")
@@ -100,7 +135,22 @@ def main(argv: list[str] | None = None, *, melder=push_lauf_ueberfaellig) -> int
     alter, grund = befund(Path(args.status), heute)
 
     if grund is None:
-        log(f"Waechter: letzter Lauf vor {alter} Tag(en) — im Rahmen, kein Push.")
+        log(f"Waechter: letzter Lauf vor {alter} Tag(en) — im Rahmen.")
+        # Der lautlose Gesund-Push. Er ist NIE wichtiger als das Wachen
+        # selbst: jeder Fehlschlag hier bleibt eine Zeile im Protokoll
+        # und dreht den Rueckgabewert nicht. Ein Waechter, der rot wird,
+        # weil seine Beruhigungs-Nachricht nicht durchkam, haette die
+        # Bedeutungen genau vertauscht.
+        try:
+            verschickt = status_melder(stand_text(alter, heute))
+        except Exception as exc:  # noqa: BLE001 - der Status ist Beiwerk
+            log(f"Waechter: Status-Push fehlgeschlagen ({type(exc).__name__}: {exc}).")
+        else:
+            log(
+                "Waechter: Status-Push (lautlos) verschickt."
+                if verschickt
+                else "Waechter: Status-Push NICHT verschickt (siehe Meldung oben)."
+            )
         return 0
 
     log(f"Waechter: ALARM — {grund}")

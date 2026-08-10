@@ -54,9 +54,15 @@ TOPIC_MAX = 64
 # Wie viel vom Antwortkoerper des Servers ins Protokoll darf.
 FEHLERTEXT_MAX = 500
 
-# ntfy-Prioritaeten: 3 = normal, 4 = hoch (loest auf dem iPhone die
-# auffaellige Zustellung aus). Mehr braucht dieses Werkzeug nicht.
-PRIORITIES = {"default": 3, "high": 4}
+# ntfy-Prioritaeten: 1 = min, 3 = normal, 4 = hoch (loest auf dem iPhone
+# die auffaellige Zustellung aus). Mehr braucht dieses Werkzeug nicht.
+#
+# "min" ist seit Easys Produktentscheid vom 10.08.2026 die TRAGENDE
+# Trennlinie dieses Moduls: Nachrichten, die sagen "alles in Ordnung",
+# gehen ausschliesslich ueber diese Stufe raus. ntfy stellt sie ohne Ton
+# und ohne Banner zu -- sie erscheinen nur in der Liste der App. Damit
+# behaelt der klingelnde Kanal genau eine Bedeutung: es ist etwas kaputt.
+PRIORITIES = {"min": 1, "default": 3, "high": 4}
 
 MISSING_TOPIC_BANNER = (
     "PUSH NICHT VERSCHICKT: Das Repository-Secret NTFY_TOPIC ist nicht "
@@ -339,6 +345,38 @@ def push_lauf_ueberfaellig(grund: str, **kwargs) -> bool:
         ),
         priority="high",
         tags="rotating_light",
+        **kwargs,
+    )
+
+
+def push_waechter_ok(stand: str, **kwargs) -> bool:
+    """Push (6): der Waechter hat nachgesehen, und es ist alles in Ordnung.
+
+    LAUTLOS, und das ist der ganze Entwurf: Prioritaet "min" heisst bei
+    ntfy ohne Ton und ohne Banner -- die Nachricht erscheint nur in der
+    Liste der App. Wer wissen will, ob gestern jemand nachgesehen hat,
+    scrollt und sieht es. Wer nicht hinschaut, wird nicht gestoert.
+
+    WARUM DAS KEIN HERZSCHLAG IM SINNE DES BANNS IST (Easys
+    Produktentscheid vom 10.08.2026): Der Bann richtet sich gegen
+    Nachrichten, die den ALARMKANAL abstumpfen -- gegen das woechentliche
+    "alles ok" mit Ton, das man nach vier Wochen wegwischt, ohne
+    hinzusehen, und das am Tag des echten Alarms genauso weggewischt wird.
+    Diese Nachricht kann das nicht: sie klingelt nie. Die Trennung laeuft
+    ab jetzt ueber die PRIORITAETSSTUFE, nicht mehr ueber das Schweigen.
+
+    Der Alarm-Pfad bleibt davon unberuehrt -- gleiche Prioritaet, gleicher
+    Ton, gleicher Text wie bisher (siehe push_lauf_ueberfaellig).
+    """
+    return push(
+        "✅ Wächter: alles ok",
+        (
+            f"{stand}\n\n"
+            "Diese Nachricht kommt lautlos und sagt nur, dass nachgesehen "
+            "wurde. Klingelt es, ist etwas kaputt — dann kommt eine andere "
+            "Nachricht."
+        ),
+        priority="min",
         **kwargs,
     )
 
