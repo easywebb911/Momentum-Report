@@ -131,19 +131,21 @@ def test_titel_mit_umlauten_und_gedankenstrich_bleiben_heil():
 
 
 def test_kein_herzschlag_push_vorhanden():
-    """v0 hat bewusst keinen 'alles ok'-Push, der von selbst kommt.
+    """Kein Push, der den ALARMKANAL abstumpft.
+
+    So ist der Bann gemeint, und so wurde er am 10.08.2026 praezisiert:
+    Er richtet sich nicht gegen jede unbestellte Nachricht, sondern gegen
+    die eine Sorte, die Schaden anrichtet -- das regelmaessige "alles ok"
+    MIT TON. Was man vier Wochen lang wegwischt, wischt man am Tag des
+    echten Alarms auch weg.
 
     push_test ist keiner: sie hat keinen Zeitplan und keine Bedingung, sie
     kommt ausschliesslich auf ausdrueckliche Anforderung ueber das
-    Workflow-Feld "testpush". Ein Herzschlag waere eine Nachricht, die man
-    NICHT bestellt hat.
+    Workflow-Feld "testpush".
     """
     funktionen = [name for name in dir(notify) if name.startswith("push_")]
     # push_lauf_ueberfaellig ist ebenfalls KEIN Herzschlag: sie kommt zwar
     # aus einem Zeitplan (waechter.yml), aber ausschliesslich im ALARMFALL.
-    # Ein Herzschlag waere die Gegenrichtung -- eine Nachricht, die kommt,
-    # wenn alles gut ist. Genau die gibt es weiterhin nicht; der Waechter
-    # schweigt im Normalfall (tests/unit/test_waechter.py haelt das fest).
     assert sorted(funktionen) == [
         "push_data_conflict",
         "push_lauf_ueberfaellig",
@@ -155,11 +157,54 @@ def test_kein_herzschlag_push_vorhanden():
         # gebrochen ist (tests/unit/test_vertragstest.py haelt fest, dass
         # er im Normalfall schweigt).
         "push_vertrag_gebrochen",
+        # DIE EINE, BEGRUENDETE ERWEITERUNG DIESER LISTE.
+        #
+        # Easys Produktentscheid 10.08.: lautloser Status-Push (prio min)
+        # ist kein Herzschlag im Sinne des Banns, weil er den Alarmkanal
+        # nicht abstumpft; die Trennung laeuft ueber die Prioritaetsstufe.
+        #
+        # Sie kommt zwar nach Zeitplan und auch dann, wenn alles gut ist --
+        # aber sie klingelt nie: ntfy stellt Prioritaet 1 ohne Ton und
+        # ohne Banner zu. Der Test unten nagelt genau das fest; ohne die
+        # Prioritaet waere diese Zeile hier nicht zu rechtfertigen.
+        "push_waechter_ok",
     ]
     quelle = Path("src/momentum/notify.py").read_text(encoding="utf-8")
     assert "schedule" not in quelle and "cron" not in quelle
     lauf = Path("src/momentum/run.py").read_text(encoding="utf-8")
     assert "args.testpush" in lauf, "die Probe haengt an einem ausdruecklichen Schalter"
+
+
+def test_der_status_push_geht_lautlos_raus():
+    """Prioritaet 1 (min) — die Zusage, auf der die ganze Bann-Ausnahme
+    ruht. Geprueft wird das JSON-Feld, nicht der Name der Stufe."""
+    gesammelt = []
+    notify.push_waechter_ok(
+        "Letzter Lauf-Stand: 2026-08-07", topic="probe", opener=_sammler(gesammelt)
+    )
+    nachricht = _payload(gesammelt[0])
+    assert nachricht["priority"] == 1
+    assert nachricht["title"] == "✅ Wächter: alles ok"
+    assert "2026-08-07" in nachricht["message"]
+
+
+def test_der_alarm_klingelt_weiterhin():
+    """REGRESSION: Der Status-Push darf den Alarm-Pfad nicht anfassen.
+    Prioritaet 4 loest auf dem iPhone die auffaellige Zustellung aus."""
+    gesammelt = []
+    notify.push_lauf_ueberfaellig("Grund", topic="probe", opener=_sammler(gesammelt))
+    nachricht = _payload(gesammelt[0])
+    assert nachricht["priority"] == 4
+    assert nachricht["tags"] == ["rotating_light"]
+    assert nachricht["title"] == "Momentum-Lauf ueberfaellig"
+
+
+def test_status_und_alarm_liegen_auf_verschiedenen_stufen():
+    """Die Trennung selbst, in einer Zeile: der leise Kanal ist wirklich
+    leiser als der laute. Wer beide auf dieselbe Stufe zoege, hoebe genau
+    die Begruendung der Bann-Ausnahme auf."""
+    assert notify.PRIORITIES["min"] < notify.PRIORITIES["high"]
+    assert notify.PRIORITIES["min"] == 1
 
 
 def test_unerreichbares_ntfy_wird_nicht_zum_absturz(monkeypatch, capsys):

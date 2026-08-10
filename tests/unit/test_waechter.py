@@ -96,16 +96,87 @@ def test_fehlendes_oder_unsinniges_lauf_datum_ist_alarm(tmp_path):
 # ------------------------------------------------- main: Push und Exit-Code
 
 
-def test_im_normalfall_kein_push_und_exit_null(tmp_path):
-    """KEIN Herzschlag: solange alles laeuft, geht nichts raus."""
+def test_im_normalfall_schweigt_der_alarmkanal(tmp_path):
+    """Der ALARM bleibt aus, solange alles laeuft — das ist der Kern.
+
+    Seit dem 10.08. geht im Gesundfall ein LAUTLOSER Status-Push raus
+    (Prioritaet min, siehe unten). Der Alarmkanal ist davon unberuehrt,
+    und genau das haelt dieser Test fest.
+    """
     pfad = status_datei(tmp_path, (MONTAG - _dt.timedelta(days=3)).isoformat())
     gerufen = []
     code = main(
         ["--heute", MONTAG.isoformat(), "--status", str(pfad)],
         melder=lambda grund: gerufen.append(grund) or True,
+        status_melder=lambda _text: True,
     )
     assert code == 0
-    assert gerufen == [], "der Waechter hat ohne Grund gefunkt"
+    assert gerufen == [], "der Waechter hat Alarm geschlagen, ohne Grund"
+
+
+# ------------------------------------------- Der lautlose Gesund-Befund
+#
+# Easys Produktentscheid vom 10.08.2026: Der Waechter meldet auch, dass
+# er nachgesehen hat — aber ueber die leise Prioritaetsstufe, damit der
+# klingelnde Kanal genau eine Bedeutung behaelt.
+
+
+def test_im_gesundfall_genau_ein_status_push(tmp_path):
+    pfad = status_datei(tmp_path, (MONTAG - _dt.timedelta(days=3)).isoformat())
+    texte = []
+    code = main(
+        ["--heute", MONTAG.isoformat(), "--status", str(pfad)],
+        melder=lambda grund: pytest.fail("der Alarm darf hier nie feuern"),
+        status_melder=lambda text: texte.append(text) or True,
+    )
+    assert code == 0
+    assert len(texte) == 1, "genau einer, nicht keiner und nicht zwei"
+
+
+def test_der_status_push_nennt_den_geprueften_stand(tmp_path):
+    """Ohne Datum waere die Nachricht wertlos: sie sagte nur, dass
+    irgendwer irgendwann nachgesehen hat."""
+    freitag = MONTAG - _dt.timedelta(days=3)
+    pfad = status_datei(tmp_path, freitag.isoformat())
+    texte = []
+    main(
+        ["--heute", MONTAG.isoformat(), "--status", str(pfad)],
+        status_melder=lambda text: texte.append(text) or True,
+    )
+    assert freitag.isoformat() in texte[0]
+    assert f"Schwelle {SCHWELLE_TAGE} Tage nicht gerissen" in texte[0]
+
+
+def test_ein_gescheiterter_status_push_laesst_den_waechter_gruen(tmp_path, capsys):
+    """Der Status-Push ist NIE wichtiger als das Wachen selbst.
+
+    Beide Fehlerarten: der Melder sagt False, und der Melder wirft. In
+    keinem Fall darf der Waechter rot werden — das haette die Bedeutungen
+    genau vertauscht (rot heisst: der Lauf ist ueberfaellig).
+    """
+    pfad = status_datei(tmp_path, (MONTAG - _dt.timedelta(days=3)).isoformat())
+    argv = ["--heute", MONTAG.isoformat(), "--status", str(pfad)]
+
+    assert main(argv, status_melder=lambda _t: False) == 0
+    assert "Status-Push NICHT verschickt" in capsys.readouterr().out
+
+    def wirft(_text):
+        raise OSError("keine Verbindung")
+
+    assert main(argv, status_melder=wirft) == 0
+    assert "Status-Push fehlgeschlagen" in capsys.readouterr().out
+
+
+def test_der_gesund_push_geht_durch_dieselbe_leise_stufe():
+    """Die Verbindung zwischen Waechter und Prioritaet, festgenagelt: der
+    Gesund-Befund darf nie ueber den klingelnden Kanal gehen."""
+    import momentum.notify as notify
+
+    quelltext = Path("src/momentum/notify.py").read_text(encoding="utf-8")
+    koerper = quelltext.split("def push_waechter_ok")[1].split("\ndef ")[0]
+    assert 'priority="min"' in koerper
+    assert "urllib" not in koerper, "kein eigener Sendeweg"
+    assert notify.PRIORITIES["min"] == 1
 
 
 def test_im_alarmfall_genau_ein_push_und_exit_eins(tmp_path):
