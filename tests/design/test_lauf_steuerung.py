@@ -364,9 +364,12 @@ def test_ohne_token_ist_sperren_gesperrt(app):
 
 
 def live_zustand(page):
+    """Die Live-Anzeige JE KARTE — seit dem Umbau gibt es sie nicht mehr
+    je Markt-Block, sondern einmal pro Titel, direkt beim Kurs."""
     return page.evaluate(
-        """() => [...document.querySelectorAll('[data-live]')].map(el => ({
-             markt: el.getAttribute('data-live'),
+        """() => [...document.querySelectorAll('[data-live-ticker]')].map(el => ({
+             markt: el.getAttribute('data-live-markt'),
+             ticker: el.getAttribute('data-live-ticker'),
              versteckt: el.hidden,
              aus: el.classList.contains('live--aus'),
              text: el.querySelector('.live-txt').textContent,
@@ -446,7 +449,7 @@ def test_der_punkt_wird_gruen_und_nennt_die_uhrzeit(app):
 def test_bei_stoerung_wird_der_punkt_grau_und_die_karte_bleibt(app, antwort, warum):
     """FAIL-SOFT: nie eine kaputte Karte, immer nur eine ehrliche Auskunft."""
     vorher = kurse(app)
-    stand_vorher = {e["markt"]: e["text"] for e in live_zustand(app)}
+    stand_vorher = {(e["markt"], e["ticker"]): e["text"] for e in live_zustand(app)}
     ruesten(app, [antwort])
     app.evaluate("() => window.MR.liveRunde()")
 
@@ -454,7 +457,8 @@ def test_bei_stoerung_wird_der_punkt_grau_und_die_karte_bleibt(app, antwort, war
         assert eintrag["aus"] is True, (warum, eintrag)
         # Der Zeitstempel bleibt stehen — er sagt, wann zuletzt etwas
         # Gutes kam, nicht wann zuletzt gefragt wurde.
-        assert eintrag["text"] == stand_vorher[eintrag["markt"]], (warum, eintrag)
+        assert eintrag["text"] == stand_vorher[(eintrag["markt"], eintrag["ticker"])], \
+            (warum, eintrag)
     assert kurse(app) == vorher, f"{warum}: die Kurse wurden angetastet"
 
 
@@ -546,3 +550,108 @@ def test_das_antwortformat_wird_tolerant_gelesen(app, daten, preis, prozent):
 )
 def test_unverstaendliche_antworten_ergeben_null(app, daten):
     assert app.evaluate("d => window.MR.leseKurs(d)", daten) is None, daten
+
+
+# ==========================================================================
+# DIE LIVE-ANZEIGE JE KARTE
+#
+# Bis zum 13.08.2026 gab es Punkt und Uhrzeit genau zweimal — einmal je
+# Markt-Block. Damit sagte eine graue Anzeige nur "irgendeiner der fuenf
+# Titel klemmt", und ein gruener Punkt stand auch ueber vier stehenden
+# Kursen, solange einer frisch war. Jetzt haengt jede Anzeige an genau
+# dem Kurs, neben dem sie steht.
+# ==========================================================================
+
+
+def netz_je_ticker(page, fehlschlag):
+    """Die Kursquelle antwortet je nach TICKER — genau ein Titel klemmt.
+
+    Der Reihen-Stub oben taugt dafuer nicht: er gibt die Antworten in der
+    Aufrufreihenfolge aus, und die ist bei parallelen Abrufen kein
+    verlaesslicher Zeiger auf einen bestimmten Titel.
+    """
+    page.evaluate(
+        """(kaputt) => {
+          window.MR.deps.netz = function (url) {
+            var treffer = /ticker=([^&]+)/.exec(String(url));
+            var ticker = treffer ? decodeURIComponent(treffer[1]) : "";
+            if (ticker === kaputt) {
+              return Promise.resolve({ ok: false, status: 503,
+                json: function () { return Promise.resolve({}); } });
+            }
+            return Promise.resolve({ ok: true, status: 200,
+              json: function () {
+                return Promise.resolve({ price: 42.5, changePercent: 1.0 });
+              } });
+          };
+        }""",
+        fehlschlag,
+    )
+
+
+def test_jede_karte_hat_ihre_eigene_live_anzeige(app):
+    """So viele Anzeigen wie Kurse — nicht zwei fuer zehn Karten."""
+    zustand = live_zustand(app)
+    kurs_felder = app.evaluate("document.querySelectorAll('[data-quote]').length")
+    assert len(zustand) == kurs_felder > 2, zustand
+    # Und jede ist eindeutig: Markt plus Ticker, keine Kollision.
+    schluessel = [(e["markt"], e["ticker"]) for e in zustand]
+    assert len(set(schluessel)) == len(schluessel), schluessel
+    assert all(e["markt"] for e in zustand), "eine Karte ohne Markt-Zuordnung"
+
+
+def test_im_startzustand_steht_ueberall_der_gedankenstrich(app):
+    for eintrag in live_zustand(app):
+        assert eintrag["text"] == "Live · —", eintrag
+
+
+def test_ein_klemmender_titel_faerbt_NUR_seine_eigene_karte_grau(app):
+    """DIE Zusage dieses Umbaus: die Karten haengen nicht mehr aneinander."""
+    ruesten(app, [{"status": 200, "json": {"price": 42.5, "changePercent": 1.0}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    for eintrag in live_zustand(app):
+        assert eintrag["aus"] is False, ("Vorlauf misslungen", eintrag)
+    vorher = {(e["markt"], e["ticker"]): e["text"] for e in live_zustand(app)}
+
+    kaputt = live_zustand(app)[0]["ticker"]
+    netz_je_ticker(app, kaputt)
+    app.evaluate("() => window.MR.liveRunde()")
+
+    grau = [e for e in live_zustand(app) if e["aus"]]
+    assert [e["ticker"] for e in grau] == [kaputt] or all(
+        e["ticker"] == kaputt for e in grau
+    ), f"nicht nur {kaputt} wurde grau: {grau}"
+    for eintrag in live_zustand(app):
+        if eintrag["ticker"] == kaputt:
+            # Stehengeblieben, nicht zurueckgesetzt: der Zeitstempel sagt,
+            # wann zuletzt etwas Gutes kam.
+            assert eintrag["text"] == vorher[(eintrag["markt"], eintrag["ticker"])]
+        else:
+            assert eintrag["aus"] is False, eintrag
+            assert ":" in eintrag["text"], eintrag
+
+
+def test_die_alte_anzeige_je_markt_block_ist_weg(app):
+    """Dieselbe Aussage zweimal waere eine zu viel."""
+    assert app.evaluate("document.querySelectorAll('[data-live]').length") == 0
+
+
+def test_die_live_zeile_bricht_auf_390_px_nicht_um(app):
+    """Die Zusatzzeile darf die Karte nicht sprengen."""
+    app.set_viewport_size({"width": 390, "height": 900})
+    ruesten(app, [{"status": 200, "json": {"price": 1234.56, "changePercent": -12.3}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    befund = app.evaluate(
+        """() => [...document.querySelectorAll('.live--karte')].map(el => ({
+             hoehe: el.getBoundingClientRect().height,
+             zeilen: el.querySelector('.live-txt').getClientRects().length,
+             rechts: el.getBoundingClientRect().right,
+           }))"""
+    )
+    assert befund, "keine Live-Zeile gefunden"
+    for eintrag in befund:
+        assert eintrag["zeilen"] == 1, f"die Zeile bricht um: {eintrag}"
+        assert eintrag["rechts"] <= 390, f"sie ragt ueber den Rand: {eintrag}"
+    assert app.evaluate(
+        "document.documentElement.scrollWidth <= 390"
+    ), "die Seite scrollt seitwaerts"

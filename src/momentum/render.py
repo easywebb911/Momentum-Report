@@ -614,6 +614,10 @@ def _card(row: dict, view: MarketView) -> str:
           <div class="metric-box">
             <span class="m-val" data-quote="{e(row["ticker"])}">{price_text}</span>
             <span class="m-lbl"><span data-quote-change="{e(row["ticker"])}"></span>Kurs ({e(market.currency)})</span>
+            <span class="live live--karte" data-live-markt="{e(market.key)}"
+                  data-live-ticker="{e(row["ticker"])}"
+               ><span class="live-dot" aria-hidden="true"></span
+               ><span class="live-txt">Live · —</span></span>
           </div>
         </div>
         <div class="metrics metrics--rang">
@@ -644,10 +648,7 @@ def _market_section(view: MarketView) -> str:
     return f"""<section class="market">
   <h2><span class="flag" aria-hidden="true">{market.flag}</span>{e(market.name)}</h2>
   <p class="market-meta">Ranking vom {de_date(stichtag)} · {price_line} ·
-     {cov["bewertet"]} von {cov["universum"]} Titeln bewertet<span
-       class="live" data-live="{e(market.key)}" hidden
-       ><span class="live-dot" aria-hidden="true"></span
-       ><span class="live-txt">Live · —</span></span></p>
+     {cov["bewertet"]} von {cov["universum"]} Titeln bewertet</p>
 {_trend_banner(view)}
   <div class="cards">
 {chr(10).join(_card(row, view) for row in rows)}
