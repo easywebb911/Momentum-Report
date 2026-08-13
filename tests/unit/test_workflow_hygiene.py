@@ -38,12 +38,6 @@ def test_es_gibt_die_erwarteten_workflows():
         # Fenster vor dem Stichtag, ob die Fremdquellen noch ihre Form
         # halten.
         "vertrag.yml",
-        # WEGWERF, faellt mit dem Rueckbau-PR wieder heraus: die Messung
-        # des Bewertungs-Ankers der beiden S&P-500-UCITS-Fonds. Sie muss
-        # an mehreren Werktagen laufen, bevor Stufe 2b entschieden werden
-        # kann -- und sie laesst sich nur auf einem Runner ausfuehren,
-        # weil der Egress-Proxy der Bau-Sitzung ishares.com blockt.
-        "mess_us_anker.yml",
     }
 
 

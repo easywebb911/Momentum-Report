@@ -133,6 +133,26 @@ ERWARTETE_WAEHRUNG = "EUR"
 #   3. Bewertungszeitpunkt: ein UCITS-Fonds bewertet US-Aktien nicht
 #      zwingend zum US-Schluss. Das waere vor dem Scharfschalten zu
 #      messen -- so, wie es der Vertragstest fuer DE tut.
+#
+# ZU PUNKT 3 IST DIE ANTWORT INZWISCHEN GEMESSEN (Wegwerf-Messung,
+# 10.-12.08.2026, danach entfernt). Zwei unabhaengige Datei-Stichtage
+# (07.08. und 10.08.), je rund 490 Titel, gegen ZWEI Anker gestellt:
+#
+#   Anker = Stichtag der Datei selbst:  Median/p90/p99 0,000 %,
+#           Maximum 0,002 % bzw. 0,004 % — NULL Titel ueber 0,5 %.
+#   Anker = Handelstag davor:           Median 1,04 % bzw. 1,33 %,
+#           p99 9,4 % bzw. 6,9 %, Maximum bis 28 % — rund 290 von 490
+#           Titeln ueber 1,0 %.
+#
+# Der Fonds bewertet also zum Schluss DESSELBEN Tages, den seine Datei
+# im Vorspann nennt. Das ist kein Abwaegen, sondern ein Ausschlag um
+# mehr als Faktor 250. Beide Fonds waren dabei untereinander auf
+# 0,000 % einig (494 gemeinsame Titel).
+#
+# Fuer eine spaetere US-Toleranz folgt daraus: das beobachtete Rauschen
+# ist reine Rundung der zweistelligen Kurs-Spalte. Bei einem 2-Dollar-
+# Titel sind 0,005 Dollar bereits 0,25 % -- deshalb waere 0,25 % die
+# aus der Messung hergeleitete Schwelle, nicht 1,0 %.
 # --------------------------------------------------------------------------
 NICHT_VORGESEHEN = (
     "fuer diesen Markt gibt es keine zweite, unabhaengige Kursquelle "
