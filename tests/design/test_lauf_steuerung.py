@@ -397,7 +397,10 @@ def test_der_live_kurs_ersetzt_die_kurszeile(app):
     assert vorher != nachher
     for eintrag in nachher:
         assert "42,50" in eintrag["wert"], eintrag
-        assert "-1,3" in eintrag["aenderung"], eintrag
+        # Das Minus ist das typografische (U+2212), nicht der Bindestrich:
+        # in der Ziffernbreite der Kachel (tabular-nums) steht es auf
+        # derselben Breite wie das Plus, der Bindestrich tut das nicht.
+        assert "−1,3" in eintrag["aenderung"], eintrag
     # Das Waehrungszeichen der Karte bleibt erhalten.
     assert nachher[0]["wert"].strip()[0] in "$€", nachher[0]
 
@@ -655,3 +658,134 @@ def test_die_live_zeile_bricht_auf_390_px_nicht_um(app):
     assert app.evaluate(
         "document.documentElement.scrollWidth <= 390"
     ), "die Seite scrollt seitwaerts"
+
+
+# ==========================================================================
+# DIE TAGESVERAENDERUNG IN DER KURS-KACHEL
+#
+# Familien-Standard der Schwester-Werkzeuge: unter dem Kurs steht
+# "▲ <absolut> (<prozent>)", gruen bei plus, rot bei minus, neutral bei
+# null. Die Angaben kommen aus derselben Antwort, die ohnehin schon
+# gepollt wird -- kein zusaetzlicher Abruf, kein neues Feld im Bericht.
+#
+# Der Punkt, an dem so etwas gewoehnlich luegt, ist die fehlende Angabe:
+# eine Kachel, die "0,00 %" zeigt, weil sie nichts weiss, behauptet einen
+# unveraenderten Kurs. Deshalb der eigene Test fuer "noch keine Antwort".
+# ==========================================================================
+
+
+def aenderungen(page):
+    return page.evaluate(
+        """() => [...document.querySelectorAll('[data-quote-change]')].map(el => ({
+             ticker: el.getAttribute('data-quote-change'),
+             text: el.textContent,
+             klassen: [...el.classList],
+           }))"""
+    )
+
+
+@pytest.mark.parametrize(
+    "daten,pfeil,klasse,teile",
+    [
+        # So antwortet der Kurs-Worker: "change" in Prozent, "change_abs"
+        # als Betrag.
+        ({"price": 42.5, "change": 0.8, "change_abs": 1.23},
+         "▲", "pos", ["+1,23", "+0,8 %"]),
+        ({"price": 42.5, "change": -0.8, "change_abs": -1.23},
+         "▼", "neg", ["−1,23", "−0,8 %"]),
+        ({"price": 42.5, "change": 0, "change_abs": 0},
+         "•", "neutral", ["±0,00", "±0,0 %"]),
+    ],
+    ids=["plus", "minus", "null"],
+)
+def test_die_kachel_zeigt_die_tagesveraenderung(app, daten, pfeil, klasse, teile):
+    ruesten(app, [{"status": 200, "json": daten}])
+    app.evaluate("() => window.MR.liveRunde()")
+
+    befund = aenderungen(app)
+    assert befund, "keine Aenderungszeile gefunden"
+    for eintrag in befund:
+        assert eintrag["text"].startswith(pfeil), eintrag
+        assert klasse in eintrag["klassen"], eintrag
+        for teil in teile:
+            assert teil in eintrag["text"], eintrag
+        # Der Prozentwert steht in Klammern hinter dem Betrag.
+        assert "(" in eintrag["text"] and eintrag["text"].endswith(")"), eintrag
+
+
+def test_ohne_antwort_steht_da_keine_erfundene_null(app):
+    """Der eigentliche Test: Nichtwissen sieht nicht aus wie "unveraendert"."""
+    for eintrag in aenderungen(app):
+        assert eintrag["text"] == "", eintrag
+        assert eintrag["klassen"] == ["m-chg"], eintrag
+
+    # Auch eine gestoerte Runde erfindet nichts.
+    ruesten(app, [{"status": 503}])
+    app.evaluate("() => window.MR.liveRunde()")
+    for eintrag in aenderungen(app):
+        assert eintrag["text"] == "", eintrag
+
+
+def test_eine_stoerung_laesst_den_letzten_stand_stehen(app):
+    """Wie beim Zeitstempel: der letzte gute Wert ist mehr wert als eine
+    geleerte Zeile -- dass er alt ist, sagt der graue Punkt daneben."""
+    ruesten(app, [{"status": 200, "json": {"price": 42.5, "change": 0.8, "change_abs": 1.23}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    vorher = {e["ticker"]: e["text"] for e in aenderungen(app)}
+    assert all(vorher.values()), vorher
+
+    ruesten(app, [{"status": 503}])
+    app.evaluate("() => window.MR.liveRunde()")
+    assert {e["ticker"]: e["text"] for e in aenderungen(app)} == vorher
+
+
+def test_eine_antwort_ohne_veraenderung_laesst_die_zeile_leer(app):
+    """Kurs ja, Tagesabstand nein: dann nur der Kurs. Kein "±0,00"."""
+    ruesten(app, [{"status": 200, "json": {"price": 42.5}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    for eintrag in kurse(app):
+        assert "42,50" in eintrag["wert"], eintrag
+    for eintrag in aenderungen(app):
+        assert eintrag["text"] == "", eintrag
+
+
+def test_die_aenderungszeile_bricht_auf_390_px_nicht_um(app):
+    """Der lange Fall: vierstelliger Kurs, dreistelliger Abstand."""
+    app.set_viewport_size({"width": 390, "height": 900})
+    ruesten(app, [{"status": 200, "json": {
+        "price": 1234.56, "change": -12.34, "change_abs": -173.45}}])
+    app.evaluate("() => window.MR.liveRunde()")
+
+    befund = app.evaluate(
+        """() => [...document.querySelectorAll('.m-chg')].map(el => ({
+             zeilen: el.getClientRects().length,
+             rechts: el.getBoundingClientRect().right,
+             kachel: el.closest('.metric-box').getBoundingClientRect().right,
+           }))"""
+    )
+    assert befund, "keine Aenderungszeile gefunden"
+    for eintrag in befund:
+        assert eintrag["zeilen"] == 1, f"die Zeile bricht um: {eintrag}"
+        assert eintrag["rechts"] <= eintrag["kachel"] + 0.5, f"sie tritt aus: {eintrag}"
+        assert eintrag["rechts"] <= 390, f"sie ragt ueber den Rand: {eintrag}"
+    assert app.evaluate(
+        "document.documentElement.scrollWidth <= 390"
+    ), "die Seite scrollt seitwaerts"
+
+
+def test_die_ticker_zeile_springt_nicht_wenn_die_aenderung_kommt(app):
+    """Der Platz ist von Anfang an reserviert (min-height auf .m-chg).
+
+    Sonst haette jede Karte beim ersten Eintreffen einer Antwort einen
+    Ruck gemacht -- und zwar nacheinander, waehrend man liest.
+    """
+    app.set_viewport_size({"width": 390, "height": 900})
+    zeile = "() => [...document.querySelectorAll('.ticker-zeile')]" \
+            ".map(el => Math.round(el.getBoundingClientRect().top))"
+    vorher = app.evaluate(zeile)
+    assert vorher, "keine Ticker-Zeile gefunden"
+
+    ruesten(app, [{"status": 200, "json": {
+        "price": 1234.56, "change": -12.34, "change_abs": -173.45}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    assert app.evaluate(zeile) == vorher, "die Karten sind gesprungen"

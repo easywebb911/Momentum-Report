@@ -632,10 +632,30 @@ main > h2::after {
   .live-dot { animation: none; }
 }
 
-/* Die Tagesaenderung sitzt im Label der Kurs-Kachel, vor dem Wort "Kurs". */
-[data-quote-change]:not(:empty) { margin-right: 0.25rem; }
-[data-quote-change].pos { color: var(--grn); }
-[data-quote-change].neg { color: var(--red); }
+/* Die Tagesveraenderung: eigene Zeile DIREKT unter dem Kurs.
+   `tabular-nums` ist hier kein Detail, sondern der Punkt: ohne
+   gleichbreite Ziffern springt die Zeile bei jeder Aktualisierung, und
+   ein Wert, der zappelt, sieht unsicher aus, obwohl er es nicht ist. */
+.m-chg {
+  display: block;
+  /* Beides zusammen haelt die Kachel ruhig: die min-height reserviert den
+     Platz, solange die Zeile leer ist, und die feste line-height sorgt
+     dafuer, dass die gefuellte Zeile genau denselben Platz braucht. Ohne
+     die line-height waere die Karte beim ersten Kurs um ein paar Pixel
+     gesprungen -- die Pfeile ▲▼ kommen aus einer Ersatzschrift, deren
+     Zeilenkasten hoeher ist als der der Ziffern. */
+  min-height: 0.875rem;
+  line-height: 0.875rem;
+  margin-top: 0.0625rem;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  white-space: nowrap;
+  color: var(--txt-sub);
+}
+.m-chg.pos { color: var(--grn); }
+.m-chg.neg { color: var(--red); }
+.m-chg.neutral { color: var(--txt-sub); }
 
 .card-score { flex: none; text-align: right; }
 
