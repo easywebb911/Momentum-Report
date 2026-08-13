@@ -217,8 +217,20 @@ def test_die_karte_traegt_die_anker_fuer_den_live_kurs():
     html = render_index([_view()], Date(2026, 8, 3))
     assert 'data-quote="AAA"' in html
     assert 'data-quote-change="AAA"' in html
-    assert 'data-live="us"' in html
-    assert 'class="live" data-live="us" hidden' in html, "ohne JS bleibt sie unsichtbar"
+    # Seit dem 13.08.2026 haengt die Live-Anzeige an der KARTE, nicht mehr
+    # am Markt-Block: Markt und Ticker zusammen sind der Anker.
+    assert 'data-live-markt="us"' in html
+    assert 'data-live-ticker="AAA"' in html
+    assert 'data-live="us"' not in html, "die alte Markt-Anzeige ist zurueck"
+    # Sie ist von Anfang an SICHTBAR und sagt "Live · —", statt wie frueher
+    # bis zur ersten Antwort versteckt zu bleiben. Grund: der Punkt sitzt
+    # jetzt mitten in der Kurs-Box; eine Anzeige, die dort nachtraeglich
+    # auftaucht, ruckelt die Karte. "—" ist ausserdem die ehrlichere
+    # Auskunft als gar nichts -- es sagt: gefragt, noch keine Antwort.
+    assert 'class="live live--karte"' in html
+    assert "Live · —" in html
+    # Je Karte genau eine, so viele wie Kurs-Anker.
+    assert html.count("data-live-ticker=") == html.count("data-quote=")
 
 
 def test_live_beruehrt_score_und_rang_nicht():

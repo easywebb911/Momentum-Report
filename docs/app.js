@@ -587,15 +587,31 @@
     return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
   }
 
-  var liveStand = {};   // Markt -> Zeitpunkt der letzten guten Antwort
+  // Schluessel: Markt UND Ticker. Derselbe Titel kann in zwei Maerkten
+  // stehen, und beide Karten fuehren ihren eigenen Stand -- sonst wuerde
+  // eine gelungene Abfrage im einen Markt die stehengebliebene Uhrzeit im
+  // anderen ueberschreiben.
+  var liveStand = {};   // "markt|ticker" -> Zeitpunkt der letzten guten Antwort
 
-  function liveAnzeigen(markt, gut) {
-    var el = document.querySelector('[data-live="' + markt + '"]');
+  function liveSchluessel(markt, ticker) { return markt + "|" + ticker; }
+
+  /**
+   * Die Live-Anzeige EINER Karte setzen.
+   *
+   * Je Karte, nicht je Markt: der Punkt sitzt beim Kurs, den er meint.
+   * Eine Karte, deren Abruf klemmt, wird grau und behaelt ihre alte
+   * Uhrzeit -- alle anderen bleiben davon unberuehrt, weil hier
+   * ausschliesslich das eine Element angefasst wird.
+   */
+  function liveAnzeigen(bereich, markt, ticker, gut) {
+    var el = bereich.querySelector('[data-live-ticker="' + ticker + '"]');
     if (!el) { return; }
-    el.hidden = false;
-    if (gut) { liveStand[markt] = deps.jetzt(); }
-    var stand = liveStand[markt];
-    el.className = "live" + (gut ? "" : " live--aus");
+    var schluessel = liveSchluessel(markt, ticker);
+    if (gut) { liveStand[schluessel] = deps.jetzt(); }
+    var stand = liveStand[schluessel];
+    // Der Zeitstempel sagt, wann zuletzt etwas GUTES kam -- nicht, wann
+    // zuletzt gefragt wurde. Deshalb bleibt er bei einer Stoerung stehen.
+    el.className = "live live--karte" + (gut ? "" : " live--aus");
     el.querySelector(".live-txt").textContent =
       "Live · " + (stand ? uhrzeit(stand) : "—");
   }
@@ -627,20 +643,24 @@
     return true;
   }
 
-  /** [{markt, bereich, tickers}] — je Markt-Sektion die sichtbaren Titel. */
+  /** [{markt, bereich, tickers}] — je Markt-Sektion die sichtbaren Titel.
+   *
+   * Der Markt-Schluessel kommt jetzt von den Karten selbst
+   * (data-live-markt): die frueher eigenstaendige Markt-Anzeige gibt es
+   * nicht mehr, seit Punkt und Uhrzeit je Karte stehen. */
   function sichtbareMaerkte() {
     var gefunden = [];
     var sektionen = document.querySelectorAll("section.market");
     for (var i = 0; i < sektionen.length; i++) {
-      var live = sektionen[i].querySelector("[data-live]");
-      if (!live) { continue; }
       var werte = sektionen[i].querySelectorAll("[data-quote]");
+      if (!werte.length) { continue; }
+      var marke = sektionen[i].querySelector("[data-live-markt]");
       var tickers = [];
       for (var j = 0; j < werte.length; j++) {
         tickers.push(werte[j].getAttribute("data-quote"));
       }
       gefunden.push({
-        markt: live.getAttribute("data-live"),
+        markt: marke ? marke.getAttribute("data-live-markt") : String(i),
         bereich: sektionen[i],
         tickers: tickers
       });
@@ -664,11 +684,16 @@
           .then(function (daten) {
             return kursSetzen(eintrag.bereich, ticker, leseKurs(daten));
           })
-          .catch(function () { return false; });   // fail-soft, kein Nachfassen
+          .catch(function () { return false; })   // fail-soft, kein Nachfassen
+          .then(function (gut) {
+            // JE TITEL entschieden, unmittelbar nach SEINER Antwort. Ein
+            // klemmender Abruf faerbt damit genau eine Karte grau und
+            // keine zweite -- die Anzeigen haengen nicht mehr aneinander.
+            liveAnzeigen(eintrag.bereich, eintrag.markt, ticker, gut === true);
+            return gut;
+          });
       })).then(function (ergebnisse) {
-        var gut = ergebnisse.some(function (x) { return x === true; });
-        liveAnzeigen(eintrag.markt, gut);
-        return gut;
+        return ergebnisse.some(function (x) { return x === true; });
       });
     })).then(function () { return "fertig"; });
   }
@@ -676,7 +701,7 @@
   var liveUhr = null;
 
   function liveStarten() {
-    if (!document.querySelector("[data-live]")) { return; }
+    if (!document.querySelector("[data-quote]")) { return; }
     liveRunde();
     if (liveUhr === null) {
       liveUhr = setInterval(liveRunde, TAKT_MS);

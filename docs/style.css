@@ -611,6 +611,18 @@ main > h2::after {
 .live--aus .live-dot { background: var(--txt-dim); animation: none; }
 .live-txt { font-variant-numeric: tabular-nums; }
 
+/* Die Anzeige JE KARTE: eigene Zeile unter Kurs und Tagesaenderung,
+   rechtsbuendig. Sie steht bewusst in der Kurs-Box und nicht am Rand der
+   Karte -- der Punkt soll den Kurs meinen, neben dem er sitzt.
+   `white-space: nowrap` (oben) haelt "Live · 14:07" auf 390 px zusammen. */
+.live--karte {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.125rem 0 0;
+  font-size: 0.6875rem;
+  color: var(--txt-sub);
+}
+
 @keyframes live-puls {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
