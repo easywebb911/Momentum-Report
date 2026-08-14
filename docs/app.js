@@ -585,8 +585,11 @@
     if (eigenesAbs && prozent === null) { prozent = erstesFeld(kern, ["change"]); }
     if (!eigenesAbs && absolut === null) { absolut = erstesFeld(kern, ["change"]); }
 
-    // Manche Dienste liefern nur den Vortagesschluss.
-    var vortag = erstesFeld(kern, ["previousClose", "regularMarketPreviousClose", "pc"]);
+    // Manche Dienste liefern nur den Vortagesschluss. "prev_close" ist
+    // das Feld des Kurs-Workers.
+    var vortag = erstesFeld(kern, [
+      "prev_close", "previousClose", "regularMarketPreviousClose", "pc"
+    ]);
     if (absolut === null && vortag !== null) { absolut = preis - vortag; }
     if (prozent === null && vortag !== null && vortag !== 0) {
       prozent = (absolut !== null ? absolut / vortag : (preis - vortag) / vortag) * 100;

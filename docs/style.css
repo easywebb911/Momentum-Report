@@ -602,8 +602,8 @@ main > h2::after {
 .live[hidden] { display: none; }
 
 .live-dot {
-  width: 0.4375rem;
-  height: 0.4375rem;
+  width: 0.5625rem;
+  height: 0.5625rem;
   border-radius: 50%;
   background: var(--grn);
   animation: live-puls 2.4s ease-in-out infinite;
@@ -625,7 +625,7 @@ main > h2::after {
 
 @keyframes live-puls {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  50% { opacity: 0.2; }
 }
 
 @media (prefers-reduced-motion: reduce) {

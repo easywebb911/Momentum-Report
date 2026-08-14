@@ -713,6 +713,30 @@ def test_die_kachel_zeigt_die_tagesveraenderung(app, daten, pfeil, klasse, teile
         assert "(" in eintrag["text"] and eintrag["text"].endswith(")"), eintrag
 
 
+def test_die_echte_worker_antwort_wird_erkannt(app):
+    """Regression fuer den Live-Befund vom 13.08.: die Antwort des
+    Kurs-Workers traegt "change" (Prozent), "change_abs" (Betrag) und
+    "prev_close" -- keines der alten Fremd-Namen (changePercent,
+    previousClose, ...). Vor diesem Fix blieb die Zeile deshalb leer,
+    obwohl beide Werte vorlagen. Das genaue Beispiel aus dem Befund
+    (DHL.DE, unveraendert) wurde durch eine echte Bewegung ersetzt, weil
+    change=0 sonst nicht von "nichts erkannt" zu unterscheiden waere."""
+    ruesten(app, [{"status": 200, "json": {
+        "ticker": "DHL.DE", "price": 56.03, "change": 0.99, "change_abs": 0.55,
+        "volume": 468, "market_state": "UNKNOWN", "prev_close": 55.48,
+        "ts": 1_000_000_000,
+    }}])
+    app.evaluate("() => window.MR.liveRunde()")
+
+    befund = aenderungen(app)
+    assert befund, "keine Aenderungszeile gefunden"
+    for eintrag in befund:
+        assert eintrag["text"].startswith("▲"), eintrag
+        assert "pos" in eintrag["klassen"], eintrag
+        assert "+0,55" in eintrag["text"], eintrag
+        assert "+1,0 %" in eintrag["text"], eintrag
+
+
 def test_ohne_antwort_steht_da_keine_erfundene_null(app):
     """Der eigentliche Test: Nichtwissen sieht nicht aus wie "unveraendert"."""
     for eintrag in aenderungen(app):
