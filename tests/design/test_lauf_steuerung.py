@@ -797,6 +797,72 @@ def test_die_aenderungszeile_bricht_auf_390_px_nicht_um(app):
     ), "die Seite scrollt seitwaerts"
 
 
+def test_die_aenderung_wird_von_der_kurs_beschriftung_nicht_abgeschnitten(app):
+    """Regression fuer den Live-Befund vom 13.08.: auf dem damals noch
+    NICHT neu erzeugten docs/index.html steckte data-quote-change als
+    verschachteltes Element INNERHALB von .m-lbl -- derselben Zeile, die
+    "Kurs (EUR)" traegt und die dafuer white-space:nowrap +
+    overflow:hidden + text-overflow:ellipsis fuehrt. Mit dem zusaetzlichen
+    Aenderungstext wurde die Zeile zu lang und die Ellipsis-Regel schnitt
+    sie ab. Seit #33 ist data-quote-change ein eigenstaendiges .m-chg-
+    Geschwister von .m-lbl -- dieser Test haelt das ausdruecklich fest,
+    getrennt vom reinen Ueberlauf-Check oben: .m-chg traegt selbst gar
+    kein overflow/ellipsis, kann den Text also gar nicht mehr abschneiden,
+    UND .m-lbl bleibt unangetastet bei seiner kurzen, festen Beschriftung."""
+    app.set_viewport_size({"width": 390, "height": 900})
+    lang = {"price": 1234.56, "change": -12.34, "change_abs": -173.45}
+    erwartete_aenderung = "▼ −173,45 (−12,3 %)"
+    ruesten(app, [{"status": 200, "json": lang}])
+    app.evaluate("() => window.MR.liveRunde()")
+
+    befund = app.evaluate(
+        """() => [...document.querySelectorAll('.m-chg')].map(el => {
+             const box = el.closest('.metric-box');
+             const lbl = box.querySelector('.m-lbl');
+             const cs = getComputedStyle(el);
+             return {
+               aenderungstext: el.textContent,
+               // Die Ellipsis-Klemme braucht BEIDE Regeln zusammen
+               // (overflow:hidden + text-overflow:ellipsis) -- .m-chg
+               // traegt keine von beiden, kann also gar nicht mehr
+               // abschneiden, egal wie breit der Text wird.
+               overflow: cs.overflow,
+               textUeberlauf: cs.textOverflow,
+               ist_geschwister_von_m_lbl: el.parentElement === lbl.parentElement,
+               steckt_in_m_lbl: lbl.querySelector('[data-quote-change]') !== null,
+               beschriftungstext: lbl.textContent,
+             };
+           })"""
+    )
+    assert befund, "keine Aenderungszeile gefunden"
+    for eintrag in befund:
+        assert eintrag["aenderungstext"] == erwartete_aenderung, eintrag
+        assert eintrag["overflow"] != "hidden", eintrag
+        assert eintrag["textUeberlauf"] != "ellipsis", eintrag
+        assert eintrag["ist_geschwister_von_m_lbl"] is True, eintrag
+        assert eintrag["steckt_in_m_lbl"] is False, eintrag
+        # Die Beschriftung selbst ist unangetastet kurz -- "Kurs (EUR)"
+        # bzw. "Kurs (USD)", nie um den Aenderungstext verlaengert.
+        assert eintrag["beschriftungstext"].startswith("Kurs ("), eintrag
+        assert "▼" not in eintrag["beschriftungstext"], eintrag
+        assert "%" not in eintrag["beschriftungstext"], eintrag
+
+
+def test_live_punkt_und_takt_bleiben_von_der_aenderungszeile_unberuehrt(app):
+    """Die Live-Anzeige (Punkt + Uhrzeit je Karte) ist ein eigenes
+    Geschwister-Element und darf von der Aenderungszeile weder verschoben
+    noch inhaltlich beruehrt werden."""
+    ruesten(app, [{"status": 200, "json": {
+        "price": 1234.56, "change": -12.34, "change_abs": -173.45}}])
+    app.evaluate("() => window.MR.liveRunde()")
+    for eintrag in live_zustand(app):
+        assert eintrag["versteckt"] is False
+        assert eintrag["aus"] is False, eintrag
+        assert eintrag["text"].startswith("Live · "), eintrag
+    assert app.evaluate("window.MR.deps.pollAbstandMs") == 5, \
+        "der Polling-Takt wurde in diesem Test-Stub angetastet"
+
+
 def test_die_ticker_zeile_springt_nicht_wenn_die_aenderung_kommt(app):
     """Der Platz ist von Anfang an reserviert (min-height auf .m-chg).
 
