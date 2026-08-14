@@ -813,3 +813,90 @@ def test_die_ticker_zeile_springt_nicht_wenn_die_aenderung_kommt(app):
         "price": 1234.56, "change": -12.34, "change_abs": -173.45}}])
     app.evaluate("() => window.MR.liveRunde()")
     assert app.evaluate(zeile) == vorher, "die Karten sind gesprungen"
+
+
+# ==========================================================================
+# DER PULS ALS SCHEIN, NICHT ALS DECKKRAFT
+#
+# Befund vom Live-Deploy: die alte Animation liess den GANZEN Punkt per
+# opacity auf 0.2 verblassen -- ohne box-shadow-Schein wurde er auf
+# dunklem Grund praktisch unsichtbar. Familien-Standard (Elliott-Report):
+# die Fuellfarbe bleibt konstant gruen, nur ein box-shadow-Schein
+# pulsiert. Geprueft wird das ueber die Web-Animations-API (`getAnimations
+# ().currentTime`), nicht ueber ein Timing-Warten -- deterministisch, kein
+# Zufallstreffer je nach Prozessorlast.
+# ==========================================================================
+
+
+def _puls_proben(page, selektor=".live-dot"):
+    """Computed Style des Punkts an mehreren Stellen im Animationszyklus."""
+    return page.evaluate(
+        """(sel) => {
+             const el = document.querySelector(sel);
+             const anim = el.getAnimations()[0];
+             const zeitpunkte = anim ? [0, 600, 1200, 1800, 2399] : [0];
+             return zeitpunkte.map(t => {
+               if (anim) { anim.currentTime = t; }
+               const cs = getComputedStyle(el);
+               return { t, hintergrund: cs.backgroundColor, deckkraft: cs.opacity,
+                        schein: cs.boxShadow };
+             });
+           }""",
+        selektor,
+    )
+
+
+def test_die_fuellfarbe_bleibt_bei_jedem_animationsstand_voll_sichtbar(app):
+    """Kein Opacity-Tiefpunkt mehr am Element selbst -- egal, an welcher
+    Stelle des Zyklus man hinschaut, ist der Punkt voll deckend gruen."""
+    ruesten(app, [{"status": 200, "json": {"price": 42.5, "changePercent": 1.0}}])
+    app.evaluate("() => window.MR.liveRunde()")
+
+    proben = _puls_proben(app)
+    assert len(proben) > 1, "keine Animation gefunden -- Vorbedingung nicht erfuellt"
+    for probe in proben:
+        assert probe["hintergrund"] == "rgb(34, 197, 94)", probe
+        assert probe["deckkraft"] == "1", probe
+
+    # Und der Schein pulsiert wirklich -- sonst waere gar keine Bewegung
+    # mehr da, nur noch ein stehendes Bild.
+    scheine = {p["schein"] for p in proben}
+    assert len(scheine) > 1, "der Glow pulsiert nicht"
+
+
+def test_der_inaktive_punkt_hat_weder_schein_noch_animation(app):
+    """Der graue Zustand (Titel klemmt) bleibt eine Aussage ohne Puls."""
+    ruesten(app, [{"status": 503}])
+    app.evaluate("() => window.MR.liveRunde()")
+
+    zustand = app.evaluate(
+        """() => {
+             const el = document.querySelector('.live--aus .live-dot');
+             if (!el) { return null; }
+             const cs = getComputedStyle(el);
+             return { schein: cs.boxShadow, animation: cs.animationName };
+           }"""
+    )
+    assert zustand is not None, "kein inaktiver Punkt gefunden"
+    assert zustand["schein"] == "none", zustand
+    assert zustand["animation"] == "none", zustand
+
+
+def test_reduzierte_bewegung_laesst_den_punkt_dennoch_gruen_und_sichtbar(oeffne, server):
+    """prefers-reduced-motion stoppt die Animation, macht den Punkt aber
+    nicht merkmalslos: er bleibt voll gruen mit einem STEHENDEN Glow."""
+    page = oeffne("index.html", basis=server, bewegung="reduce")
+    ruesten(page, [{"status": 200, "json": {"price": 42.5, "changePercent": 1.0}}])
+    page.evaluate("() => window.MR.liveRunde()")
+
+    zustand = page.evaluate(
+        """() => {
+             const el = document.querySelector('.live-dot');
+             const cs = getComputedStyle(el);
+             return { hintergrund: cs.backgroundColor, schein: cs.boxShadow,
+                      animation: cs.animationName };
+           }"""
+    )
+    assert zustand["animation"] == "none", zustand
+    assert zustand["hintergrund"] == "rgb(34, 197, 94)", zustand
+    assert zustand["schein"] != "none", "der Punkt ist ohne Puls komplett merkmalslos"
