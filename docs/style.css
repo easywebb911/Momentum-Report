@@ -605,10 +605,19 @@ main > h2::after {
   width: 0.5625rem;
   height: 0.5625rem;
   border-radius: 50%;
+  /* Die FUELLFARBE pulsiert nicht mehr (frueher: opacity bis 0.2 -- auf
+     dunklem Grund ohne Schein praktisch unsichtbar). Familien-Standard
+     des Elliott-Reports: der Punkt bleibt voll deckend gruen, nur der
+     Schein darum atmet. */
   background: var(--grn);
+  box-shadow: 0 0 6px rgba(34, 197, 94, .55);
   animation: live-puls 2.4s ease-in-out infinite;
 }
-.live--aus .live-dot { background: var(--txt-dim); animation: none; }
+.live--aus .live-dot {
+  background: var(--txt-dim);
+  box-shadow: none;
+  animation: none;
+}
 .live-txt { font-variant-numeric: tabular-nums; }
 
 /* Die Anzeige JE KARTE: eigene Zeile unter Kurs und Tagesaenderung,
@@ -624,11 +633,14 @@ main > h2::after {
 }
 
 @keyframes live-puls {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
+  0%, 100% { box-shadow: 0 0 6px rgba(34, 197, 94, .55); }
+  50% { box-shadow: 0 0 2px rgba(34, 197, 94, .25); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Die Animation entfaellt, aber nicht der Schein selbst -- der Punkt
+     bleibt so voll gruen mit statischem Glow, statt merkmalslos zu
+     werden. */
   .live-dot { animation: none; }
 }
 
