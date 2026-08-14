@@ -99,6 +99,7 @@ nicht dokumentiert (bei #1–#3 deshalb „—").
 | **Anfang September 2026** | **Monatsende auswerten → Hygiene-Block → Stufe 3.** In dieser Reihenfolge: erst das erste scharfe Monatsende (31.08.) auswerten, dann den Hygiene-Backlog (§5: default-deny, Node-20), dann den Reparatur-Agenten bauen. | Easys Termin-Entscheid vom 09.08. Die Auswertung liefert die Bau-Grundlage für Stufe 3 — bis dahin wüsste ein Reparatur-Agent gar nicht, welche Sorten Rot es überhaupt gibt. Begründung im Stufenplan (§6). |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Vorher gibt es nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **laufend, montags** | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
+| **nach 25.08.2026** | **DE-Toleranz gegenprüfen.** Der Vertragstest (Stufe 1) liefert ab dem 25.08. echte Abweichungszahlen aus dem Fenster vor dem Stichtag — dann `TOLERANZ = 0.010` in `kursvergleich.py` gegen die tatsächliche Streuung prüfen, nicht gegen das gesetzte Bauchgefühl. | Die 1,0 % sind gesetzt, nicht gemessen (steht so im Code); nach der US-Messung (#31, Faktor 250 zwischen den Ankern) ist der Verdacht, dass 1,0 % für DE deutlich zu großzügig ist — aber ohne eigene DE-Messreihe bleibt das eine Vermutung, keine Herleitung. Bis dahin **nichts ändern**. |
 
 ---
 
@@ -175,10 +176,12 @@ sich selbst wartet"; die Maschine arbeitet, Easy behält den Ein-Tipp-Veto):
 | 0 | Totmannschalter (`waechter.yml`) | **gebaut** |
 | 1 | Vertragstests je Fremdquelle, werktags im Fenster 25.–31. | **gebaut** |
 | 2a | Zweite Kursquelle **DE** mit Vergleichsgatter (kein stiller Fallback; Muster: `riskfree_quelle`) | **gebaut** — erstmals scharf am 31.08. |
-| 2b | Zweite Kursquelle **US** (S&P-500-UCITS-Bestandslisten) | in Kalibrierung — Anker und Toleranz werden gemessen, nicht gesetzt |
+| 2b | Zweite Kursquelle **US** (S&P-500-UCITS-Bestandslisten) | kalibriert, Gatter-Bau folgt — Anker = Bestands-Stichtag selbst, Toleranz 0,25 %, Zulass 3 Abweichler, Ticker-Mapping Klassen-Titel „.“→„-“ (z. B. `BRK.B`→`BRK-B`) |
 | 3 | Reparatur-Agent: liest rote Läufe, öffnet einen PR, CI beweist, Easy merged | offen — **entschieden 09.08.: Anfang September**, nach Auswertung des ersten scharfen Monatsendes (31.08.) |
 
-*Warum der September und nicht früher:* Bis dahin ist das Fundament 0–2 komplett (2b in Kalibrierung), das erste scharfe Monatsende liefert die echten Rot-Sorten als Bau-Grundlage statt ausgedachter, und der Termin fällt in denselben September-Block wie default-deny und Node-20.
+*Herleitung der Stufe-2b-Werte, übernommen 14.08.:* Die Wegwerf-Messung aus #31 (drei Läufe, 10.–12.08.) verglich dieselbe Titelmenge gegen zwei Anker — Anker A (Bestands-Stichtag selbst) ergab Max 0,002 %/0,004 %, Anker B (US-Vortag) Median 1,04 %/1,33 % mit Ausreißern bis 28 %, ein Faktor-250-Unterschied, stabil an beiden vorhandenen Datei-Stichtagen; die 0,25 % Toleranz folgen aus der Rundung der zweistelligen Kurs-Spalte, Zulass 3 übernimmt das bewährte Muster des DE-Gatters (`ZULASS_ABWEICHLER`), und das Ticker-Mapping schließt die in #28 offen benannte Lücke bei Klassen-Titeln (`BRK.B`, `BF.B`). Der Gatter-Bau selbst folgt erst nach dem 31.08. (siehe Termin oben) und ist **MANUAL-MERGE**.
+
+*Warum der September und nicht früher:* Bis dahin ist das Fundament 0–2 komplett (2b kalibriert), das erste scharfe Monatsende liefert die echten Rot-Sorten als Bau-Grundlage statt ausgedachter, und der Termin fällt in denselben September-Block wie default-deny und Node-20.
 
 Die harte Grenze der Stufe 3 gilt **unverändert weiter**: Der Agent öffnet PRs, die CI beweist, **Easy merged**. Kein Auto-Merge agentengeschriebener Fixes — der Termin ändert daran nichts.
 
