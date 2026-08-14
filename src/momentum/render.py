@@ -613,7 +613,8 @@ def _card(row: dict, view: MarketView) -> str:
           </div>
           <div class="metric-box">
             <span class="m-val" data-quote="{e(row["ticker"])}">{price_text}</span>
-            <span class="m-lbl"><span data-quote-change="{e(row["ticker"])}"></span>Kurs ({e(market.currency)})</span>
+            <span class="m-chg" data-quote-change="{e(row["ticker"])}"></span>
+            <span class="m-lbl">Kurs ({e(market.currency)})</span>
             <span class="live live--karte" data-live-markt="{e(market.key)}"
                   data-live-ticker="{e(row["ticker"])}"
                ><span class="live-dot" aria-hidden="true"></span

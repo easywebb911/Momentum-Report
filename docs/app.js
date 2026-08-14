@@ -566,16 +566,35 @@
     var prozent = erstesFeld(kern, [
       "changePercent", "regularMarketChangePercent", "changesPercentage", "dp", "percent"
     ]);
-    // Manche Dienste liefern nur den absoluten Vortagesschluss/Abstand.
-    if (prozent === null) {
-      var vortag = erstesFeld(kern, ["previousClose", "regularMarketPreviousClose", "pc"]);
-      var diff = erstesFeld(kern, ["change", "regularMarketChange", "d"]);
-      if (vortag !== null && vortag !== 0) {
-        if (diff !== null) { prozent = (diff / vortag) * 100; }
-        else { prozent = ((preis - vortag) / vortag) * 100; }
-      }
+
+    // Der absolute Tagesabstand. "change_abs" ist das Feld des
+    // Kurs-Workers; die uebrigen Namen decken die gebraeuchlichen
+    // Fassungen ab.
+    var absolut = erstesFeld(kern, [
+      "change_abs", "changeAbs", "regularMarketChange", "d"
+    ]);
+
+    // WICHTIGE UNTERSCHEIDUNG, und sie ist der Grund fuer diese
+    // Reihenfolge: das Feld "change" heisst bei verschiedenen Diensten
+    // Verschiedenes. Liefert die Antwort ein eigenes change_abs, dann
+    // meint ihr "change" die PROZENT-Angabe (so macht es der
+    // Kurs-Worker). Gibt es kein change_abs, ist "change" wie eh und je
+    // der absolute Abstand. Geraten wird an keiner Stelle -- entschieden
+    // wird an der Anwesenheit des zweiten Feldes.
+    var eigenesAbs = erstesFeld(kern, ["change_abs", "changeAbs"]) !== null;
+    if (eigenesAbs && prozent === null) { prozent = erstesFeld(kern, ["change"]); }
+    if (!eigenesAbs && absolut === null) { absolut = erstesFeld(kern, ["change"]); }
+
+    // Manche Dienste liefern nur den Vortagesschluss. "prev_close" ist
+    // das Feld des Kurs-Workers.
+    var vortag = erstesFeld(kern, [
+      "prev_close", "previousClose", "regularMarketPreviousClose", "pc"
+    ]);
+    if (absolut === null && vortag !== null) { absolut = preis - vortag; }
+    if (prozent === null && vortag !== null && vortag !== 0) {
+      prozent = (absolut !== null ? absolut / vortag : (preis - vortag) / vortag) * 100;
     }
-    return { preis: preis, prozent: prozent };
+    return { preis: preis, prozent: prozent, absolut: absolut };
   }
 
   function deZahl(wert, stellen) {
@@ -616,6 +635,41 @@
       "Live · " + (stand ? uhrzeit(stand) : "—");
   }
 
+  /**
+   * Die Tagesveraenderung als "▲ +1,23 (+0,8 %)" — Familien-Standard.
+   *
+   * Was NICHT passiert: eine fehlende Angabe wird nie zu "0,00 %"
+   * ergaenzt. Kommt weder ein Betrag noch ein Prozentwert an, bleibt die
+   * Zeile leer -- und eine leere Zeile ist die ehrliche Auskunft "dazu
+   * wissen wir nichts", waehrend eine erfundene Null eine Aussage waere.
+   *
+   * Das Vorzeichen steht immer da, auch beim Plus: sonst muesste man beim
+   * Ueberfliegen erst die Farbe lesen, um die Richtung zu erkennen.
+   */
+  function aenderungSetzen(el, gelesen) {
+    var prozent = gelesen ? gelesen.prozent : null;
+    var absolut = gelesen ? gelesen.absolut : null;
+    if (prozent === null && absolut === null) {
+      // Stehenlassen, was dasteht: der letzte gute Wert ist mehr wert als
+      // eine geleerte Zeile. Beim ersten Mal ist ohnehin nichts da.
+      return;
+    }
+    var richtung = prozent !== null ? prozent : absolut;
+    var pfeil = richtung > 0 ? "▲" : (richtung < 0 ? "▼" : "•");
+    var teile = [];
+    if (absolut !== null) {
+      teile.push((absolut > 0 ? "+" : (absolut < 0 ? "\u2212" : "\u00b1")) +
+                 deZahl(Math.abs(absolut), 2));
+    }
+    if (prozent !== null) {
+      var p = (prozent > 0 ? "+" : (prozent < 0 ? "\u2212" : "\u00b1")) +
+              deZahl(Math.abs(prozent), 1) + "\u00a0%";
+      teile.push(teile.length ? "(" + p + ")" : p);
+    }
+    el.textContent = pfeil + "\u00a0" + teile.join("\u00a0");
+    el.className = "m-chg " + (richtung > 0 ? "pos" : (richtung < 0 ? "neg" : "neutral"));
+  }
+
   // Gesucht wird IMMER innerhalb der Markt-Sektion, nie global. Derselbe
   // Ticker kann in zwei Maerkten stehen; eine dokumentweite Suche wuerde
   // dann zweimal dieselbe Karte treffen und die andere nie.
@@ -630,16 +684,7 @@
     wert.textContent = waehrung + "\u00a0" + deZahl(gelesen.preis, 2);
 
     var aend = bereich.querySelector('[data-quote-change="' + ticker + '"]');
-    if (aend) {
-      if (gelesen.prozent === null) {
-        aend.textContent = "";
-        aend.className = "";
-      } else {
-        var vz = gelesen.prozent > 0 ? "+" : "";
-        aend.textContent = vz + deZahl(gelesen.prozent, 1) + "\u00a0%";
-        aend.className = gelesen.prozent > 0 ? "pos" : (gelesen.prozent < 0 ? "neg" : "");
-      }
-    }
+    if (aend) { aenderungSetzen(aend, gelesen); }
     return true;
   }
 
