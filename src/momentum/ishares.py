@@ -90,6 +90,46 @@ class Bestandsquelle:
     env_override: str      # Umgebungsvariable, die die URL ersetzen darf
 
 
+ISHARES_US: tuple[Bestandsquelle, ...] = (
+    # Beide ueber den DEUTSCHEN Endpunkt-Typ (1478358465952.ajax) -- der
+    # amerikanische Endpunkt liefert nur die Zustimmungs-Seite (siehe
+    # kursvergleich.py). SXR8 ist primaer, IUSA der dokumentierte Ausweich:
+    # beide bilden denselben Index ab und waren in der Wegwerf-Messung vom
+    # 09.-12.08.2026 auf 0,000 % untereinander einig. Verifiziert auf dem
+    # Runner der Wegwerf-Probe (#28): 504 Aktien-Zeilen, 494 Ticker, 494
+    # Kurse je Datei, Waehrung USD.
+    Bestandsquelle(
+        index_name="SXR8",
+        xetra="SXR8",
+        isin=None,
+        isin_belegt=False,
+        url=_ISHARES_DOWNLOAD.format(
+            produkt="253743", schnipsel="ishares-sp-500-b-ucits-etf-acc-fund",
+            datei="SXR8_holdings",
+        ),
+        env_override="MOMENTUM_URL_SXR8",
+    ),
+    Bestandsquelle(
+        index_name="IUSA",
+        xetra="IUSA",
+        isin=None,
+        isin_belegt=False,
+        url=_ISHARES_DOWNLOAD.format(
+            produkt="251900", schnipsel="ishares-sp-500-ucits-etf-inc-fund",
+            datei="IUSA_holdings",
+        ),
+        env_override="MOMENTUM_URL_IUSA",
+    ),
+)
+
+# ANZAHL-GATTER fuer die US-Fonds-Bestandslisten -- eigener, breiterer
+# Bereich als bei den DE-Indizes: hier geht es nicht darum, drei sich
+# gegenseitig ausschliessende Indizes zu trennen, sondern eine plausible
+# S&P-500-Abbildung von einer kaputten Datei zu unterscheiden. Beobachtet
+# (Wegwerf-Probe #28, zwei unabhaengige Stichtage): 504 Aktien-Zeilen
+# je Fonds. +/-  ~20 laesst Raum fuer normale Indexumstellungen.
+ANZAHL_ERWARTET_US: tuple[int, int] = (480, 520)
+
 ISHARES_DE: tuple[Bestandsquelle, ...] = (
     Bestandsquelle(
         index_name="DAX",
@@ -250,6 +290,23 @@ def xetra_zu_yahoo(symbol: str) -> str | None:
     if not XETRA_MUSTER.match(roh):
         return None
     return f"{roh}.DE"
+
+
+# US-Symbole aus den Fonds-Bestandslisten (SXR8/IUSA) sind bereits
+# Yahoo-Ticker -- anders als bei den DE-Bestandslisten wird kein Suffix
+# angehaengt. Einzige noetige Uebersetzung: Yahoo schreibt Klassen-Ticker
+# mit Bindestrich statt Punkt (BRK.B -> BRK-B) -- dieselbe Regel wie in
+# `tools/build_universe.py:parse_us`, hier nur ein zweites Mal auf dieselbe
+# Symbolform angewandt, nicht ein zweiter Entwurf der Regel.
+US_SYMBOL_MUSTER = re.compile(r"^[A-Z]{1,5}(-[A-Z])?$")
+
+
+def us_symbol_zu_yahoo(symbol: str) -> str | None:
+    """US-Symbol der Fonds-Bestandsliste in einen Yahoo-Ticker uebersetzen."""
+    roh = symbol.strip().upper().replace(".", "-")
+    if not US_SYMBOL_MUSTER.match(roh):
+        return None
+    return roh
 
 
 def _trenner(zeile: str) -> str:
@@ -462,13 +519,19 @@ def parse_ishares_holdings(
     isin_resolver=None,
     max_alter: int = MAX_ALTER_HANDELSTAGE,
     erwartete_anzahl: tuple[int, int] | None = None,
+    ticker_uebersetzer=xetra_zu_yahoo,
 ) -> Befund:
     """Eine iShares-Bestandsliste auswerten.
 
     Nimmt den Dateiinhalt entgegen, nicht eine URL -- deshalb ohne Netz
     testbar. `isin_resolver` ist die Reserve fuer Zeilen ohne Ticker.
     `erwartete_anzahl` uebersteuert das ANZAHL-GATTER; ohne Angabe gilt der
-    Bereich aus ANZAHL_ERWARTET.
+    Bereich aus ANZAHL_ERWARTET. `ticker_uebersetzer` ist austauschbar,
+    weil die Symbol-Spalte je nach Bestandsliste eine andere Uebersetzung
+    braucht (Xetra-Kuerzel -> ".DE" fuer die DE-Bestandslisten, US-Symbol
+    -> Yahoo-Ticker fuer die US-Fondslisten) -- Kopfzeile, Gatter und
+    Kurs-Spalte sind in beiden Faellen exakt derselbe Vertrag, nur diese
+    eine Spalte nicht.
 
     Ein FONDSNAME wird nirgends erwartet: die echten deutschen Dateien
     fuehren keinen. Ihr gesamter Vorspann ist eine Zeile mit dem Stichtag.
@@ -525,7 +588,7 @@ def parse_ishares_holdings(
         sektor = feld(roh, SEKTOR_SPALTEN)
         kurs = _zahl(feld(roh, KURS_SPALTEN), befund.kurs_konvention)
         waehrung = feld(roh, WAEHRUNG_SPALTEN).upper()
-        ticker = xetra_zu_yahoo(feld(roh, SYMBOL_SPALTEN))
+        ticker = ticker_uebersetzer(feld(roh, SYMBOL_SPALTEN))
         if ticker is None:
             isin = feld(roh, ISIN_SPALTEN).upper()
             if isin_resolver is not None and ISIN_MUSTER.match(isin):

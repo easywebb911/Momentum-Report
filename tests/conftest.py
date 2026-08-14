@@ -102,6 +102,23 @@ def keine_bestandsliste_im_netz(monkeypatch):
     monkeypatch.setattr("momentum.ishares.urllib.request.urlopen", verboten)
 
 
+@pytest.fixture(autouse=True)
+def kein_split_kalender_im_netz(monkeypatch):
+    """Sperre: kein Test ruft den Yahoo-Split-Kalender ab.
+
+    Analog zu den beiden Sperren oben: der US-Kursvergleich holt den
+    Split-Kalender nur fuer Titel, die ausserhalb der Toleranz liegen --
+    ohne diese Sperre telefonierte ein Test mit genau so einem Titel still
+    nach draussen. Wer den Split-Pfad wirklich pruefen will, spielt ihn
+    ueber `splits_oeffner` ein.
+    """
+
+    def verboten(*_args, **_kwargs):
+        raise AssertionError("Test versucht, den Yahoo-Split-Kalender abzurufen")
+
+    monkeypatch.setattr("momentum.kursvergleich_us.lade_splits_yahoo", verboten)
+
+
 # --------------------------------------------------------------------------
 # Ersatz fuer yfinance
 # --------------------------------------------------------------------------

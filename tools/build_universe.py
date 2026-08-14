@@ -74,7 +74,9 @@ from momentum.ishares import (  # noqa: E402,F401
     AKTIEN_KLASSEN,
     ANLAGEKLASSE_SPALTEN,
     ANZAHL_ERWARTET,
+    ANZAHL_ERWARTET_US,
     ISHARES_DE,
+    ISHARES_US,
     ISIN_MUSTER,
     ISIN_SPALTEN,
     KURS_SPALTEN,
@@ -103,6 +105,7 @@ from momentum.ishares import (  # noqa: E402,F401
     pruefe_aktualitaet,
     pruefe_anzahl,
     quellen_url,
+    us_symbol_zu_yahoo,
     xetra_zu_yahoo,
 )
 
