@@ -42,8 +42,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from build_universe import (  # noqa: E402
     ANZAHL_ERWARTET,
+    ANZAHL_ERWARTET_US,
     ERWARTET,
     ISHARES_DE,
+    ISHARES_US,
     MAX_ALTER_HANDELSTAGE,
     QUELLE_US,
     Bestandsquelle,
@@ -54,9 +56,11 @@ from build_universe import (  # noqa: E402
     parse_ishares_holdings,
     parse_us,
     quellen_url,
+    us_symbol_zu_yahoo,
 )
 from momentum.config import MARKETS_BY_KEY  # noqa: E402
 from momentum.data import download_prices  # noqa: E402
+from momentum import kursvergleich_us as kv_us  # noqa: E402
 from momentum.kursvergleich import (  # noqa: E402
     TOLERANZ,
     ZULASS_ABWEICHLER,
@@ -162,7 +166,10 @@ def pruefe_us_tabelle(html: str) -> Verdikt:
     )
 
 
-def pruefe_ishares(inhalt: str, quelle: Bestandsquelle, heute: Date) -> Verdikt:
+def pruefe_ishares(
+    inhalt: str, quelle: Bestandsquelle, heute: Date,
+    *, bereich: tuple[int, int] | None = None, ticker_uebersetzer=None,
+) -> Verdikt:
     """Vertrag: Die Bestandsliste laedt, traegt einen jungen Stichtag und
     die zum Index passende Zahl von Aktien-Zeilen.
 
@@ -171,15 +178,23 @@ def pruefe_ishares(inhalt: str, quelle: Bestandsquelle, heute: Date) -> Verdikt:
     ISIN-Rueckfall bleibt hier bewusst AUS: er wuerde je Zeile eine
     Yahoo-Suche ausloesen und den Vertragstest zu einem Lasttest machen.
     Fuer die Frage "haelt die Datei ihre Form" ist er ohne Belang.
+
+    `bereich` und `ticker_uebersetzer` uebersteuern das ANZAHL-Gatter bzw.
+    die Symbol-Uebersetzung -- fuer die US-Fondslisten (SXR8/IUSA), deren
+    Index-Name nicht in ANZAHL_ERWARTET steht und deren Symbole bereits
+    Yahoo-Ticker sind, keine Xetra-Kuerzel.
     """
-    unten, oben = ANZAHL_ERWARTET[quelle.index_name]
+    unten, oben = bereich if bereich is not None else ANZAHL_ERWARTET[quelle.index_name]
     vertrag = (
         f"Stichtag ≤ {MAX_ALTER_HANDELSTAGE} Handelstage alt, "
         f"{unten}–{oben} Aktien-Zeilen, Ticker- und Kurs-Spalte tragen"
     )
     wer = f"iShares {quelle.xetra} ({quelle.index_name})"
+    kwargs = {"erwartete_anzahl": bereich} if bereich is not None else {}
+    if ticker_uebersetzer is not None:
+        kwargs["ticker_uebersetzer"] = ticker_uebersetzer
     try:
-        befund = parse_ishares_holdings(inhalt, quelle.index_name, heute=heute)
+        befund = parse_ishares_holdings(inhalt, quelle.index_name, heute=heute, **kwargs)
     except QuelleUnbrauchbar as exc:
         return Verdikt(wer, vertrag, False,
                        f"erwartet: {vertrag} — vorgefunden: {exc}")
@@ -250,6 +265,41 @@ def pruefe_kursvergleich(befunde: list, roh_kurse: dict) -> Verdikt:
     return Verdikt("Kursvergleich DE", vertrag, True, befund)
 
 
+def pruefe_kursvergleich_us(
+    befund, fonds: str, roh_kurse: dict, *, splits_oeffner=None,
+) -> Verdikt:
+    """Vertrag: Der US-Kursvergleich (Stufe 2b) wuerde den Stichtag NICHT
+    verweigern. Geschwister von `pruefe_kursvergleich`, mit den eigenen
+    Schwellen der US-Seite (Anker = Datei-Stichtag, Toleranz 0,25 %) und
+    der Split-Ausnahme (siehe momentum/kursvergleich_us.py) -- ein als
+    Split erkannter Titel ist hier KEIN Bruch, genau wie ein "entfallen"."""
+    vertrag = (
+        f"hoechstens {kv_us.ZULASS_ABWEICHLER} Titel ueber "
+        f"{kv_us.TOLERANZ * 100:.2f} % Abweichung zwischen {fonds} und Kursquelle"
+    )
+    vergleich = kv_us.vergleiche(befund, fonds, roh_kurse, splits_oeffner=splits_oeffner)
+    if vergleich.verdikt == "entfallen":
+        return Verdikt("Kursvergleich US", vertrag, True,
+                       f"nicht durchfuehrbar: {vergleich.grund}")
+    groesste = max(
+        (abs(a.abweichung) for a in vergleich.abweichler), default=0.0
+    )
+    befundtext = (
+        f"Stichtag {vergleich.stichtag}, {len(vergleich.verglichen)} Titel "
+        f"verglichen, {len(vergleich.ohne_vergleich)} ohne Vergleich, "
+        f"{len(vergleich.abweichler)} ueber der Toleranz "
+        f"(groesste {groesste * 100:.2f} %), {len(vergleich.split_erkannt)} "
+        f"als Split erkannt"
+    )
+    if vergleich.verweigert:
+        return Verdikt(
+            "Kursvergleich US", vertrag, False,
+            f"erwartet: {vertrag} — vorgefunden: {befundtext}; "
+            + "; ".join(a.zeile() for a in vergleich.abweichler),
+        )
+    return Verdikt("Kursvergleich US", vertrag, True, befundtext)
+
+
 def pruefe_kurse(geliefert: set[str]) -> list[Verdikt]:
     """Vertrag: Die Kursquelle liefert bereinigte Schlusskurse.
 
@@ -315,8 +365,11 @@ def pruefe_estr(text: str, heute: Date) -> Verdikt:
 
 WAS_TUN = {
     "Wikipedia": "Artikelaufbau geaendert? tools/build_universe.py parse_us pruefen.",
-    "iShares": "CSV-Link umgezogen? Ersatz-URL dem Workflow 'Universum "
-               "aktualisieren' als Eingabefeld mitgeben (url_dax/url_mdax/url_tecdax).",
+    "iShares": "CSV-Link umgezogen? DE-Bestandslisten: Ersatz-URL dem "
+               "Workflow 'Universum aktualisieren' als Eingabefeld mitgeben "
+               "(url_dax/url_mdax/url_tecdax). SXR8/IUSA (US-Kursvergleich): "
+               "Ersatz-URL als Umgebungsvariable MOMENTUM_URL_SXR8 bzw. "
+               "MOMENTUM_URL_IUSA setzen.",
     "Kursquelle": "yfinance-Fassung oder Yahoo-Format geaendert? "
                   "requirements.txt und momentum/data.py pruefen.",
     "EZB": "Reihe oder Spaltennamen geaendert? momentum/riskfree.py pruefen.",
@@ -371,6 +424,7 @@ def sammle_verdikte(
     hole_ishares=None,
     hole_estr=None,
     downloader=None,
+    splits_oeffner=None,
 ) -> list[Verdikt]:
     """Alle vier Vertraege pruefen. Ein Abruf-Fehler ist selbst ein Bruch --
     eine Quelle, die nicht antwortet, haelt ihren Vertrag nicht."""
@@ -413,18 +467,60 @@ def sammle_verdikte(
             # Datei nur aus dem Kursvergleich heraus.
             pass
 
+    # Die US-Fondslisten, dieselbe Vorsicht wie oben: einmal geholt, einmal
+    # fuer das eigene Formverdikt geparst, derselbe Befund fuer den
+    # Kursvergleich weiter unten wiederverwendet. SXR8 primaer, IUSA
+    # Ausweich (Easys Entscheid vom 14.08.2026) -- der ERSTE Fonds, der
+    # parsebar ist, speist den Kursvergleich; ein zweiter wird dafuer nicht
+    # gebraucht, beide bilden denselben Index ab.
+    befunde_us: dict[str, object] = {}
+    for quelle in ISHARES_US:
+        try:
+            inhalt = hole_ishares(quelle)
+        except Exception as exc:  # noqa: BLE001
+            verdikte.append(Verdikt(
+                f"iShares {quelle.xetra} ({quelle.index_name})", "Datei abrufbar", False,
+                f"erwartet: CSV-Download — vorgefunden: {type(exc).__name__}: {exc}",
+            ))
+            continue
+        verdikte.append(pruefe_ishares(
+            inhalt, quelle, heute,
+            bereich=ANZAHL_ERWARTET_US, ticker_uebersetzer=us_symbol_zu_yahoo,
+        ))
+        try:
+            befunde_us[quelle.xetra] = parse_ishares_holdings(
+                inhalt, quelle.index_name, heute=heute,
+                ticker_uebersetzer=us_symbol_zu_yahoo,
+                erwartete_anzahl=ANZAHL_ERWARTET_US,
+            )
+        except QuelleUnbrauchbar:
+            pass
+
+    fonds_name = next((q.xetra for q in ISHARES_US if q.xetra in befunde_us), None)
+    fonds_befund = befunde_us.get(fonds_name) if fonds_name else None
+
     alle_ticker = list(TRAGENDE_REIHEN) + [t for ts in STICHPROBE.values() for t in ts]
     de_ticker = sorted(
         {k.ticker for b in befunde for k in b.kandidaten if k.kurs is not None}
     )
+    us_ticker = sorted(
+        {k.ticker for b in befunde_us.values() for k in b.kandidaten if k.kurs is not None}
+    )
     try:
         buendel = download_prices(
-            alle_ticker + de_ticker,
+            alle_ticker + de_ticker + us_ticker,
             heute - _dt.timedelta(days=KURS_FENSTER_TAGE), heute,
             downloader=downloader,
         )
         verdikte.extend(pruefe_kurse(set(buendel.adjusted)))
         verdikte.append(pruefe_kursvergleich(befunde, buendel.close))
+        if fonds_befund is not None:
+            verdikte.append(pruefe_kursvergleich_us(
+                fonds_befund, fonds_name, buendel.close, splits_oeffner=splits_oeffner,
+            ))
+        # Sind BEIDE US-Fonds nicht parsebar, ist das schon durch ihre
+        # eigenen Verdikte oben rot -- ein drittes, kuenstliches Verdikt
+        # "Kursvergleich nicht pruefbar" waere dieselbe Rotmeldung zweimal.
     except Exception as exc:  # noqa: BLE001
         verdikte.append(Verdikt("Kursquelle (yfinance)", "Abruf moeglich", False,
                                 f"erwartet: Kursdaten — vorgefunden: "

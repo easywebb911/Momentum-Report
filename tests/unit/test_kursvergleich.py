@@ -455,11 +455,17 @@ def test_der_schalter_setzt_das_gatter_sichtbar_aus(welt, kleines_anzahl_gatter)
 
 
 def test_der_us_markt_traegt_den_grund_statt_eines_leeren_blocks(welt):
+    """Seit Stufe 2b hat auch der US-Markt ein echtes Gatter (siehe
+    tests/unit/test_kursvergleich_us.py) -- ohne eigenen `bestand_oeffner`
+    greift hier dieselbe Sperre wie bei DE (keine echten Netzabrufe in
+    Tests) und der Vergleich entfaellt mit einem ECHTEN Grund, nicht mehr
+    mit dem festen "fuer diesen Markt nicht vorgesehen"."""
     tmp_path, downloader = welt
     run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader)
     us = json.loads((tmp_path / "data/rankings/us_2026-07.json").read_text(encoding="utf-8"))
     assert us["kursvergleich"]["verdikt"] == "entfallen"
-    assert us["kursvergleich"]["grund"] == kv.NICHT_VORGESEHEN
+    assert us["kursvergleich"]["grund"] != kv.NICHT_VORGESEHEN
+    assert "SXR8" in us["kursvergleich"]["grund"] and "IUSA" in us["kursvergleich"]["grund"]
 
 
 def test_der_anzeige_lauf_ruehrt_die_bestandslisten_nicht_an(welt, kleines_anzahl_gatter):
@@ -475,7 +481,9 @@ def test_der_anzeige_lauf_ruehrt_die_bestandslisten_nicht_an(welt, kleines_anzah
     run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader,
                    bestand_oeffner=oeffner)
     nach_stichtag = len(gerufen)
-    assert nach_stichtag == 3, "am Stichtag werden alle drei Dateien geholt"
+    # 3 DE-Dateien + SXR8 + IUSA (der US-Ausweich wird ebenfalls versucht,
+    # weil die Kunst-Datei mit 5 Zeilen das US-ANZAHL-Gatter nicht besteht).
+    assert nach_stichtag == 5, "am Stichtag werden alle fuenf Dateien geholt"
 
     run_modul.main(["--today", "2026-08-05"], downloader=downloader,
                    bestand_oeffner=oeffner)
@@ -498,9 +506,14 @@ def test_der_push_traegt_den_entfallenen_vergleich(welt, monkeypatch):
     hinweise = verschickt[0]
     assert any("Kursvergleich entfiel" in h for h in hinweise)
     assert any(h.startswith("Deutschland:") for h in hinweise)
-    # Der US-Markt hat dauerhaft keinen Vergleich — das gehoert nicht in
-    # jeden Push, sonst wird es zur Tapete.
-    assert not any(h.startswith("USA:") for h in hinweise)
+    # Seit Stufe 2b hat auch der US-Markt ein echtes Gatter -- entfaellt
+    # es (hier: kein bestand_oeffner, also gesperrter Netzabruf), gehoert
+    # der Grund genauso in den Push wie bei DE. Nur der alte, dauerhaft
+    # feste "nicht vorgesehen"-Text sollte NIE einen Push fuellen.
+    usa_hinweis = next((h for h in hinweise if h.startswith("USA:")), None)
+    assert usa_hinweis is not None
+    assert "Kursvergleich entfiel" in usa_hinweis
+    assert kv.NICHT_VORGESEHEN not in usa_hinweis
 
 
 def test_der_push_text_enthaelt_die_hinweise():

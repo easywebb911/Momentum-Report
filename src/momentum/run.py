@@ -25,7 +25,15 @@ from pathlib import Path
 
 from .config import HISTORY_DAYS, MARKETS, TOP_N, Market
 from .data import PriceBundle, download_prices
-from .ishares import ISHARES_DE, QuelleUnbrauchbar, lade_bestandsliste, parse_ishares_holdings
+from .ishares import (
+    ISHARES_DE,
+    ISHARES_US,
+    ANZAHL_ERWARTET_US,
+    QuelleUnbrauchbar,
+    lade_bestandsliste,
+    parse_ishares_holdings,
+    us_symbol_zu_yahoo,
+)
 from .kursvergleich import (
     ABGESCHALTET,
     NICHT_VORGESEHEN,
@@ -34,6 +42,7 @@ from .kursvergleich import (
     kurzfassung_aus_report,
     vergleiche,
 )
+from . import kursvergleich_us
 from .notify import push_new_ranking, push_run_failed, push_test
 from .ranking import (
     RANKING_DIR,
@@ -122,6 +131,30 @@ def _bestandslisten(heute: Date, *, oeffner=None) -> list:
     ]
 
 
+def _bestandsliste_us(heute: Date, *, oeffner=None) -> tuple:
+    """SXR8 primaer, IUSA als dokumentierter Ausweich (Easys Entscheid vom
+    14.08.2026 zu Stufe 2b). Scheitert SXR8 aus IRGENDEINEM Grund -- auch
+    unerwartet, nicht nur QuelleUnbrauchbar --, wird IUSA versucht, bevor
+    der Vergleich als Ganzes entfaellt. Gibt (Befund, Fondsname) zurueck.
+    """
+    oeffner = oeffner or lade_bestandsliste
+    gruende: list[str] = []
+    for quelle in ISHARES_US:
+        try:
+            inhalt = oeffner(quelle)
+            befund = parse_ishares_holdings(
+                inhalt, quelle.index_name, heute=heute,
+                ticker_uebersetzer=us_symbol_zu_yahoo,
+                erwartete_anzahl=ANZAHL_ERWARTET_US,
+            )
+            return befund, quelle.xetra
+        except QuelleUnbrauchbar as exc:
+            gruende.append(f"{quelle.xetra}: {exc}")
+        except Exception as exc:  # noqa: BLE001 - Ausweich statt Abbruch
+            gruende.append(f"{quelle.xetra}: {type(exc).__name__}: {exc}")
+    raise QuelleUnbrauchbar("SXR8 UND IUSA unbrauchbar — " + " | ".join(gruende))
+
+
 def _kursvergleich(
     market: Market,
     bundle: PriceBundle,
@@ -129,8 +162,9 @@ def _kursvergleich(
     heute: Date,
     *,
     oeffner=None,
+    splits_oeffner=None,
     aktiv: bool = True,
-) -> Vergleich:
+):
     """Das Verdikt der zweiten Kursquelle -- fail-soft, aber nie still.
 
     Jeder Fehlschlag auf dem Weg (Datei nicht abrufbar, Format geaendert,
@@ -140,19 +174,34 @@ def _kursvergleich(
     Verweigert wird nur, wenn beide Quellen antworten und sich
     widersprechen.
     """
-    if market.key != "de":
-        return Vergleich.entfaellt(NICHT_VORGESEHEN)
-    if not aktiv:
-        return Vergleich.entfaellt(ABGESCHALTET)
-    try:
-        befunde = _bestandslisten(heute, oeffner=oeffner)
-    except QuelleUnbrauchbar as exc:
-        return Vergleich.entfaellt(f"Bestandsliste unbrauchbar — {exc}")
-    except Exception as exc:  # noqa: BLE001 - die Zweitquelle darf nie der Grund sein
-        return Vergleich.entfaellt(
-            f"Bestandslisten nicht lesbar ({type(exc).__name__}: {exc})"
+    if market.key == "de":
+        if not aktiv:
+            return Vergleich.entfaellt(ABGESCHALTET)
+        try:
+            befunde = _bestandslisten(heute, oeffner=oeffner)
+        except QuelleUnbrauchbar as exc:
+            return Vergleich.entfaellt(f"Bestandsliste unbrauchbar — {exc}")
+        except Exception as exc:  # noqa: BLE001 - die Zweitquelle darf nie der Grund sein
+            return Vergleich.entfaellt(
+                f"Bestandslisten nicht lesbar ({type(exc).__name__}: {exc})"
+            )
+        return vergleiche(befunde, bundle.close, universum=set(universum))
+    if market.key == "us":
+        if not aktiv:
+            return kursvergleich_us.Vergleich.entfaellt(ABGESCHALTET)
+        try:
+            befund, fonds = _bestandsliste_us(heute, oeffner=oeffner)
+        except QuelleUnbrauchbar as exc:
+            return kursvergleich_us.Vergleich.entfaellt(f"Bestandsliste unbrauchbar — {exc}")
+        except Exception as exc:  # noqa: BLE001 - die Zweitquelle darf nie der Grund sein
+            return kursvergleich_us.Vergleich.entfaellt(
+                f"Bestandsliste nicht lesbar ({type(exc).__name__}: {exc})"
+            )
+        return kursvergleich_us.vergleiche(
+            befund, fonds, bundle.close, universum=set(universum),
+            splits_oeffner=splits_oeffner,
         )
-    return vergleiche(befunde, bundle.close, universum=set(universum))
+    return Vergleich.entfaellt(NICHT_VORGESEHEN)
 
 
 def process_market(
@@ -164,6 +213,7 @@ def process_market(
     data_root: Path = DATA_DIR,
     zins_oeffner=None,
     bestand_oeffner=None,
+    splits_oeffner=None,
     kursvergleich_aktiv: bool = True,
 ) -> tuple[MarketView, dict | None, dict]:
     """Einen Markt verarbeiten. Gibt (Ansicht, neues Ranking oder None, Status)."""
@@ -202,13 +252,18 @@ def process_market(
         # worden sein.
         vergleich = _kursvergleich(
             market, bundle, universe.tickers, today,
-            oeffner=bestand_oeffner, aktiv=kursvergleich_aktiv,
+            oeffner=bestand_oeffner, splits_oeffner=splits_oeffner,
+            aktiv=kursvergleich_aktiv,
         )
         for zeile in vergleich.protokoll():
             log(f"[{market.key}] {zeile}")
         status["kursvergleich"] = vergleich.als_status()
         if vergleich.verweigert:
-            raise RankingNotPossible(abbruchtext(vergleich, market.key))
+            # Welcher Abbruchtext stimmt, haengt am Markt: die beiden
+            # Gatter haben verschiedene Schwellen und verschiedene Texte
+            # ueber sich selbst (siehe kursvergleich_us.py).
+            text_erzeuger = abbruchtext if market.key == "de" else kursvergleich_us.abbruchtext
+            raise RankingNotPossible(text_erzeuger(vergleich, market.key))
 
         # Der Geldmarktsatz gehoert zur Waehrung; fuer USD kommt er aus
         # derselben Kursquelle, fuer EUR aus der EZB (siehe riskfree.py).
@@ -345,10 +400,12 @@ def main(
     downloader=None,
     zins_oeffner=None,
     bestand_oeffner=None,
+    splits_oeffner=None,
 ) -> int:
-    """`downloader`, `zins_oeffner` und `bestand_oeffner` sind die
-    Test-Naehte: ohne sie laufen der echte Kursabruf, der echte EZB-Abruf
-    und der echte Abruf der iShares-Bestandslisten."""
+    """`downloader`, `zins_oeffner`, `bestand_oeffner` und `splits_oeffner`
+    sind die Test-Naehte: ohne sie laufen der echte Kursabruf, der echte
+    EZB-Abruf, der echte Abruf der iShares-Bestandslisten und der echte
+    Abruf des Yahoo-Split-Kalenders (nur US, siehe kursvergleich_us.py)."""
     parser = argparse.ArgumentParser(description="Momentum-Report Lauf")
     parser.add_argument("--today", help="Laufdatum JJJJ-MM-TT (nur fuer Tests)")
     parser.add_argument(
@@ -363,10 +420,10 @@ def main(
         "--ohne-kursvergleich",
         action="store_true",
         help=(
-            "Das DE-Vergleichsgatter aussetzen. NOTAUS von Hand: falls das "
-            "Gatter am Stichtag faelschlich verweigert, kommt der Monat so "
-            "trotzdem zustande. Der Verzicht steht sichtbar im Report und "
-            "im Push — still ausgesetzt wird nie."
+            "Das DE- UND das US-Vergleichsgatter aussetzen. NOTAUS von "
+            "Hand: falls ein Gatter am Stichtag faelschlich verweigert, "
+            "kommt der Monat so trotzdem zustande. Der Verzicht steht "
+            "sichtbar im Report und im Push — still ausgesetzt wird nie."
         ),
     )
     args = parser.parse_args(argv)
@@ -383,6 +440,7 @@ def main(
             downloader=downloader,
             zins_oeffner=zins_oeffner,
             bestand_oeffner=bestand_oeffner,
+            splits_oeffner=splits_oeffner,
             kursvergleich_aktiv=not args.ohne_kursvergleich,
         )
         views.append(view)

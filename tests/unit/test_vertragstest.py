@@ -83,6 +83,48 @@ def ishares_csv(
     return vorspann + kopfzeile + reihen + bargeld
 
 
+def _us_ticker(i: int) -> str:
+    """Rein alphabetisches Kuerzel -- echte US-Symbole tragen (anders als
+    Xetra-Kuerzel wie 1COV, VOW3) keine Ziffern; US_SYMBOL_MUSTER laesst
+    keine zu."""
+    buchstaben = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    a, rest = divmod(i, 26 * 26)
+    b, c = divmod(rest, 26)
+    return buchstaben[a % 26] + buchstaben[b] + buchstaben[c]
+
+
+def ishares_csv_us(
+    zeilen: int, stand: Date | None, *,
+    kurs: str = "10.00", ohne_kurs_spalte: bool = False, waehrung: str = "USD",
+) -> str:
+    """Eine US-Fonds-Bestandsliste (SXR8/IUSA) -- dieselbe Form wie
+    `ishares_csv`, nur mit US-Symbolen (keine Ziffern) und USD/NASDAQ."""
+    spalten = ["Ticker", "Name", "Sektor", "Anlageklasse", "Marktwert",
+               "Gewichtung (%)", "Nominalwert", "Nominale", "ISIN"]
+    if not ohne_kurs_spalte:
+        spalten.append("Kurs")
+    spalten += ["Standort", "Boerse", "Waehrung"]
+    kopfzeile = ";".join(spalten) + "\n"
+
+    vorspann = f"Fondsposition per {stand.strftime('%d.%b%Y')}\n\n" if stand else "\n\n"
+
+    def zeile(kennung, name, sektor, klasse, marktwert, gewicht, isin, preis, ort, boerse, waehr):
+        felder = [kennung, name, sektor, klasse, marktwert, gewicht, "1", "1", isin]
+        if not ohne_kurs_spalte:
+            felder.append(preis)
+        felder += [ort, boerse, waehr]
+        return ";".join(felder) + "\n"
+
+    reihen = "".join(
+        zeile(_us_ticker(i), f"Firma {i}", "Industrials", "Equity", "1.000,00", "1,00",
+              f"US{i:09d}", kurs, "USA", "NASDAQ", waehrung)
+        for i in range(zeilen)
+    )
+    bargeld = zeile("XUSD", "USD CASH", "Bargeld", "Bargeld und/oder Derivate",
+                    "1,00", "0,01", "-", "1", "-", "-", waehrung)
+    return vorspann + kopfzeile + reihen + bargeld
+
+
 def estr_csv(taege: list[Date]) -> str:
     kopf = "KEY,FREQ,REF_AREA,PROVIDER_FM_ID,TIME_PERIOD,OBS_VALUE,OBS_STATUS"
     zeilen = [
@@ -291,15 +333,18 @@ def test_der_bericht_ist_deterministisch():
 
 
 def gesunde_naehte():
-    """Alle vier Quellen antworten vertragsgemaess — ohne Netz."""
+    """Alle fuenf Quellen antworten vertragsgemaess — ohne Netz."""
+    groessen = {"DAX": 40, "MDAX": 50, "TecDAX": 30}
     return {
         "hole_us": lambda: us_html(503),
-        "hole_ishares": lambda q: ishares_csv(
-            q.index_name, {"DAX": 40, "MDAX": 50, "TecDAX": 30}[q.index_name],
-            Date(2026, 8, 26),
+        "hole_ishares": lambda q: (
+            ishares_csv_us(504, Date(2026, 8, 26))
+            if q.index_name in ("SXR8", "IUSA")
+            else ishares_csv(q.index_name, groessen[q.index_name], Date(2026, 8, 26))
         ),
         "hole_estr": lambda: estr_csv([HEUTE - _dt.timedelta(days=1)]),
         "downloader": _kurs_stub(alle=True),
+        "splits_oeffner": lambda ticker: {},
     }
 
 
@@ -401,14 +446,24 @@ def test_ein_nicht_moeglicher_vergleich_ist_kein_bruch():
     geprueft) — der Vergleich selbst meldet dann "nicht durchfuehrbar" und
     nicht "die Quellen widersprechen sich". Zwei verschiedene Aussagen."""
     naehte = gesunde_naehte()
-    naehte["hole_ishares"] = lambda q: ishares_csv(
-        q.index_name, {"DAX": 40, "MDAX": 50, "TecDAX": 30}[q.index_name],
-        Date(2026, 8, 26), ohne_kurs_spalte=True,
+    naehte["hole_ishares"] = lambda q: (
+        ishares_csv_us(504, Date(2026, 8, 26), ohne_kurs_spalte=True)
+        if q.index_name in ("SXR8", "IUSA")
+        else ishares_csv(
+            q.index_name, {"DAX": 40, "MDAX": 50, "TecDAX": 30}[q.index_name],
+            Date(2026, 8, 26), ohne_kurs_spalte=True,
+        )
     )
     verdikte = vt.sammle_verdikte(HEUTE, **naehte)
     vergleich = next(v for v in verdikte if v.quelle == "Kursvergleich DE")
     assert vergleich.ok
     assert "nicht durchfuehrbar" in vergleich.befund
+    # Derselbe Fall, US-Seite: SXR8 parst trotzdem (es fehlt nur die
+    # Kurs-Spalte, nicht der Ticker) -- der Vergleich meldet ebenfalls
+    # "nicht durchfuehrbar", nicht "die Quellen widersprechen sich".
+    vergleich_us = next(v for v in verdikte if v.quelle == "Kursvergleich US")
+    assert vergleich_us.ok
+    assert "nicht durchfuehrbar" in vergleich_us.befund
 
 
 def test_die_bestandslisten_werden_genau_einmal_geholt():
@@ -424,7 +479,7 @@ def test_die_bestandslisten_werden_genau_einmal_geholt():
 
     naehte["hole_ishares"] = zaehlend
     vt.sammle_verdikte(HEUTE, **naehte)
-    assert gerufen == ["DAX", "MDAX", "TecDAX"]
+    assert gerufen == ["DAX", "MDAX", "TecDAX", "SXR8", "IUSA"]
 
 
 def test_ein_abrufaussetzer_ist_selbst_ein_bruch():
