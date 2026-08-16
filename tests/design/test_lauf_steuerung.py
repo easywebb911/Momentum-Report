@@ -801,33 +801,36 @@ def test_die_aenderung_wird_von_der_kurs_beschriftung_nicht_abgeschnitten(app):
     """Regression fuer den Live-Befund vom 13.08.: auf dem damals noch
     NICHT neu erzeugten docs/index.html steckte data-quote-change als
     verschachteltes Element INNERHALB von .m-lbl -- derselben Zeile, die
-    "Kurs (EUR)" traegt und die dafuer white-space:nowrap +
-    overflow:hidden + text-overflow:ellipsis fuehrt. Mit dem zusaetzlichen
-    Aenderungstext wurde die Zeile zu lang und die Ellipsis-Regel schnitt
-    sie ab. Seit #33 ist data-quote-change ein eigenstaendiges .m-chg-
-    Geschwister von .m-lbl -- dieser Test haelt das ausdruecklich fest,
-    getrennt vom reinen Ueberlauf-Check oben: .m-chg traegt selbst gar
-    kein overflow/ellipsis, kann den Text also gar nicht mehr abschneiden,
-    UND .m-lbl bleibt unangetastet bei seiner kurzen, festen Beschriftung."""
+    "Kurs (EUR)" traegt. Seit #33 ist data-quote-change ein
+    eigenstaendiges .m-chg-Geschwister von .m-lbl -- dieser Test haelt das
+    ausdruecklich fest: bei einem REALISTISCHEN Wert bleibt die Zeile
+    vollstaendig sichtbar (die Ellipsis-Vorsorge von .m-chg greift hier
+    nicht, weil der Text in die Kachel passt), UND .m-lbl bleibt
+    unangetastet bei seiner kurzen, festen Beschriftung."""
     app.set_viewport_size({"width": 390, "height": 900})
-    lang = {"price": 1234.56, "change": -12.34, "change_abs": -173.45}
-    erwartete_aenderung = "▼ −173,45 (−12,3 %)"
-    ruesten(app, [{"status": 200, "json": lang}])
+    # Ein typischer Fall (einstelliger Prozentwert, kleiner Betrag) --
+    # NICHT der Extremfall von unten. Der geht bewusst auf einen kleinen
+    # Wert, weil sich zeigte, dass selbst ein vierstelliger Kurs mit
+    # dreistelligem Abstand in der 390-px-Dreierspalte schon an die
+    # Kachelbreite stoesst -- das ist genau der Fall, fuer den die
+    # Ellipsis-Vorsorge unten gedacht ist, nicht der Regelfall.
+    typisch = {"price": 155.20, "change": -1.25, "change_abs": -1.95}
+    NBSP = "\u00a0"
+    erwartete_aenderung = f"▼{NBSP}−1,95{NBSP}(−1,3{NBSP}%)"
+    ruesten(app, [{"status": 200, "json": typisch}])
     app.evaluate("() => window.MR.liveRunde()")
 
     befund = app.evaluate(
         """() => [...document.querySelectorAll('.m-chg')].map(el => {
              const box = el.closest('.metric-box');
              const lbl = box.querySelector('.m-lbl');
-             const cs = getComputedStyle(el);
              return {
                aenderungstext: el.textContent,
-               // Die Ellipsis-Klemme braucht BEIDE Regeln zusammen
-               // (overflow:hidden + text-overflow:ellipsis) -- .m-chg
-               // traegt keine von beiden, kann also gar nicht mehr
-               // abschneiden, egal wie breit der Text wird.
-               overflow: cs.overflow,
-               textUeberlauf: cs.textOverflow,
+               // scrollWidth > clientWidth deckt auf, ob die Ellipsis
+               // tatsaechlich beschneidet -- fuer einen realistischen
+               // Wert soll das NICHT der Fall sein, er passt in die
+               // Kachel.
+               tatsaechlich_beschnitten: el.scrollWidth > el.clientWidth + 1,
                ist_geschwister_von_m_lbl: el.parentElement === lbl.parentElement,
                steckt_in_m_lbl: lbl.querySelector('[data-quote-change]') !== null,
                beschriftungstext: lbl.textContent,
@@ -837,8 +840,8 @@ def test_die_aenderung_wird_von_der_kurs_beschriftung_nicht_abgeschnitten(app):
     assert befund, "keine Aenderungszeile gefunden"
     for eintrag in befund:
         assert eintrag["aenderungstext"] == erwartete_aenderung, eintrag
-        assert eintrag["overflow"] != "hidden", eintrag
-        assert eintrag["textUeberlauf"] != "ellipsis", eintrag
+        assert eintrag["tatsaechlich_beschnitten"] is False, \
+            f"ein realistischer Wert wird schon beschnitten: {eintrag}"
         assert eintrag["ist_geschwister_von_m_lbl"] is True, eintrag
         assert eintrag["steckt_in_m_lbl"] is False, eintrag
         # Die Beschriftung selbst ist unangetastet kurz -- "Kurs (EUR)"
@@ -846,6 +849,44 @@ def test_die_aenderung_wird_von_der_kurs_beschriftung_nicht_abgeschnitten(app):
         assert eintrag["beschriftungstext"].startswith("Kurs ("), eintrag
         assert "▼" not in eintrag["beschriftungstext"], eintrag
         assert "%" not in eintrag["beschriftungstext"], eintrag
+
+
+def test_ein_extrem_langer_wert_wird_per_ellipsis_gekappt_statt_zu_ueberlaufen(app):
+    """Vorsorge, kein beobachteter Fehler: .m-val und .m-lbl tragen beide
+    overflow:hidden + text-overflow:ellipsis, .m-chg bisher nicht. Bei
+    einem pathologisch langen Wert (hoher Kurs, grosser Punktsprung) lief
+    die Zeile bis dahin ungebremst ueber den Kachelrand. Jetzt traegt
+    .m-chg dasselbe Paar wie seine Geschwister -- die Zeile bleibt
+    innerhalb der Kachel, auch wenn der Text dafuer sichtbar gekappt wird."""
+    app.set_viewport_size({"width": 390, "height": 900})
+    ruesten(app, [{"status": 200, "json": {
+        "price": 1234567.89, "change": 1234.5, "change_abs": 999999.99}}])
+    app.evaluate("() => window.MR.liveRunde()")
+
+    befund = app.evaluate(
+        """() => [...document.querySelectorAll('.m-chg')].map(el => {
+             const cs = getComputedStyle(el);
+             return {
+               zeilen: el.getClientRects().length,
+               rechts: el.getBoundingClientRect().right,
+               kachel: el.closest('.metric-box').getBoundingClientRect().right,
+               beschnitten: el.scrollWidth > el.clientWidth + 1,
+               overflow: cs.overflow,
+               textUeberlauf: cs.textOverflow,
+             };
+           })"""
+    )
+    assert befund, "keine Aenderungszeile gefunden"
+    for eintrag in befund:
+        assert eintrag["overflow"] == "hidden", eintrag
+        assert eintrag["textUeberlauf"] == "ellipsis", eintrag
+        assert eintrag["zeilen"] == 1, f"die Zeile bricht um: {eintrag}"
+        assert eintrag["rechts"] <= eintrag["kachel"] + 0.5, f"sie tritt aus: {eintrag}"
+        assert eintrag["beschnitten"] is True, \
+            "Vorbedingung nicht erfuellt: der Testwert ist nicht lang genug, um zu kappen"
+    assert app.evaluate(
+        "document.documentElement.scrollWidth <= 390"
+    ), "die Seite scrollt seitwaerts"
 
 
 def test_live_punkt_und_takt_bleiben_von_der_aenderungszeile_unberuehrt(app):
