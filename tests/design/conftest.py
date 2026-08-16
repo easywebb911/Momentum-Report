@@ -20,6 +20,7 @@ import os
 import shutil
 import threading
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -28,6 +29,54 @@ from momentum.render import MarketView, render_index, render_konfluenz, render_m
 
 Date = _dt.date
 BREITE = 390
+
+# --------------------------------------------------------------------------
+# DEFAULT-DENY fuer jeden Netzzugriff der Browser-Tests.
+#
+# Vorher wurden nur zwei BEKANNTE Hosts geblockt (Kurs-Worker, Elliott-
+# Quelle) -- alles andere durfte durch. Eine neue externe Abhaengigkeit
+# haette denselben blinden Fleck erzeugt wie bei #12: sie faellt nur auf,
+# wenn jemand daran denkt, sie zu blocken. Jetzt gilt das Muster, das im
+# Projekt schon zweimal getragen hat (Universums-Gatter, Status-/Datums-
+# Gatter): eine kleine, begruendete ALLOWLIST, alles andere faellt durch.
+#
+# Erlaubt sind zwei Kategorien, keine dritte:
+#   1. file:// -- die Seite und ihre eigenen Ressourcen unter
+#      test_layout_390.py oeffnen so; das ist kein Netzzugriff.
+#   2. 127.0.0.1 -- der lokale Test-Server aus der `server`-Fixture
+#      (dynamischer Port, deshalb nur der Host geprueft, nicht der Port).
+# Kurs-Worker und Elliott-Quelle stehen NICHT auf der Allowlist: sie
+# werden von den beiden spezifischen Routen weiter unten abgefangen
+# (Abbruch bzw. eingespielte Antwort). Das Default-Deny erkennt sie nur
+# als "hier bereits behandelt" und reicht sie per `route.fallback()`
+# weiter -- verhielten sie sich dort nicht mehr wie erwartet, faellt das
+# genauso auf wie jeder andere unerwartete Host.
+#
+# Absichtlich URL-PRAEFIXE und nicht nur Hostnamen: sonst waere jeder
+# beliebige Pfad unter easywebb911.github.io "erlaubt" (das Domain gehoert
+# auch Easys anderen Projekten), obwohl nur GENAU der Elliott-Report-Pfad
+# von der eigenen Route abgefangen wird -- alles andere unter demselben
+# Host wuerde sonst durchrutschen, statt am Default-Deny zu scheitern.
+ERLAUBTE_URL_PRAEFIXE = {
+    "https://quote-proxy.easywebb.workers.dev/":
+        "Kurs-Worker -- wird von einer eigenen Route abgefangen (Abbruch)",
+    "https://easywebb911.github.io/Elliott-Report/":
+        "Elliott-Quelle -- wird von einer eigenen Route abgefangen (Abbruch oder Einspielung)",
+}
+
+
+def pruefe_host(url: str) -> tuple[bool, str]:
+    """(erlaubt?, Begruendung) fuer eine Request-URL. Reine Funktion, ohne
+    Playwright -- deshalb schnell und deterministisch unit-testbar."""
+    teile = urlsplit(url)
+    if teile.scheme == "file":
+        return True, "file:// -- kein Netzzugriff"
+    for praefix, grund in ERLAUBTE_URL_PRAEFIXE.items():
+        if url.startswith(praefix):
+            return True, grund
+    if teile.hostname == "127.0.0.1":
+        return True, "lokaler Test-Server (server-Fixture)"
+    return False, f"{teile.hostname or url!r} steht auf keiner Allowlist"
 HOEHE = 844  # iPhone-Format
 
 LANGER_NAME = (
@@ -250,10 +299,21 @@ def server(seite):
 
 @pytest.fixture
 def oeffne(browser, seite):
-    """Seite oeffnen und danach sicher wieder zumachen."""
+    """Seite oeffnen und danach sicher wieder zumachen.
+
+    `erwarte_blockiert` ist die Test-Naht fuer das Default-Deny selbst:
+    eine Menge von Hostnamen, deren Blockierung EIN Test bewusst ausloest
+    und nachweisen will (siehe test_default_deny.py). Jeder ANDERE
+    blockierte Host laesst den Test beim Schliessen des Kontexts laut und
+    mit Namen scheitern -- keine stille Verlangsamung, kein "irgendein
+    Assert lief ins Leere". Und ein erwarteter Host, der NICHT blockiert
+    wurde, scheitert ebenso: sonst koennte eine Erwartung im Code stehen,
+    die nie wirklich geprueft wird.
+    """
     offen = []
 
-    def _oeffne(datei, schriftgroesse=None, basis=None, bewegung=None, elliott=None):
+    def _oeffne(datei, schriftgroesse=None, basis=None, bewegung=None, elliott=None,
+                erwarte_blockiert=()):
         # bewegung="reduce" schaltet prefers-reduced-motion ein -- so laesst
         # sich pruefen, dass die Seite das wirklich respektiert.
         kontext = browser.new_context(
@@ -261,7 +321,8 @@ def oeffne(browser, seite):
             device_scale_factor=3,
             reduced_motion=bewegung,
         )
-        offen.append(kontext)
+        geblockt: list[str] = []
+        offen.append((kontext, geblockt, set(erwarte_blockiert)))
         # KEIN Test geht nach draussen. Die Seite startet ihre Live-Abfrage
         # beim Aufbau von selbst -- ohne diese Sperre wuerde jeder
         # Browser-Test den echten Kurs-Dienst anrufen, und das Ergebnis
@@ -285,6 +346,25 @@ def oeffne(browser, seite):
                 )
             ),
         )
+
+        def default_deny(route):
+            erlaubt, _grund = pruefe_host(route.request.url)
+            if erlaubt:
+                # Reicht weiter an die naechste (frueher registrierte)
+                # passende Route -- fuer die beiden Hosts oben also an
+                # deren eigene Abbruch-/Einspiel-Logik, fuer 127.0.0.1 und
+                # file:// ans echte Netz bzw. Dateisystem.
+                route.fallback()
+                return
+            geblockt.append(urlsplit(route.request.url).hostname or route.request.url)
+            route.abort()
+
+        # ZULETZT registriert: Playwright prueft Routen in umgekehrter
+        # Registrierungsreihenfolge, das Default-Deny sieht also JEDE
+        # Anfrage zuerst -- genau das macht es zum Default-Deny statt zu
+        # einer dritten Ausnahme neben den beiden obigen.
+        kontext.route("**/*", default_deny)
+
         page = kontext.new_page()
         page.goto(f"{basis}/{datei}" if basis else (seite / datei).as_uri())
         if schriftgroesse:
@@ -295,5 +375,21 @@ def oeffne(browser, seite):
         return page
 
     yield _oeffne
-    for kontext in offen:
+    fehler = []
+    for kontext, geblockt, erwartet in offen:
         kontext.close()
+        unerwartet = sorted(set(geblockt) - erwartet)
+        nicht_eingetreten = sorted(erwartet - set(geblockt))
+        if unerwartet:
+            fehler.append(
+                f"Default-Deny hat unerwartet blockiert: {', '.join(unerwartet)} "
+                f"-- entweder ist das ein echter blinder Fleck (Host gehoert auf "
+                f"die Allowlist in ERLAUBTE_HOSTS mit Begruendung) oder eine "
+                f"stillschweigende externe Abhaengigkeit dieses Tests."
+            )
+        if nicht_eingetreten:
+            fehler.append(
+                f"erwartete Blockierung ist NICHT eingetreten: {', '.join(nicht_eingetreten)} "
+                f"-- die Erwartung im Test ist ungeprueft."
+            )
+    assert not fehler, "; ".join(fehler)
