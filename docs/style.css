@@ -663,6 +663,8 @@ main > h2::after {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--txt-sub);
 }
 .m-chg.pos { color: var(--grn); }
