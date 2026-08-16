@@ -176,12 +176,14 @@ sich selbst wartet"; die Maschine arbeitet, Easy behält den Ein-Tipp-Veto):
 | 0 | Totmannschalter (`waechter.yml`) | **gebaut** |
 | 1 | Vertragstests je Fremdquelle, werktags im Fenster 25.–31. | **gebaut** |
 | 2a | Zweite Kursquelle **DE** mit Vergleichsgatter (kein stiller Fallback; Muster: `riskfree_quelle`) | **gebaut** — erstmals scharf am 31.08. |
-| 2b | Zweite Kursquelle **US** (S&P-500-UCITS-Bestandslisten) | kalibriert, Gatter-Bau folgt — Anker = Bestands-Stichtag selbst, Toleranz 0,25 %, Zulass 3 Abweichler, Ticker-Mapping Klassen-Titel „.“→„-“ (z. B. `BRK.B`→`BRK-B`) |
+| 2b | Zweite Kursquelle **US** (S&P-500-UCITS-Bestandslisten) | **gebaut** — DE- und US-Kursvergleich beide scharf (#35, MANUAL-MERGE, 14.08.). Anker = Bestands-Stichtag selbst, Toleranz 0,25 %, Zulass 3 Abweichler, Quelle SXR8 primär mit IUSA als dokumentiertem Ausweich, Split-Ausnahme mit Anti-Schlupfloch-Test, Ticker-Mapping Klassen-Titel „.“→„-“ (z. B. `BRK.B`→`BRK-B`) |
 | 3 | Reparatur-Agent: liest rote Läufe, öffnet einen PR, CI beweist, Easy merged | offen — **entschieden 09.08.: Anfang September**, nach Auswertung des ersten scharfen Monatsendes (31.08.) |
 
-*Herleitung der Stufe-2b-Werte, übernommen 14.08.:* Die Wegwerf-Messung aus #31 (drei Läufe, 10.–12.08.) verglich dieselbe Titelmenge gegen zwei Anker — Anker A (Bestands-Stichtag selbst) ergab Max 0,002 %/0,004 %, Anker B (US-Vortag) Median 1,04 %/1,33 % mit Ausreißern bis 28 %, ein Faktor-250-Unterschied, stabil an beiden vorhandenen Datei-Stichtagen; die 0,25 % Toleranz folgen aus der Rundung der zweistelligen Kurs-Spalte, Zulass 3 übernimmt das bewährte Muster des DE-Gatters (`ZULASS_ABWEICHLER`), und das Ticker-Mapping schließt die in #28 offen benannte Lücke bei Klassen-Titeln (`BRK.B`, `BF.B`). Der Gatter-Bau selbst folgt erst nach dem 31.08. (siehe Termin oben) und ist **MANUAL-MERGE**.
+*Herleitung der Stufe-2b-Werte:* Die Wegwerf-Messung aus #31 (drei Läufe, 10.–12.08.) verglich dieselbe Titelmenge gegen zwei Anker — Anker A (Bestands-Stichtag selbst) ergab Max 0,002 %/0,004 %, Anker B (US-Vortag) Median 1,04 %/1,33 % mit Ausreißern bis 28 %, ein Faktor-250-Unterschied, stabil an beiden vorhandenen Datei-Stichtagen; die 0,25 % Toleranz folgen aus der Rundung der zweistelligen Kurs-Spalte, Zulass 3 übernimmt das bewährte Muster des DE-Gatters (`ZULASS_ABWEICHLER`), und das Ticker-Mapping schließt die in #28 offen benannte Lücke bei Klassen-Titeln (`BRK.B`, `BF.B`). Easy hat die Werte am 14.08. übernommen (#34); derselbe Tag brachte auch den Gatter-Bau selbst (#35) — früher als der ursprünglich genannte Termin nach dem 31.08., weil die Messung schon vorlag und nichts mehr zu kalibrieren war. Neu gegenüber der Messung: die **Split-Ausnahme** (aus einem Mess-Tag gelernt — ein Titel zählt nur dann als „Split erkannt, kein Befund" statt als Abweichler, wenn Kursverhältnis *und* Yahoo-Split-Kalender im Fenster um den Stichtag zusammenpassen; eine Bedingung allein zählt weiter als Abweichler, damit der Filter kein Schlupfloch für echte Fehler wird — eigener Test dafür).
 
-*Warum der September und nicht früher:* Bis dahin ist das Fundament 0–2 komplett (2b kalibriert), das erste scharfe Monatsende liefert die echten Rot-Sorten als Bau-Grundlage statt ausgedachter, und der Termin fällt in denselben September-Block wie default-deny und Node-20.
+Im selben Zeitfenster (14.–16.08.) liefen daneben drei kleine, unabhängige Frontend-PRs — Details in §7.7/Frontend-Stand unten: Live-Punkt-Puls auf Glow statt Deckkraft umgestellt (#36), ein Regressionstest für die bereits korrekte Trennung von Kurs-Beschriftung und Änderungszeile (#37), und eine Ellipsis-Vorsorge gegen sehr lange Änderungswerte (#38). Keiner der drei berührt den Kursvergleich oder irgendeine Rechengröße.
+
+*Warum ursprünglich September geplant war:* Bis dahin sollte das Fundament 0–2 komplett sein, das erste scharfe Monatsende sollte die echten Rot-Sorten als Bau-Grundlage liefern statt ausgedachter, und der Termin fiel in denselben September-Block wie default-deny und Node-20. Das gilt für **Stufe 3** unverändert weiter (siehe Zeile oben) — nur Stufe 2b ist, wie oben beschrieben, bereits vor diesem Termin fertig geworden, weil ihre Bau-Grundlage (die Messung, nicht das scharfe Monatsende) schon am 14.08. vorlag.
 
 Die harte Grenze der Stufe 3 gilt **unverändert weiter**: Der Agent öffnet PRs, die CI beweist, **Easy merged**. Kein Auto-Merge agentengeschriebener Fixes — der Termin ändert daran nichts.
 
@@ -314,6 +316,20 @@ Rangfolge nie an — festgehalten in
   der nächste `Momentum-Lauf` `docs/index.html` neu erzeugt.
   `docs/index.html` wird **niemals** von Hand gelöscht und neu gebaut — dort
   steht die echte, ausgelieferte Rangliste.
+- **Live-Punkt (Stand 14.08., #36):** pulsiert über `box-shadow`
+  (Familien-Standard des Elliott-Reports), nicht mehr über `opacity` — die
+  alte Fassung ließ die Füllfarbe periodisch auf 0.2 verblassen und war auf
+  dunklem Grund ohne Schein praktisch unsichtbar. Die Füllfarbe (`--grn`)
+  ist jetzt zu jedem Zeitpunkt der Animation voll deckend, nur der Schein
+  atmet. `prefers-reduced-motion` stoppt die Animation, lässt den Punkt
+  aber mit dem stärkeren, stehenden Glow sichtbar statt merkmalslos.
+- **Tagesveränderungs-Zeile (`.m-chg`, Stand 16.08., #37/#38):** eigenes
+  Element, Geschwister von `.m-val`/`.m-lbl`, nie mehr in die
+  Kurs-Beschriftung verschachtelt (das war der Zustand vor #33 und zeigte
+  sich am Live-Deploy noch, solange `docs/index.html` nicht neu erzeugt
+  war). Trägt seit #38 dasselbe `overflow: hidden` +
+  `text-overflow: ellipsis` wie seine Geschwister — Vorsorge gegen sehr
+  lange Werte, kein beobachteter Fehler im Regelbetrieb.
 
 ---
 
@@ -353,6 +369,18 @@ Rangfolge nie an — festgehalten in
    Konfluenz-Seite zeigte überall „—", weil der Elliott-Score unter
    `score_heuristic` liegt, nicht unter `score`. Das tolerante Lesen hat
    richtig reagiert: nichts geraten.
+10. **Das PWA-Homescreen-Symbol cacht den Seiten-CODE getrennt von den
+    DATEN.** Ein Live-Befund vom 13.08. beschrieb ein Markup-Problem, das
+    im Quelltext (`render.py`) längst behoben war (#33) — gemessen wurde
+    aber die noch nicht neu erzeugte `docs/index.html`. Der tiefere Grund,
+    warum das auf dem Homescreen besonders hartnäckig auffällt: „Neu
+    laden" im Menü holt per `fetch` nur die aktuellen DATEN, nie den
+    HTML/CSS/JS-CODE selbst — der liegt im Service-Worker-/Homescreen-Cache
+    der PWA und wird nur bei einem echten Neuaufruf der Seite ersetzt.
+    Nach größeren Frontend-Änderungen (Markup, CSS, `app.js`) also nicht
+    nur auf den nächsten `Momentum-Lauf` warten, sondern bei Bedarf auch
+    das Homescreen-Symbol löschen und neu anlegen — sonst wirkt ein
+    längst gemergter Fix clientseitig ungeliefert.
 
 ---
 
