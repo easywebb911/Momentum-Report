@@ -248,10 +248,25 @@ def test_nirgends_steht_noch_ein_70_30():
 
 
 def test_anzeige_kurs_kommt_aus_dem_tagesabruf_nicht_aus_dem_ranking():
-    """Die Kurs-Kachel zeigt den aktuellen Kurs, nicht den vom Stichtag."""
+    """Die Kurs-Kachel (Live-Puls, `data-quote`) zeigt den aktuellen Kurs,
+    nicht den vom Stichtag -- die beiden duerfen sich in DIESEM Feld nie
+    vermischen. Der Stichtag-Kurs steht seit dem Transparenz-Zusatz
+    zusaetzlich auf der Karte (siehe Test direkt darunter), aber in einem
+    eigenen, klar getrennten Satz."""
     html = render_index([_view(warnung=False)], Date(2026, 8, 3))
-    assert f"${NBSP}130,50" in html      # aktueller Kurs
-    assert f"${NBSP}123,45" not in html  # Kurs vom Stichtag
+    assert f'data-quote="AAA">${NBSP}130,50</span>' in html      # aktueller Kurs
+    assert f'data-quote="AAA">${NBSP}123,45</span>' not in html  # Kurs vom Stichtag
+
+
+def test_der_eingefrorene_stichtag_kurs_steht_zusaetzlich_auf_der_karte():
+    """Transparenz-Zusatz: der Kurs, auf dem Score und 52W-Naehe wirklich
+    beruhen, steht sichtbar und klar als eingefroren gekennzeichnet auf der
+    Karte -- getrennt vom Live-Kurs-Feld (siehe Test darueber)."""
+    html = render_index([_view(warnung=False)], Date(2026, 8, 3))
+    assert "eingefroren" in html
+    assert "31.07." in html  # der Stichtag, deutsch formatiert
+    assert f"${NBSP}123,45" in html  # AAA: Stichtag-Kurs, nicht der Live-Kurs
+    assert f"${NBSP}50,00" in html   # BBB: eigener Stichtag-Kurs je Titel
 
 
 def test_langer_firmenname_bleibt_in_einer_zeile_mit_ellipsis():
