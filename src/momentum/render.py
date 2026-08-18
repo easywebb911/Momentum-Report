@@ -581,6 +581,17 @@ def _card(row: dict, view: MarketView) -> str:
     beschreibung = view.meta.get(row["ticker"], {})
     firma = beschreibung.get("name") or row["name"] or "—"
     sektor = beschreibung.get("sektor") or "—"
+    # Der Stichtag-Kurs ist die Zahl, auf der Score und 52W-Naehe wirklich
+    # beruhen -- eingefroren am Monats-Stichtag, unveraenderlich seit dem
+    # Bau des Rankings. Er steht bereits in jeder Zeile (row["kurs_stichtag"],
+    # siehe ranking.py); hier wird nichts Neues berechnet, nur zusaetzlich
+    # gezeigt. Bewusst als eigener Ehrlichkeits-Satz (--disc, wie card-ft
+    # oben) und NICHT im "Kurs (...)"-Kaestchen: der Live-Puls dort zeigt
+    # den JETZIGEN Kurs, und beide in derselben Farbe/Zeile zu vermengen
+    # wuerde genau die Verwechslung nahelegen, die dieser Zusatz vermeiden
+    # soll.
+    stichtag = Date.fromisoformat(view.ranking["stichtag"])
+    stichtag_kurs_text = f"{market.currency_symbol}{NBSP}{de_num(row['kurs_stichtag'], 2)}"
     return f"""      <article class="card">
         <div class="card-hd">
           <div class="card-id">
@@ -632,6 +643,8 @@ def _card(row: dict, view: MarketView) -> str:
           </div>
         </div>
         <p class="card-ft">Rang aus belegter Rechenvorschrift — keine Prognose für diese Aktie.</p>
+        <p class="card-ft card-ft--stichtag">Kurs vom {de_daymonth(stichtag)}, <strong>eingefroren</strong>
+           — Basis für dieses Ranking: {stichtag_kurs_text}.</p>
       </article>"""
 
 

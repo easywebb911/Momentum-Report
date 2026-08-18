@@ -120,6 +120,36 @@ def test_die_teil_raenge_stehen_auf_der_karte(oeffne):
         assert kachel["breite"] >= 150, kachel
 
 
+@pytest.mark.parametrize("schriftgroesse", [16, 20])
+def test_der_eingefrorene_stichtag_kurs_ist_lesbar_und_bricht_nicht_um(oeffne, schriftgroesse):
+    """Transparenz-Zusatz: der Stichtag-Kurs steht als eigener Satz unter
+    der Karte -- klar getrennt vom Live-Kurs-Feld weiter oben, das per
+    JavaScript aktualisiert wird. Geprueft wird hier NUR das Layout; dass
+    der Wert stimmt, prueft tests/unit/test_render.py."""
+    page = oeffne("index.html", schriftgroesse)
+    befund = page.evaluate(
+        """() => Array.from(document.querySelectorAll('.card')).map(karte => {
+             const satz = karte.querySelector('.card-ft--stichtag');
+             const kurs = karte.querySelector('[data-quote]');
+             return {
+               text: satz ? satz.textContent : null,
+               eigenes_element: satz !== kurs && !kurs.closest('.card-ft--stichtag'),
+               rechts: satz ? satz.getBoundingClientRect().right : null,
+               karten_rechts: karte.getBoundingClientRect().right,
+             };
+           })"""
+    )
+    assert befund, "keine Karte gefunden"
+    for eintrag in befund:
+        assert eintrag["text"], "kein Stichtag-Satz auf der Karte gefunden"
+        assert "eingefroren" in eintrag["text"], eintrag
+        assert eintrag["eigenes_element"] is True, (
+            "der Stichtag-Kurs sitzt im selben Element wie der Live-Kurs", eintrag
+        )
+        assert eintrag["rechts"] <= eintrag["karten_rechts"] + 0.5, \
+            f"der Satz tritt aus der Karte aus: {eintrag}"
+
+
 def test_karte_und_kacheln_haben_sinnvolle_breiten(oeffne):
     """Bei 390 px: Karte ~358 px, Kacheln je gut 110 px — nichts wird gequetscht."""
     page = oeffne("index.html")
