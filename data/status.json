@@ -1,5 +1,5 @@
 {
-  "lauf_datum": "2026-08-18",
+  "lauf_datum": "2026-08-19",
   "maerkte": [
     {
       "daten": {
@@ -11,7 +11,7 @@
         "zeilen_verworfen_nicht_endlich": 0
       },
       "faellige_monate_offen": [],
-      "kurse_vom": "2026-08-18",
+      "kurse_vom": "2026-08-19",
       "markt": "us"
     },
     {
@@ -24,7 +24,7 @@
         "zeilen_verworfen_nicht_endlich": 0
       },
       "faellige_monate_offen": [],
-      "kurse_vom": "2026-08-18",
+      "kurse_vom": "2026-08-19",
       "markt": "de"
     }
   ]
