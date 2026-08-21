@@ -592,7 +592,7 @@ def _card(row: dict, view: MarketView) -> str:
     # soll.
     stichtag = Date.fromisoformat(view.ranking["stichtag"])
     stichtag_kurs_text = f"{market.currency_symbol}{NBSP}{de_num(row['kurs_stichtag'], 2)}"
-    return f"""      <article class="card">
+    return f"""      <article class="card card--{e(market.key)}">
         <div class="card-hd">
           <div class="card-id">
             <span class="rank">{row["rang"]}</span>
