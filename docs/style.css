@@ -20,6 +20,15 @@
   --grn: #22c55e;
   --disc: #ca8a04;
   --mono: 'SF Mono', 'SFMono-Regular', ui-monospace, 'Courier New', monospace;
+  /* Markt-Tönung der Karten — rein dekorativ, KEIN Status, KEINE Warnung.
+     Bewusst nicht rot/gruen (siehe oben) und blass genug, dass Text, Score
+     und vor allem die Pos/Neg-Farben und die Trend-Ampel unverfaelscht
+     bleiben (Ampel und Kurs-Delta sitzen ohnehin auf eigenem, deckendem
+     --bg-met bzw. --bg-card und werden von dieser Toenung gar nicht
+     erreicht). US: kuehler Blau-Grau. DE: warmer Sand/Gold. */
+  --tint-us-rgb: 107, 140, 174;
+  --tint-de-rgb: 196, 149, 74;
+  --tint-alpha: .06;
 }
 
 /* Textgroessen-Einstellung im Menue skaliert die GESAMTE UI:
@@ -508,6 +517,22 @@ main > h2::after {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 0.875rem;
+}
+
+/* Markt-Toenung: gleiche Karte, nur eine hauchduenne Farbschicht zusaetzlich
+   zwischen Lichtverlauf und Kartenfarbe -- Rand, Schatten, Radius bleiben
+   unveraendert. */
+.card--us {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05) 0%, rgba(0, 0, 0, .10) 100%),
+    linear-gradient(rgba(var(--tint-us-rgb), var(--tint-alpha)), rgba(var(--tint-us-rgb), var(--tint-alpha))),
+    var(--bg-card);
+}
+.card--de {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05) 0%, rgba(0, 0, 0, .10) 100%),
+    linear-gradient(rgba(var(--tint-de-rgb), var(--tint-alpha)), rgba(var(--tint-de-rgb), var(--tint-alpha))),
+    var(--bg-card);
 }
 
 .card-hd {
