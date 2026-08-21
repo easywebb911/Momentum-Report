@@ -28,7 +28,12 @@
      erreicht). US: kuehler Blau-Grau. DE: warmer Sand/Gold. */
   --tint-us-rgb: 107, 140, 174;
   --tint-de-rgb: 196, 149, 74;
-  --tint-alpha: .06;
+  /* .14: hoechster Wert, bei dem --txt-dim (siehe deren Kommentar oben,
+     Mindest-Kontrast 4,5:1) auf BEIDEN Toenungen noch mit Luft darueber
+     bleibt (US 4,91:1 / DE 4,77:1 statt 5,90:1 auf --bg-card). Bewusst
+     bis an diese Grenze statt nur leicht angehoben -- vorher (.06) war
+     der Unterschied laut Rueckmeldung kaum zu sehen. */
+  --tint-alpha: .14;
 }
 
 /* Textgroessen-Einstellung im Menue skaliert die GESAMTE UI:
