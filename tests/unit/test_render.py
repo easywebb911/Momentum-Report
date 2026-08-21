@@ -193,12 +193,17 @@ def test_farb_semantik_gruen_nur_positiv_rot_nur_negativ():
     assert f'<span class="m-val">98,1{NBSP}%</span>' in html
 
 
-def test_karte_zeigt_die_kacheln_und_das_ehrlichkeits_label():
+def test_karte_zeigt_die_kacheln_und_den_stichtag_hinweis():
+    """Der frühere Zusatzsatz "Rang aus belegter Rechenvorschrift — keine
+    Prognose für diese Aktie." wurde entfernt (reine Textkürzung, Easys
+    Entscheid) -- der Stichtag-Kurs-Hinweis bleibt als einziger
+    Ehrlichkeits-Satz auf der Karte stehen."""
     html = render_index([_view(warnung=False)], Date(2026, 8, 3))
     for label in ("12-1-Momentum", "52W-Hoch-Nähe", "Kurs (USD)"):
         assert label in html
-    assert "keine Prognose für diese Aktie" in html
-    assert 'class="card-ft"' in html
+    assert "keine Prognose für diese Aktie" not in html
+    assert "eingefroren" in html
+    assert 'class="card-ft card-ft--stichtag"' in html
 
 
 def test_karte_zeigt_beide_teil_raenge():

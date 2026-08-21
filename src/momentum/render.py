@@ -642,9 +642,8 @@ def _card(row: dict, view: MarketView) -> str:
             <span class="m-lbl">Rang 52W-Hoch-Nähe</span>
           </div>
         </div>
-        <p class="card-ft">Rang aus belegter Rechenvorschrift — keine Prognose für diese Aktie.</p>
         <p class="card-ft card-ft--stichtag">Kurs vom {de_daymonth(stichtag)}, <strong>eingefroren</strong>
-           — Basis für dieses Ranking: {stichtag_kurs_text}.</p>
+           — Basis für dieses Ranking: <strong>{stichtag_kurs_text}</strong>.</p>
       </article>"""
 
 
