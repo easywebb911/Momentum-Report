@@ -19,6 +19,15 @@
   --ora: #f59e0b;
   --grn: #22c55e;
   --disc: #ca8a04;
+  /* Nur fuer die Evaluations-Balken: "neutral" und "unbekannt" sind dort
+     ECHTE Kategorien (Kursveraenderung nahe null bzw. Endkurs fehlt), keine
+     Dekoration und keine Verwechslung mit --grn/--red, die dort korrekt
+     ihre normale Bedeutung (positiv/negativ) tragen. Hell genug fuer
+     WCAG AA (>= 4,5:1) auf --bg-card, weil beide auch als Text stehen
+     (Veraenderungs-Wert, Balken-Legende) -- die ersten, dunkleren Werte
+     (#64748b/#475569) waren dort nur 3,7:1 bzw. 2,3:1. */
+  --neu: #93a5c4;
+  --unk: #838fa1;
   --mono: 'SF Mono', 'SFMono-Regular', ui-monospace, 'Courier New', monospace;
   /* Markt-Tönung der Karten — rein dekorativ, KEIN Status, KEINE Warnung.
      Bewusst nicht rot/gruen (siehe oben) und blass genug, dass Text, Score
@@ -931,3 +940,121 @@ main > h2::after {
 .konf-zeile--treffer { color: var(--grn); font-weight: 700; }
 .konf-zeile--treffer .konf-wert { color: var(--grn); }
 .konf-zeile--leer { color: var(--txt-dim); }
+
+/* --------------------------------------------------------- Evaluation */
+/* Reiner Rueckblick, kein Wirksamkeitsnachweis (siehe render.py,
+   EVALUATION_HINWEIS). --grn/--red tragen hier ihre normale Bedeutung
+   (Kurs gestiegen/gefallen); --neu/--unk sind eigene, bewusst ungesaettigte
+   Grautoene fuer "neutral" und "kein Endkurs verfuegbar". */
+
+.eval-sub {
+  margin: -0.375rem 0 0.75rem;
+  color: var(--txt-dim);
+  font-size: 0.8125rem;
+}
+
+.eval-empty {
+  padding: 1.25rem 1rem;
+  border: 1px dashed var(--brd);
+  border-radius: var(--radius);
+  color: var(--txt-sub);
+  font-size: 0.875rem;
+}
+
+.eval-markt {
+  background: var(--bg-card);
+  border: 1px solid var(--brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.eval-markt h3 {
+  margin: 0 0 0.625rem;
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.eval-none { margin: 0; color: var(--txt-dim); font-size: 0.8125rem; }
+
+.eval-bar {
+  display: flex;
+  height: 1.25rem;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-met);
+}
+.eval-seg { display: block; }
+.eval-seg--positiv { background: var(--grn); }
+.eval-seg--neutral { background: var(--neu); }
+.eval-seg--negativ { background: var(--red); }
+.eval-seg--unbekannt { background: var(--unk); }
+
+.eval-legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--txt-sub);
+}
+.eval-legend-item { display: inline-flex; align-items: center; gap: 0.3125rem; }
+.eval-dot { width: 0.625rem; height: 0.625rem; border-radius: 50%; flex: none; }
+.eval-legend-item--positiv .eval-dot { background: var(--grn); }
+.eval-legend-item--neutral .eval-dot { background: var(--neu); }
+.eval-legend-item--negativ .eval-dot { background: var(--red); }
+.eval-legend-item--unbekannt .eval-dot { background: var(--unk); }
+
+.eval-monat {
+  background: var(--bg-card);
+  border: 1px solid var(--brd);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.eval-monat h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.eval-titelliste { list-style: none; margin: 0; padding: 0; }
+
+/* Bewusst KEINE Tabelle: feste Spalten brechen bei langen Firmennamen
+   oder grosser Textgroesse seitwaerts aus dem 390px-Rahmen (siehe
+   tests/design). Jede Zeile ist stattdessen ein einfacher Textblock, der
+   frei umbricht. */
+.eval-titelzeile {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--brd);
+  font-size: 0.8125rem;
+}
+.eval-titelzeile:first-child { border-top: 0; padding-top: 0; }
+
+.eval-titelzeile-kopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.eval-ticker { font-family: var(--mono); font-weight: 700; }
+.eval-veraenderung { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.eval-name { display: block; color: var(--txt-sub); font-size: 0.75rem; margin-top: 0.125rem; }
+.eval-kurse {
+  display: block;
+  color: var(--txt-dim);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.125rem;
+}
+.eval-titelzeile--positiv .eval-veraenderung { color: var(--grn); }
+.eval-titelzeile--negativ .eval-veraenderung { color: var(--red); }
+.eval-titelzeile--neutral .eval-veraenderung { color: var(--neu); }
+.eval-titelzeile--unbekannt .eval-veraenderung { color: var(--unk); }

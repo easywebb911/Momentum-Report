@@ -25,7 +25,13 @@ from urllib.parse import urlsplit
 import pytest
 
 from momentum.config import MARKETS_BY_KEY
-from momentum.render import MarketView, render_index, render_konfluenz, render_methodik
+from momentum.render import (
+    MarketView,
+    render_evaluation,
+    render_index,
+    render_konfluenz,
+    render_methodik,
+)
 
 Date = _dt.date
 BREITE = 390
@@ -246,6 +252,33 @@ def seite(tmp_path_factory):
     (ziel / "index.html").write_text(render_index(views, Date(2026, 8, 3)), encoding="utf-8")
     (ziel / "methodik.html").write_text(render_methodik(), encoding="utf-8")
     (ziel / "konfluenz.html").write_text(render_konfluenz(), encoding="utf-8")
+    # Synthetischer Rueckblick mit allen Kanten: langer Name, alle vier
+    # Klassen (auch "unbekannt" -- Titel ohne Endkurs), zwei Monate fuer den
+    # Gesamtrueckblick.
+    _eval_titel = [
+        {"ticker": "AAA", "name": LANGER_NAME, "kurs_start": 100.0, "kurs_end": 130.0,
+         "veraenderung": 0.30, "klasse": "positiv"},
+        {"ticker": "BBB", "name": "Firma BBB", "kurs_start": 50.0, "kurs_end": 50.5,
+         "veraenderung": 0.01, "klasse": "neutral"},
+        {"ticker": "CCC", "name": "Firma CCC", "kurs_start": 80.0, "kurs_end": 60.0,
+         "veraenderung": -0.25, "klasse": "negativ"},
+        {"ticker": "DDD", "name": "Firma DDD", "kurs_start": 20.0, "kurs_end": None,
+         "veraenderung": None, "klasse": "unbekannt"},
+        {"ticker": "EEE", "name": "Firma EEE", "kurs_start": 10.0, "kurs_end": 10.05,
+         "veraenderung": 0.005, "klasse": "neutral"},
+    ]
+    evaluations = {
+        "us": [
+            {"schema": 1, "markt": "us", "ausgewerteter_monat": "2026-06",
+             "start_stichtag": "2026-06-30", "end_stichtag": "2026-07-31",
+             "neutral_schwelle": 0.02, "titel": _eval_titel},
+            {"schema": 1, "markt": "us", "ausgewerteter_monat": "2026-07",
+             "start_stichtag": "2026-07-31", "end_stichtag": "2026-08-31",
+             "neutral_schwelle": 0.02, "titel": _eval_titel},
+        ],
+        "de": [],
+    }
+    (ziel / "evaluation.html").write_text(render_evaluation(evaluations), encoding="utf-8")
     (ziel / "data").mkdir(exist_ok=True)
     (ziel / "data" / "top5.json").write_text(
         json.dumps(TOP5, ensure_ascii=False), encoding="utf-8"

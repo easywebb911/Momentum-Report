@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from .config import (
     LIQUIDITY_MIN_MEDIAN_TURNOVER,
     LIQUIDITY_WINDOW_MONTHS,
+    MARKETS,
     REPO_SLUG,
     TOP_N,
     WORKFLOW_LAUF,
@@ -61,6 +62,16 @@ HONESTY = (
     ),
 )
 
+# Pflicht-Hinweis auf der Evaluations-Seite. Wortlaut ist Teil des Produkts
+# (siehe HONESTY oben) -- bewusst NUR Zaehler und Kurse, kein Prozentwert,
+# keine "Erfolgsrate", kein Track-Record-Vokabular. Bei 5 Werten je Markt
+# und Monat ist jede einzelne Monats-Aufteilung statistisch reines
+# Rauschen; das sagt dieser Satz, nicht mehr und nicht weniger.
+EVALUATION_HINWEIS = (
+    "Nur 5 Werte pro Markt und Monat — einzelne Monate sagen nichts über "
+    "die Methode aus, dient nur der eigenen Nachvollziehbarkeit."
+)
+
 
 @dataclass
 class MarketView:
@@ -81,6 +92,18 @@ def de_date(day: Date) -> str:
 
 def de_daymonth(day: Date) -> str:
     return f"{day.day:02d}.{day.month:02d}."
+
+
+_MONATSNAMEN = (
+    "Januar", "Februar", "März", "April", "Mai", "Juni",
+    "Juli", "August", "September", "Oktober", "November", "Dezember",
+)
+
+
+def de_monat(jahr_monat: str) -> str:
+    """"2026-07" -> "Juli 2026"."""
+    year, month = (int(x) for x in jahr_monat.split("-"))
+    return f"{_MONATSNAMEN[month - 1]} {year}"
 
 
 # Deutsche Zahlentypografie, bewusst gesetzt (nicht zufaellig eingefangen):
@@ -182,6 +205,10 @@ def _header(subline: str, *, zurueck: bool = False) -> str:
     <a class="sheet-item" href="konfluenz.html">
       <span class="sheet-icon" aria-hidden="true">∩</span>
       <span><span class="sheet-title">Konfluenz</span><span class="sheet-sub">Wo Momentum und Elliott sich treffen</span></span>
+    </a>
+    <a class="sheet-item" href="evaluation.html">
+      <span class="sheet-icon" aria-hidden="true">▭</span>
+      <span><span class="sheet-title">Evaluation</span><span class="sheet-sub">Was aus den Top-5 tatsächlich wurde</span></span>
     </a>
     <button type="button" class="sheet-item sheet-item--btn" id="reload-btn">
       <span class="sheet-icon" aria-hidden="true">⟳</span>
@@ -816,6 +843,161 @@ in beiden, wird er hervorgehoben.</p>
         '<div id="konf-inhalt"></div>',
         "</main>",
     ]
+    return "\n".join(body) + _foot()
+
+
+# --------------------------------------------------------------------------
+# Evaluation — reiner Rueckblick, kein Wirksamkeitsnachweis
+#
+# Alle Zahlen kommen fertig klassifiziert aus data/evaluation/*.json
+# (siehe evaluation.py); hier wird nur noch gezaehlt und dargestellt, NICHT
+# neu bewertet. Absichtlich: keine Prozent-Trefferquote, kein Wort wie
+# "Erfolgsrate" oder "Trefferquote" -- nur Zaehler (Anzahl je Klasse) und
+# Kurse, wie ein Kontoauszug (siehe EVALUATION_HINWEIS oben).
+# --------------------------------------------------------------------------
+
+_EVAL_KLASSEN = ("positiv", "neutral", "negativ", "unbekannt")
+
+
+def _eval_counts(titel_liste: list[dict]) -> dict[str, int]:
+    counts = {k: 0 for k in _EVAL_KLASSEN}
+    for t in titel_liste:
+        counts[t["klasse"]] = counts.get(t["klasse"], 0) + 1
+    return counts
+
+
+def _eval_bar(counts: dict[str, int]) -> str:
+    """Farbbalken + Zahlen-Legende. Leere Klassen bleiben schlicht weg --
+    weder Balken-Segment noch Legenden-Zeile fuer eine Klasse mit 0."""
+    vorhanden = [(k, n) for k in _EVAL_KLASSEN if (n := counts.get(k, 0)) > 0]
+    if not vorhanden:
+        return '<p class="eval-none">Keine Titel auswertbar.</p>'
+    segs = "".join(
+        f'<span class="eval-seg eval-seg--{k}" style="flex-grow:{n}"></span>'
+        for k, n in vorhanden
+    )
+    aria = ", ".join(f"{n} {k}" for k, n in vorhanden)
+    legend = "".join(
+        f'<li class="eval-legend-item eval-legend-item--{k}">'
+        f'<span class="eval-dot" aria-hidden="true"></span>{n}{NBSP}{k}</li>'
+        for k, n in vorhanden
+    )
+    return (
+        f'<div class="eval-bar" role="img" aria-label="{e(aria)}">{segs}</div>\n'
+        f'<ul class="eval-legend">{legend}</ul>'
+    )
+
+
+def _eval_monat_liste(evaluation: dict, market: Market) -> str:
+    """Kein <table>: bei sehr langen Firmennamen oder grosser Textgroesse
+    (siehe tests/design, 390px/20px) muss jede Zeile umbrechen koennen,
+    statt die Seite seitwaerts scrollen zu lassen -- eine Tabelle mit
+    festen Spalten kann das nicht."""
+    zeilen = []
+    for t in evaluation["titel"]:
+        kurs_end = (
+            f"{market.currency_symbol}{NBSP}{de_num(t['kurs_end'], 2)}"
+            if t["kurs_end"] is not None
+            else "kein Kurs verfügbar"
+        )
+        veraenderung = (
+            de_pct(t["veraenderung"], 1) if t["veraenderung"] is not None else "—"
+        )
+        zeilen.append(
+            f"""    <li class="eval-titelzeile eval-titelzeile--{t["klasse"]}">
+      <div class="eval-titelzeile-kopf">
+        <span class="eval-ticker">{e(t["ticker"])}</span>
+        <span class="eval-veraenderung">{veraenderung}</span>
+      </div>
+      <span class="eval-name">{e(t["name"])}</span>
+      <span class="eval-kurse">{market.currency_symbol}{NBSP}{de_num(t["kurs_start"], 2)}
+        → {kurs_end}</span>
+    </li>"""
+        )
+    return f"""<div class="eval-monat">
+  <h4><span class="flag" aria-hidden="true">{e(market.flag)}</span>
+    {e(market.name)} — {e(de_monat(evaluation["ausgewerteter_monat"]))}</h4>
+  <ul class="eval-titelliste">
+{chr(10).join(zeilen)}
+  </ul>
+</div>"""
+
+
+def render_evaluation(evaluations: dict[str, list[dict]]) -> str:
+    """`evaluations` bildet market.key auf seine Rueckblicke ab,
+    chronologisch AUFSTEIGEND (aeltester Monat zuerst) — siehe
+    evaluation.all_evaluations(). Leere oder fehlende Listen sind normal
+    (noch kein Monat abgeschlossen) und ergeben den Leerzustand."""
+    body = [
+        _head(
+            "Evaluation — Momentum-Report",
+            "Monats-Rückblick: was aus den eingefrorenen Top-5 tatsächlich wurde.",
+        ),
+        _header("Reiner Rückblick, kein Wirksamkeitsnachweis", zurueck=True),
+        "<main>",
+        f"""<p class="lead">Diese Seite zeigt, wie sich die eingefrorenen
+<strong>Top-5-Titel</strong> je Markt seit ihrem Stichtag bis zum
+nächsten Stichtag tatsächlich entwickelt haben — wie ein Kontoauszug,
+keine Bewertung der Methode. Die zugrunde liegende Literatur ist bereits
+belegt (siehe <a href="methodik.html">Methodik</a>); diese Seite weist
+davon nichts nach und validiert nichts.</p>
+<div class="disc-box"><ul class="disc-list"><li class="disc-item">
+  <span class="disc-title">Kleine Stichprobe</span>
+  <span class="disc-text">{e(EVALUATION_HINWEIS)}</span>
+</li></ul></div>""",
+    ]
+
+    markets_with_data = [m for m in MARKETS if evaluations.get(m.key)]
+    if not markets_with_data:
+        body.append(
+            """<div class="eval-empty">
+  <p>Noch keine Daten. Der erste Rückblick entsteht automatisch, sobald das
+  nächste Monats-Ranking gebildet wird — für den ersten abgeschlossenen
+  Monat also erst mit dessen Folge-Stichtag.</p>
+</div>"""
+        )
+        body.append("</main>")
+        return "\n".join(body) + _foot()
+
+    body.append("<h2>Monatsrückblick</h2>")
+    body.append(
+        '<p class="eval-sub">Der zuletzt abgeschlossene Monat je Markt.</p>'
+    )
+    for market in markets_with_data:
+        letzter = evaluations[market.key][-1]
+        body.append(
+            f"""<div class="eval-markt">
+  <h3><span class="flag" aria-hidden="true">{e(market.flag)}</span>
+    {e(market.name)} — {e(de_monat(letzter["ausgewerteter_monat"]))}</h3>
+  {_eval_bar(_eval_counts(letzter["titel"]))}
+</div>"""
+        )
+
+    body.append("<h2>Gesamtrückblick</h2>")
+    body.append(
+        '<p class="eval-sub">Kumuliert über alle bisher abgeschlossenen Monate.</p>'
+    )
+    for market in markets_with_data:
+        liste = evaluations[market.key]
+        gesamt = {k: 0 for k in _EVAL_KLASSEN}
+        for ev in liste:
+            for k, n in _eval_counts(ev["titel"]).items():
+                gesamt[k] += n
+        monate_wort = "Monat" if len(liste) == 1 else "Monate"
+        body.append(
+            f"""<div class="eval-markt">
+  <h3><span class="flag" aria-hidden="true">{e(market.flag)}</span>
+    {e(market.name)} — {len(liste)}{NBSP}{monate_wort}</h3>
+  {_eval_bar(gesamt)}
+</div>"""
+        )
+
+    body.append("<h2>Details je Monat</h2>")
+    for market in markets_with_data:
+        for ev in reversed(evaluations[market.key]):
+            body.append(_eval_monat_liste(ev, market))
+
+    body.append("</main>")
     return "\n".join(body) + _foot()
 
 

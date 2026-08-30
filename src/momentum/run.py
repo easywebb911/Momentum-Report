@@ -25,6 +25,13 @@ from pathlib import Path
 
 from .config import HISTORY_DAYS, MARKETS, TOP_N, Market
 from .data import PriceBundle, download_prices
+from .evaluation import (
+    EVAL_DIR,
+    all_evaluations,
+    build_evaluation,
+    evaluation_path,
+    write_evaluation,
+)
 from .ishares import (
     ISHARES_DE,
     ISHARES_US,
@@ -51,6 +58,8 @@ from .ranking import (
     due_months,
     existing_months,
     latest_ranking,
+    ranking_path,
+    read_ranking,
     resolve_asof,
     write_ranking,
 )
@@ -59,6 +68,7 @@ from .riskfree import IRX_TICKER, QUELLE_FEHLT, riskfree_12m
 from .render import (
     MarketView,
     last_weekday_of_month,
+    render_evaluation,
     render_index,
     render_konfluenz,
     render_methodik,
@@ -211,6 +221,7 @@ def process_market(
     downloader=None,
     ranking_root: Path = RANKING_DIR,
     data_root: Path = DATA_DIR,
+    evaluation_root: Path = EVAL_DIR,
     zins_oeffner=None,
     bestand_oeffner=None,
     splits_oeffner=None,
@@ -290,6 +301,24 @@ def process_market(
             )
             write_ranking(ranking, ranking_root)
             new_ranking = ranking
+
+            # Monats-Rueckblick fuer den VORANGEGANGENEN Monat: reines
+            # Nebenprodukt, kein zusaetzlicher Kursabruf -- der Kurs der
+            # damaligen Top-5 steht bereits in `bundle` (siehe
+            # evaluation.py). Nur wenn es ein Vorgaenger-Ranking gibt UND
+            # dessen Rueckblick noch nicht existiert -- beides normal beim
+            # allerersten Monat bzw. bei einem bereits erfassten Rueckblick.
+            prev_year, prev_month = shift_month(year, month, -1)
+            prev_ranking_datei = ranking_path(market.key, prev_year, prev_month, ranking_root)
+            eval_datei = evaluation_path(market.key, prev_year, prev_month, evaluation_root)
+            if prev_ranking_datei.exists() and not eval_datei.exists():
+                prev_ranking = read_ranking(prev_ranking_datei)
+                evaluation = build_evaluation(prev_ranking, market, bundle, asof)
+                write_evaluation(evaluation, evaluation_root)
+                log(
+                    f"[{market.key}] Monats-Rueckblick {prev_year:04d}-{prev_month:02d} "
+                    f"geschrieben (Endkurs vom {asof})."
+                )
         current = new_ranking
         top = current["top"]
         price_bundle = bundle
@@ -452,6 +481,10 @@ def main(
     (DOCS_DIR / "index.html").write_text(render_index(views, today), encoding="utf-8")
     (DOCS_DIR / "methodik.html").write_text(render_methodik(), encoding="utf-8")
     (DOCS_DIR / "konfluenz.html").write_text(render_konfluenz(), encoding="utf-8")
+    evaluations = {m.key: all_evaluations(m.key) for m in MARKETS}
+    (DOCS_DIR / "evaluation.html").write_text(
+        render_evaluation(evaluations), encoding="utf-8"
+    )
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     (DATA_DIR / "status.json").write_text(
