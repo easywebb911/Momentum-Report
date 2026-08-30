@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as _dt
 from pathlib import Path
 
-from .render import render_index, render_konfluenz, render_methodik
+from .render import render_evaluation, render_index, render_konfluenz, render_methodik
 
 DOCS_DIR = Path("docs")
 
@@ -34,6 +34,14 @@ def main() -> int:
     if not start.exists():
         start.write_text(render_index([], _dt.date.today()), encoding="utf-8")
         print(f"geschrieben: {start} (Platzhalter, noch kein Ranking)")
+
+    # Dasselbe fuer die Evaluations-Seite: sie traegt echte Monats-
+    # Rueckblicke aus data/evaluation/ und darf hier nicht ueberbuegelt
+    # werden. Ohne vorhandene Datei entsteht der Leerzustand.
+    eval_seite = DOCS_DIR / "evaluation.html"
+    if not eval_seite.exists():
+        eval_seite.write_text(render_evaluation({}), encoding="utf-8")
+        print(f"geschrieben: {eval_seite} (Platzhalter, noch keine Rueckblicke)")
     return 0
 
 

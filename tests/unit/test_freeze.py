@@ -10,6 +10,7 @@ die Daten, aus denen ein Ranking entstehen koennte, gar nicht erst geladen.
 from __future__ import annotations
 
 import datetime as _dt
+import json
 from dataclasses import replace
 
 import pytest
@@ -51,6 +52,7 @@ def test_lauf_mitten_im_monat_laesst_das_ranking_byte_identisch(tmp_path):
         downloader=make_downloader(_daten()),
         ranking_root=wurzel,
         data_root=daten,
+        evaluation_root=tmp_path / "evaluation",
     )
     assert neu1 is not None, "am Stichtag muss ein Ranking entstehen"
     datei = wurzel / "us_2026-07.json"
@@ -66,6 +68,7 @@ def test_lauf_mitten_im_monat_laesst_das_ranking_byte_identisch(tmp_path):
         ),
         ranking_root=wurzel,
         data_root=daten,
+        evaluation_root=tmp_path / "evaluation",
     )
 
     assert neu2 is None, "mitten im Monat darf kein neues Ranking entstehen"
@@ -91,6 +94,7 @@ def test_anzeige_lauf_laedt_nur_die_top5_nicht_das_universum(tmp_path):
         downloader=make_downloader(_daten()),
         ranking_root=wurzel,
         data_root=daten,
+        evaluation_root=tmp_path / "evaluation",
     )
 
     angefragt: list[list[str]] = []
@@ -101,7 +105,8 @@ def test_anzeige_lauf_laedt_nur_die_top5_nicht_das_universum(tmp_path):
         return basis(batch, start, end)
 
     process_market(
-        markt, MITTE_AUGUST, downloader=mitschnitt, ranking_root=wurzel, data_root=daten
+        markt, MITTE_AUGUST, downloader=mitschnitt, ranking_root=wurzel, data_root=daten,
+        evaluation_root=tmp_path / "evaluation",
     )
 
     assert len(angefragt) == 1, "Anzeige-Lauf darf genau einen Abruf machen"
@@ -114,8 +119,10 @@ def test_naechster_stichtag_bildet_ein_neues_ranking(tmp_path):
     markt = _markt(tmp_path)
     wurzel = tmp_path / "rankings"
     daten = tmp_path / "data"
+    evaluation_wurzel = tmp_path / "evaluation"
     process_market(
-        markt, STICHTAG, downloader=make_downloader(_daten()), ranking_root=wurzel, data_root=daten
+        markt, STICHTAG, downloader=make_downloader(_daten()), ranking_root=wurzel,
+        data_root=daten, evaluation_root=evaluation_wurzel,
     )
 
     serien = _daten()
@@ -129,11 +136,25 @@ def test_naechster_stichtag_bildet_ein_neues_ranking(tmp_path):
         downloader=make_downloader(serien),
         ranking_root=wurzel,
         data_root=daten,
+        evaluation_root=evaluation_wurzel,
     )
     assert neu is not None
     assert neu["ranking_monat"] == "2026-08"
     assert neu["stichtag"] == "2026-08-31"
     assert (wurzel / "us_2026-07.json").exists(), "das alte Ranking bleibt erhalten"
+
+    # Nebenprodukt dieses Laufs: der Rueckblick auf Juli entsteht jetzt,
+    # weil August (der Folge-Stichtag) gerade gebildet wurde -- alle 5
+    # Titel stehen +10 % (deutlich ueber der 2%-Schwelle) also "positiv".
+    rueckblick_datei = evaluation_wurzel / "us_2026-07.json"
+    assert rueckblick_datei.exists(), "Monats-Rueckblick fuer Juli fehlt"
+    rueckblick = json.loads(rueckblick_datei.read_text(encoding="utf-8"))
+    assert rueckblick["ausgewerteter_monat"] == "2026-07"
+    assert rueckblick["start_stichtag"] == "2026-07-31"
+    assert rueckblick["end_stichtag"] == "2026-08-31"
+    assert len(rueckblick["titel"]) == 5
+    assert all(t["klasse"] == "positiv" for t in rueckblick["titel"])
+    assert all(t["veraenderung"] == pytest.approx(0.1) for t in rueckblick["titel"])
 
 
 def test_bestehendes_ranking_wird_nie_ueberschrieben(tmp_path):

@@ -85,9 +85,10 @@ def test_die_frischepruefung_deckt_alle_erzeugten_seiten_ab():
 
     text = TESTS_YML.read_text(encoding="utf-8")
     for seite in erzeugt:
-        if seite == "index.html":
-            # Die Startseite traegt echte Ranking-Daten und wird von
-            # build_pages nur angelegt, wenn es sie noch nicht gibt. Sie
-            # darf und kann hier nicht auf Frische geprueft werden.
+        if seite in ("index.html", "evaluation.html"):
+            # Beide tragen echte Lauf-Daten (Ranking bzw. Monats-
+            # Rueckblicke) und werden von build_pages nur angelegt, wenn es
+            # sie noch nicht gibt. Sie duerfen und koennen hier nicht auf
+            # Frische geprueft werden.
             continue
         assert f"docs/{seite}" in text, f"docs/{seite} fehlt in der Frischepruefung"
