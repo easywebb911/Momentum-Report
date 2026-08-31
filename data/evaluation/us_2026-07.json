@@ -1,0 +1,50 @@
+{
+  "ausgewerteter_monat": "2026-07",
+  "end_stichtag": "2026-08-28",
+  "markt": "us",
+  "neutral_schwelle": 0.02,
+  "schema": 1,
+  "start_stichtag": "2026-07-31",
+  "titel": [
+    {
+      "klasse": "positiv",
+      "kurs_end": 352.36,
+      "kurs_start": 312.9,
+      "name": "Valero Energy",
+      "ticker": "VLO",
+      "veraenderung": 0.12611053
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 180.68,
+      "kurs_start": 240.09,
+      "name": "DaVita",
+      "ticker": "DVA",
+      "veraenderung": -0.2474489
+    },
+    {
+      "klasse": "positiv",
+      "kurs_end": 148.35,
+      "kurs_start": 130.2,
+      "name": "Merck & Co.",
+      "ticker": "MRK",
+      "veraenderung": 0.13940097
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 16.34,
+      "kurs_start": 17.56,
+      "name": "Viatris",
+      "ticker": "VTRS",
+      "veraenderung": -0.06947607
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 228.55,
+      "kurs_start": 251.07,
+      "name": "Ross Stores",
+      "ticker": "ROST",
+      "veraenderung": -0.08969609
+    }
+  ]
+}

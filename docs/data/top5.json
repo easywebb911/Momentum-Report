@@ -2,73 +2,73 @@
   "maerkte": {
     "de": {
       "name": "Deutschland",
-      "stichtag": "2026-07-31",
+      "stichtag": "2026-08-31",
       "top5": [
         {
           "rang": 1,
-          "score": 86.904762,
-          "stichtag": "2026-07-31",
-          "ticker": "DHL.DE"
-        },
-        {
-          "rang": 2,
-          "score": 85.119048,
-          "stichtag": "2026-07-31",
+          "score": 86.144578,
+          "stichtag": "2026-08-31",
           "ticker": "DWS.DE"
         },
         {
+          "rang": 2,
+          "score": 85.542169,
+          "stichtag": "2026-08-31",
+          "ticker": "TKA.DE"
+        },
+        {
           "rang": 3,
-          "score": 82.738095,
-          "stichtag": "2026-07-31",
+          "score": 83.13253,
+          "stichtag": "2026-08-31",
           "ticker": "ALV.DE"
         },
         {
           "rang": 4,
-          "score": 82.738095,
-          "stichtag": "2026-07-31",
-          "ticker": "TKA.DE"
+          "score": 83.13253,
+          "stichtag": "2026-08-31",
+          "ticker": "DHL.DE"
         },
         {
           "rang": 5,
-          "score": 81.547619,
-          "stichtag": "2026-07-31",
-          "ticker": "SIE.DE"
+          "score": 82.53012,
+          "stichtag": "2026-08-31",
+          "ticker": "RWE.DE"
         }
       ]
     },
     "us": {
       "name": "USA",
-      "stichtag": "2026-07-31",
+      "stichtag": "2026-08-28",
       "top5": [
         {
           "rang": 1,
-          "score": 96.292585,
-          "stichtag": "2026-07-31",
+          "score": 97.883065,
+          "stichtag": "2026-08-28",
           "ticker": "VLO"
         },
         {
           "rang": 2,
-          "score": 93.086172,
-          "stichtag": "2026-07-31",
-          "ticker": "DVA"
+          "score": 96.572581,
+          "stichtag": "2026-08-28",
+          "ticker": "MPC"
         },
         {
           "rang": 3,
-          "score": 92.985972,
-          "stichtag": "2026-07-31",
-          "ticker": "MRK"
+          "score": 94.858871,
+          "stichtag": "2026-08-28",
+          "ticker": "PSX"
         },
         {
           "rang": 4,
-          "score": 92.685371,
-          "stichtag": "2026-07-31",
-          "ticker": "VTRS"
+          "score": 94.556452,
+          "stichtag": "2026-08-28",
+          "ticker": "STT"
         },
         {
           "rang": 5,
-          "score": 92.38477,
-          "stichtag": "2026-07-31",
-          "ticker": "ROST"
+          "score": 91.028226,
+          "stichtag": "2026-08-28",
+          "ticker": "BNY"
         }
       ]
     }

@@ -1,0 +1,50 @@
+{
+  "ausgewerteter_monat": "2026-07",
+  "end_stichtag": "2026-08-31",
+  "markt": "de",
+  "neutral_schwelle": 0.02,
+  "schema": 1,
+  "start_stichtag": "2026-07-31",
+  "titel": [
+    {
+      "klasse": "negativ",
+      "kurs_end": 56.42,
+      "kurs_start": 57.76,
+      "name": "DEUTSCHE POST AG",
+      "ticker": "DHL.DE",
+      "veraenderung": -0.02319948
+    },
+    {
+      "klasse": "positiv",
+      "kurs_end": 76.1,
+      "kurs_start": 72.8,
+      "name": "DWS GROUP & GMBH CO KGAA",
+      "ticker": "DWS.DE",
+      "veraenderung": 0.04532965
+    },
+    {
+      "klasse": "positiv",
+      "kurs_end": 452.8,
+      "kurs_start": 432.5,
+      "name": "ALLIANZ",
+      "ticker": "ALV.DE",
+      "veraenderung": 0.04693639
+    },
+    {
+      "klasse": "positiv",
+      "kurs_end": 14.545,
+      "kurs_start": 12.055,
+      "name": "THYSSENKRUPP AG",
+      "ticker": "TKA.DE",
+      "veraenderung": 0.2065533
+    },
+    {
+      "klasse": "positiv",
+      "kurs_end": 288.4,
+      "kurs_start": 282.65,
+      "name": "SIEMENS N AG",
+      "ticker": "SIE.DE",
+      "veraenderung": 0.02034316
+    }
+  ]
+}
