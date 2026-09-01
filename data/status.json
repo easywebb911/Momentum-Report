@@ -1,50 +1,30 @@
 {
-  "lauf_datum": "2026-08-31",
+  "lauf_datum": "2026-09-01",
   "maerkte": [
     {
       "daten": {
-        "angefragt": 503,
+        "angefragt": 5,
         "fehlgeschlagene_bloecke": [],
-        "geliefert": 503,
+        "geliefert": 5,
         "ticker_ohne_daten": [],
-        "zeilen_gesamt": 158948,
-        "zeilen_verworfen_nicht_endlich": 1520
+        "zeilen_gesamt": 50,
+        "zeilen_verworfen_nicht_endlich": 0
       },
-      "faellige_monate_offen": [
-        "2026-08"
-      ],
-      "kurse_vom": "2026-08-28",
-      "kursvergleich": {
-        "abweichler": [],
-        "fonds": "SXR8",
-        "grund": "",
-        "split_erkannt": [],
-        "stichtag": "2026-08-28",
-        "verdikt": "ok",
-        "verglichen": 498
-      },
+      "faellige_monate_offen": [],
+      "kurse_vom": "2026-08-31",
       "markt": "us"
     },
     {
       "daten": {
-        "angefragt": 102,
+        "angefragt": 5,
         "fehlgeschlagene_bloecke": [],
-        "geliefert": 102,
+        "geliefert": 5,
         "ticker_ohne_daten": [],
-        "zeilen_gesamt": 32742,
-        "zeilen_verworfen_nicht_endlich": 356
+        "zeilen_gesamt": 50,
+        "zeilen_verworfen_nicht_endlich": 5
       },
-      "faellige_monate_offen": [
-        "2026-08"
-      ],
-      "kurse_vom": "2026-08-31",
-      "kursvergleich": {
-        "abweichler": [],
-        "grund": "",
-        "stichtag": "2026-08-28",
-        "verdikt": "ok",
-        "verglichen": 102
-      },
+      "faellige_monate_offen": [],
+      "kurse_vom": "2026-08-28",
       "markt": "de"
     }
   ]
