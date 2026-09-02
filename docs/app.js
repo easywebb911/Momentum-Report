@@ -45,7 +45,10 @@
     netz: function (url, opt) { return fetch(url, opt); },
     jetzt: function () { return Date.now(); },
     pollAbstandMs: 5000,
-    zeitlimitMs: 10 * 60 * 1000
+    zeitlimitMs: 10 * 60 * 1000,
+    // Eigener Takt fuer die Sekundenanzeige waehrend "Neu berechnen" --
+    // ausdruecklich NICHT an pollAbstandMs gekoppelt (siehe tickerStarten).
+    tickAbstandMs: 1000
   };
 
   // ---------------------------------------------------------- Textgroesse
@@ -174,7 +177,10 @@
   }
 
   if (barClose) {
-    barClose.addEventListener("click", function () { bar.hidden = true; });
+    barClose.addEventListener("click", function () {
+      bar.hidden = true;
+      tickerStoppen();
+    });
   }
 
   // ----------------------------------------------------------- Neu laden
@@ -296,6 +302,36 @@
     return Math.max(0, Math.round((deps.jetzt() - start) / 1000));
   }
 
+  // ---------------------------------------------- Sekundenanzeige, entkoppelt
+  //
+  // Die Statusabfrage (verfolgen(), unten) laeuft alle pollAbstandMs PLUS die
+  // Laufzeit der jeweiligen Netzantwort -- unregelmaessig, absichtlich nicht
+  // angetastet. Der Text "Neuberechnung laeuft… (N s)" sprang bisher genau in
+  // diesem unregelmaessigen Takt mit, weil er nur dort geschrieben wurde. Der
+  // Ticker hier ist eine eigene, gleichmaessige Uhr: er schreibt denselben
+  // Text im festen tickAbstandMs-Takt, unabhaengig davon, wann die naechste
+  // Statusabfrage antwortet. Beide Quellen rechnen aus demselben `start` und
+  // derselben deps.jetzt() denselben Wert -- es gibt keinen Widerspruch
+  // zwischen ihnen, nur eine haeufigere, ruhige Aktualisierung.
+  var tickTimer = null;
+
+  function tickAnzeigen(start) {
+    barText.textContent = "Neuberechnung laeuft… (" + sekunden(start) + " s)";
+    tickTimer = setTimeout(function () { tickAnzeigen(start); }, deps.tickAbstandMs);
+  }
+
+  function tickerStarten(start) {
+    tickerStoppen();
+    tickAnzeigen(start);
+  }
+
+  function tickerStoppen() {
+    if (tickTimer !== null) {
+      clearTimeout(tickTimer);
+      tickTimer = null;
+    }
+  }
+
   /**
    * Verfolgt den Lauf bis zum Ende. Loest auf mit "fertig",
    * "fehlgeschlagen", "zeitlimit" oder "abgebrochen" — nie mit einem
@@ -303,6 +339,7 @@
    */
   function verfolgen(token, start, letzter) {
     if (deps.jetzt() - start > deps.zeitlimitMs) {
+      tickerStoppen();
       bannerZeigen(
         "fehler",
         "Lauf dauert ungewoehnlich lange (" + sekunden(start) + " s) — " +
@@ -314,12 +351,14 @@
 
     return laufSuchen(token, start).then(function (ergebnis) {
       if (ergebnis && ergebnis.fehler) {
+        tickerStoppen();
         bannerZeigen("fehler", ergebnis.fehler.text, laufUrl());
         return "abgebrochen";
       }
       var lauf = (ergebnis && ergebnis.lauf) || letzter;
 
       if (lauf && lauf.status === "completed") {
+        tickerStoppen();
         if (lauf.conclusion === "success") {
           return neuLaden().then(function () {
             bannerZeigen("fertig", "Neuberechnung fertig, Daten aktualisiert.", lauf.html_url);
@@ -347,6 +386,11 @@
         return "fehlgeschlagen";
       }
 
+      // Die Sekundenzahl steht hier weiterhin (fuer den Fall, dass der
+      // Ticker aus irgendeinem Grund nicht laeuft) -- sie stimmt IMMER mit
+      // dem ueberein, was der Ticker gerade zeigt, weil beide aus demselben
+      // `start` und derselben deps.jetzt() rechnen. Kein Wettlauf, keine
+      // widerspruechliche Zahl.
       bannerZeigen(
         "laeuft",
         "Neuberechnung laeuft… (" + sekunden(start) + " s)",
@@ -356,6 +400,7 @@
         setTimeout(ok, deps.pollAbstandMs);
       }).then(function () { return verfolgen(token, start, lauf); });
     }).catch(function (err) {
+      tickerStoppen();
       bannerZeigen("fehler", "Verbindung zu GitHub abgebrochen: " + err.message, laufUrl());
       return "abgebrochen";
     });
@@ -363,9 +408,13 @@
 
   function laufStarten(token) {
     var start = deps.jetzt();
+    tickerStoppen();
     bannerZeigen("laeuft", "Lauf wird angestossen …", null);
     return anstossen(token).then(function (antwort) {
-      if (antwort.status === 204) { return verfolgen(token, start, null); }
+      if (antwort.status === 204) {
+        tickerStarten(start);
+        return verfolgen(token, start, null);
+      }
       var grund = ablehnung(antwort);
       bannerZeigen("fehler", grund.text, laufUrl());
       if (grund.tokenWeg) {
@@ -378,6 +427,7 @@
       }
       return "abgelehnt";
     }).catch(function (err) {
+      tickerStoppen();
       bannerZeigen("fehler", "Der Lauf liess sich nicht anstossen: " + err.message, null);
       return "abgebrochen";
     });
