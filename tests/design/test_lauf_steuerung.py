@@ -14,6 +14,7 @@ Beschoenigung, die dieses Projekt nirgends duldet.
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -79,6 +80,13 @@ def banner(page):
                   link: l.hidden ? null : l.getAttribute('href')};
         }"""
     )
+
+
+def sekundenzahl(text):
+    """"Neuberechnung laeuft… (7 s)" -> 7."""
+    treffer = re.search(r"\((\d+) s\)", text)
+    assert treffer, text
+    return int(treffer.group(1))
 
 
 @pytest.fixture
@@ -257,6 +265,50 @@ def test_der_zaehler_laeuft_waehrend_der_lauf_laeuft(app):
     # Fehlschlag. Geprueft wird deshalb der Endzustand plus die Zahl der Runden.
     assert app.evaluate("window.__aufrufe.length") == 3
     assert "runbar--fehler" in banner(app)["klasse"]
+
+
+def test_die_sekundenanzeige_zaehlt_gleichmaessig_und_nicht_im_poll_takt(app):
+    """DER Beleg fuer die Entkopplung.
+
+    pollAbstandMs steht hier auf einer Minute -- innerhalb der Testlaufzeit
+    kommt garantiert KEINE zweite Statusabfrage zustande (belegt am Ende
+    ueber window.__aufrufe.length). Die Sekundenzahl im Banner steigt
+    trotzdem mehrfach, gleichmaessig getaktet -- sie kommt vom eigenen
+    Ticker (tickAbstandMs), nicht vom Poll-Rhythmus.
+    """
+    ruesten(app, [
+        {"status": 204},
+        {"status": 200, "json": {"workflow_runs": [lauf("in_progress", None)]}},
+    ])
+    # Fuer DIESEN Test die echte Uhr statt der eingefrorenen Testuhr: nur so
+    # zeigt der Ticker in Echtzeit steigende Werte, waehrend pollAbstandMs
+    # bewusst so gross steht, dass der Poll in der Testlaufzeit nicht noch
+    # einmal feuert.
+    app.evaluate("""() => {
+      window.MR.deps.jetzt = function () { return Date.now(); };
+      window.MR.deps.pollAbstandMs = 60000;
+      window.MR.deps.tickAbstandMs = 120;
+    }""")
+    # Nicht awaiten: der Lauf haengt absichtlich in der einminuetigen
+    # Poll-Wartezeit. Der Block-Body (kein "return") gibt das an Playwright
+    # weiter -- es wird nur angestossen, nicht auf das Ende gewartet.
+    app.evaluate(f"() => {{ window.MR.laufStarten({TOKEN!r}); }}")
+
+    app.wait_for_function(
+        "document.querySelector('#runbar-text').textContent.includes('laeuft')"
+    )
+    erste = sekundenzahl(banner(app)["text"])
+    app.wait_for_timeout(650)
+    zweite = sekundenzahl(banner(app)["text"])
+    app.wait_for_timeout(650)
+    dritte = sekundenzahl(banner(app)["text"])
+
+    assert erste <= zweite <= dritte, (erste, zweite, dritte)
+    assert dritte > erste, "die Sekundenzahl hat sich in gut 1,3 s nicht bewegt"
+    # Der Anstieg kommt vom Ticker: genau Dispatch + EINE Statusabfrage,
+    # keine zweite -- pollAbstandMs (60 s) ist in der Testlaufzeit nicht
+    # verstrichen.
+    assert app.evaluate("window.__aufrufe.length") == 2
 
 
 def test_zeitlimit_beendet_das_zaehlen_ehrlich(app):
