@@ -1,5 +1,5 @@
 {
-  "lauf_datum": "2026-09-02",
+  "lauf_datum": "2026-09-03",
   "maerkte": [
     {
       "daten": {
@@ -8,10 +8,10 @@
         "geliefert": 5,
         "ticker_ohne_daten": [],
         "zeilen_gesamt": 55,
-        "zeilen_verworfen_nicht_endlich": 2
+        "zeilen_verworfen_nicht_endlich": 0
       },
       "faellige_monate_offen": [],
-      "kurse_vom": "2026-09-02",
+      "kurse_vom": "2026-09-03",
       "markt": "us"
     },
     {
@@ -24,7 +24,7 @@
         "zeilen_verworfen_nicht_endlich": 5
       },
       "faellige_monate_offen": [],
-      "kurse_vom": "2026-09-01",
+      "kurse_vom": "2026-09-02",
       "markt": "de"
     }
   ]
