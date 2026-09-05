@@ -426,3 +426,53 @@ def push_test(**kwargs) -> bool:
         tags="white_check_mark",
         **kwargs,
     )
+
+
+def push_konfluenz_treffer(treffer: list[dict], **kwargs) -> bool:
+    """Push (7): mindestens ein NEUER Konfluenz-Treffer (siehe konfluenz.py).
+
+    Ein Titel steht jetzt GLEICHZEITIG im Momentum-Top-5 und bei Elliott
+    als Long-Kandidat, war das aber beim letzten Lauf noch nicht. EIN Push
+    mit allen neuen Treffern als Liste, nicht einer je Treffer -- treten
+    mehrere gleichzeitig auf, ist das EIN Ereignis (siehe
+    push_vertrag_gebrochen).
+
+    Ein bereits bekannter, weiterhin bestehender Treffer erzeugt NIE
+    erneut einen Push -- das entscheidet konfluenz.neue_konfluenz_treffer,
+    nicht diese Funktion. Ohne diese Trennung gaebe es bei jedem Lauf
+    denselben Alarm erneut (Ermuedungseffekt, Easys ausdrueckliche
+    Vorgabe).
+
+    Prioritaet "default": eine Beobachtung, kein Fehlschlag -- keine
+    Sirene.
+    """
+    if not treffer:
+        return False
+    lines = [
+        f"{len(treffer)} neue{'r' if len(treffer) == 1 else ''} "
+        f"Konfluenz-Treffer{'' if len(treffer) == 1 else ''}:",
+        "",
+    ]
+    for t in treffer:
+        momentum = (
+            f"{t['momentum_score']:.1f}" if t.get("momentum_score") is not None else "—"
+        )
+        elliott = (
+            f"{t['elliott_score']:.1f}" if t.get("elliott_score") is not None else "—"
+        )
+        lines.append(
+            f"{t['markt_name']}: {t['ticker']} — Momentum Rang "
+            f"{t['momentum_rang']} (Score {momentum}), Elliott-Score {elliott}"
+        )
+    lines += [
+        "",
+        "Momentum und Elliott messen Verschiedenes — eine Ueberschneidung "
+        "ist ein Zufall zweier Verfahren, kein doppelter Beleg.",
+    ]
+    return push(
+        "Momentum-Report: neuer Konfluenz-Treffer",
+        "\n".join(lines),
+        priority="default",
+        tags="link",
+        **kwargs,
+    )

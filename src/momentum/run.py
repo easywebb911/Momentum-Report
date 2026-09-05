@@ -49,8 +49,9 @@ from .kursvergleich import (
     kurzfassung_aus_report,
     vergleiche,
 )
+from . import konfluenz
 from . import kursvergleich_us
-from .notify import push_new_ranking, push_run_failed, push_test
+from .notify import push_konfluenz_treffer, push_new_ranking, push_run_failed, push_test
 from .ranking import (
     RANKING_DIR,
     RankingNotPossible,
@@ -374,17 +375,11 @@ def process_market(
     return view, new_ranking, status
 
 
-def _schreibe_top5(views: list[MarketView], docs_root: Path) -> None:
-    """Die eingefrorenen Top-5 als eigene, kleine Datei — rein additiv.
-
-    Sie aendert nichts an bestehenden Dateien und wird von nichts in diesem
-    Werkzeug gelesen. Sie existiert, damit die Konfluenz-Seite (und
-    grundsaetzlich jeder andere Leser) an die Top-5 kommt, ohne das
-    vollstaendige Ranking oder die HTML-Seite auseinandernehmen zu muessen.
-
-    Ohne Zeitstempel und mit sortierten Schluesseln: die Datei aendert sich
-    nur, wenn sich ihr Inhalt aendert.
-    """
+def _top5_je_markt(views: list[MarketView]) -> dict[str, dict]:
+    """market.key -> {"name", "stichtag", "top5": [...]}. Gemeinsame
+    Grundlage fuer _schreibe_top5() UND den Konfluenz-Push-Abgleich
+    (konfluenz.neue_konfluenz_treffer) -- beide sollen exakt dasselbe
+    Top-5 sehen, nicht zwei getrennt berechnete Fassungen."""
     maerkte: dict[str, dict] = {}
     for view in views:
         if not view.ranking:
@@ -403,6 +398,21 @@ def _schreibe_top5(views: list[MarketView], docs_root: Path) -> None:
                 for row in view.ranking["rangliste"][:TOP_N]
             ],
         }
+    return maerkte
+
+
+def _schreibe_top5(views: list[MarketView], docs_root: Path) -> None:
+    """Die eingefrorenen Top-5 als eigene, kleine Datei — rein additiv.
+
+    Sie aendert nichts an bestehenden Dateien und wird von nichts in diesem
+    Werkzeug gelesen. Sie existiert, damit die Konfluenz-Seite (und
+    grundsaetzlich jeder andere Leser) an die Top-5 kommt, ohne das
+    vollstaendige Ranking oder die HTML-Seite auseinandernehmen zu muessen.
+
+    Ohne Zeitstempel und mit sortierten Schluesseln: die Datei aendert sich
+    nur, wenn sich ihr Inhalt aendert.
+    """
+    maerkte = _top5_je_markt(views)
     if not maerkte:
         return
     ziel = docs_root / "data" / "top5.json"
@@ -413,6 +423,57 @@ def _schreibe_top5(views: list[MarketView], docs_root: Path) -> None:
         encoding="utf-8",
     )
     log(f"Top-5-Export geschrieben: {ziel}")
+
+
+def _konfluenz_push_pruefen(
+    views: list[MarketView],
+    data_root: Path = DATA_DIR,
+    *,
+    elliott_oeffner=None,
+) -> None:
+    """Vergleicht den aktuellen Konfluenz-Stand (Momentum-Top-5 x Elliott)
+    gegen den zuletzt bekannten und verschickt bei NEUEN Treffern EINEN
+    Push (siehe konfluenz.py und notify.push_konfluenz_treffer).
+
+    Laeuft bei JEDEM Lauf, nicht nur an einem neuen Monats-Stichtag (Easys
+    Entscheid): Elliotts Bericht kann sich jederzeit aendern, auch wenn
+    das Top-5 zwischen zwei Stichtagen unveraendert bleibt.
+
+    FAIL-SOFT: ist der Elliott-Bericht gerade nicht erreichbar, geschieht
+    NICHTS -- kein Vergleich, kein Push, kein Schreiben. Der zuletzt
+    bekannte Stand bleibt exakt so stehen, wie er war (siehe
+    konfluenz.hole_elliott_bericht: ein leerer Stand wuerde jeden
+    bisherigen Treffer beim naechsten erfolgreichen Lauf faelschlich als
+    neu melden).
+    """
+    top5_je_markt = {
+        key: eintrag["top5"] for key, eintrag in _top5_je_markt(views).items()
+    }
+    if not top5_je_markt:
+        return
+    kwargs = {} if elliott_oeffner is None else {"opener": elliott_oeffner}
+    bericht = konfluenz.hole_elliott_bericht(**kwargs)
+    if bericht is None:
+        log(
+            "[konfluenz] Elliott-Bericht gerade nicht erreichbar — "
+            "Push-Abgleich fuer heute uebersprungen."
+        )
+        return
+    markt_namen = {m.key: m.name for m in MARKETS}
+    stand_pfad = data_root / "konfluenz_stand.json"
+    bisheriger_stand = konfluenz.lies_stand(stand_pfad)
+    neu, aktuell = konfluenz.neue_konfluenz_treffer(
+        top5_je_markt, markt_namen, bericht, bisheriger_stand
+    )
+    konfluenz.schreibe_stand(aktuell, stand_pfad)
+    if neu:
+        log(
+            f"[konfluenz] {len(neu)} neue(r) Treffer: "
+            + ", ".join(f"{t['markt']}:{t['ticker']}" for t in neu)
+        )
+        push_konfluenz_treffer(neu)
+    else:
+        log("[konfluenz] keine neuen Treffer.")
 
 
 def _github_output(key: str, value: str) -> None:
@@ -430,11 +491,14 @@ def main(
     zins_oeffner=None,
     bestand_oeffner=None,
     splits_oeffner=None,
+    elliott_oeffner=None,
 ) -> int:
-    """`downloader`, `zins_oeffner`, `bestand_oeffner` und `splits_oeffner`
-    sind die Test-Naehte: ohne sie laufen der echte Kursabruf, der echte
-    EZB-Abruf, der echte Abruf der iShares-Bestandslisten und der echte
-    Abruf des Yahoo-Split-Kalenders (nur US, siehe kursvergleich_us.py)."""
+    """`downloader`, `zins_oeffner`, `bestand_oeffner`, `splits_oeffner` und
+    `elliott_oeffner` sind die Test-Naehte: ohne sie laufen der echte
+    Kursabruf, der echte EZB-Abruf, der echte Abruf der
+    iShares-Bestandslisten, der echte Abruf des Yahoo-Split-Kalenders (nur
+    US, siehe kursvergleich_us.py) und der echte Abruf des
+    Elliott-Berichts (siehe konfluenz.py)."""
     parser = argparse.ArgumentParser(description="Momentum-Report Lauf")
     parser.add_argument("--today", help="Laufdatum JJJJ-MM-TT (nur fuer Tests)")
     parser.add_argument(
@@ -499,6 +563,12 @@ def main(
     )
 
     _schreibe_top5(views, DOCS_DIR)
+
+    # Konfluenz-Push-Abgleich: bei JEDEM Lauf, nicht nur an einem neuen
+    # Stichtag (siehe _konfluenz_push_pruefen). --no-push gilt hier genauso
+    # wie fuer jeden anderen Push in diesem Lauf.
+    if not args.no_push:
+        _konfluenz_push_pruefen(views, DATA_DIR, elliott_oeffner=elliott_oeffner)
 
     _github_output("ranking_created", "true" if new_rankings else "false")
 

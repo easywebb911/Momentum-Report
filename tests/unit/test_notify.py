@@ -121,6 +121,57 @@ def test_die_beiden_fehlerfaelle_sind_klar_unterscheidbar():
     assert nachrichten[1]["title"] == "Lauf fehlgeschlagen"
 
 
+def test_konfluenz_treffer_ohne_liste_verschickt_nichts():
+    gesammelt = []
+    ergebnis = notify.push_konfluenz_treffer([], topic="t", opener=_sammler(gesammelt))
+    assert ergebnis is False
+    assert gesammelt == []
+
+
+def test_konfluenz_treffer_nennt_ticker_markt_und_beide_scores():
+    treffer = [{
+        "ticker": "NVDA", "markt": "us", "markt_name": "USA",
+        "momentum_rang": 2, "momentum_score": 96.3, "elliott_score": 61.2,
+    }]
+    gesammelt = []
+    notify.push_konfluenz_treffer(treffer, topic="t", opener=_sammler(gesammelt))
+    nachricht = _payload(gesammelt[0])
+    assert nachricht["title"] == "Momentum-Report: neuer Konfluenz-Treffer"
+    assert "NVDA" in nachricht["message"]
+    assert "USA" in nachricht["message"]
+    assert "2" in nachricht["message"]
+    assert "96.3" in nachricht["message"]
+    assert "61.2" in nachricht["message"]
+    assert nachricht["priority"] == 3, "kein Fehlschlag -- keine Sirene"
+
+
+def test_konfluenz_treffer_ohne_elliott_score_zeigt_gedankenstrich():
+    treffer = [{
+        "ticker": "AAA", "markt": "de", "markt_name": "Deutschland",
+        "momentum_rang": 1, "momentum_score": 80.0, "elliott_score": None,
+    }]
+    gesammelt = []
+    notify.push_konfluenz_treffer(treffer, topic="t", opener=_sammler(gesammelt))
+    nachricht = _payload(gesammelt[0])
+    assert "—" in nachricht["message"]
+
+
+def test_mehrere_neue_treffer_kommen_in_einem_einzigen_push():
+    """Wie push_vertrag_gebrochen: EIN Push mit allen neuen Treffern,
+    nicht einer je Treffer."""
+    treffer = [
+        {"ticker": "AAA", "markt": "us", "markt_name": "USA",
+         "momentum_rang": 1, "momentum_score": 90.0, "elliott_score": 50.0},
+        {"ticker": "BBB", "markt": "de", "markt_name": "Deutschland",
+         "momentum_rang": 3, "momentum_score": 70.0, "elliott_score": 40.0},
+    ]
+    gesammelt = []
+    notify.push_konfluenz_treffer(treffer, topic="t", opener=_sammler(gesammelt))
+    assert len(gesammelt) == 1
+    nachricht = _payload(gesammelt[0])
+    assert "AAA" in nachricht["message"] and "BBB" in nachricht["message"]
+
+
 def test_titel_mit_umlauten_und_gedankenstrich_bleiben_heil():
     """Ueber JSON statt HTTP-Kopfzeile — sonst wuerde "—" zu Zeichensalat."""
     gesammelt = []
@@ -148,6 +199,13 @@ def test_kein_herzschlag_push_vorhanden():
     # aus einem Zeitplan (waechter.yml), aber ausschliesslich im ALARMFALL.
     assert sorted(funktionen) == [
         "push_data_conflict",
+        # Auch kein Herzschlag: sie laeuft zwar bei JEDEM werktaeglichen
+        # Lauf mit (siehe konfluenz.py), meldet sich aber ausschliesslich,
+        # wenn sich die Konfluenz-Menge gegenueber dem letzten bekannten
+        # Stand tatsaechlich VERAENDERT hat -- ein unveraenderter, weiterhin
+        # bestehender Treffer loest laut tests/unit/test_konfluenz_python.py
+        # nie erneut einen Push aus.
+        "push_konfluenz_treffer",
         "push_lauf_ueberfaellig",
         "push_new_ranking",
         "push_run_failed",

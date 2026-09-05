@@ -81,6 +81,27 @@ def keine_zinsquelle_im_netz(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def keine_elliott_quelle_im_netz(monkeypatch):
+    """Sperre: kein Test ruft den echten Elliott-Bericht ab.
+
+    Spiegelbild von keine_zinsquelle_im_netz oben, aus demselben Grund:
+    der Abruf haengt nicht am injizierten `downloader`, sondern an einer
+    eigenen HTTP-Verbindung (siehe konfluenz.hole_elliott_bericht). Ohne
+    diese Sperre wuerde jeder main()-Test, der `elliott_oeffner` nicht
+    setzt, still nach draussen telefonieren. hole_elliott_bericht faengt
+    JEDEN Fehler ab (Fail-soft, siehe dort) -- diese Sperre wird also nie
+    als Testfehler sichtbar, sondern als "Bericht nicht erreichbar", genau
+    wie ein echter Netzausfall. Wer echte Elliott-Daten braucht, spielt sie
+    ueber `elliott_oeffner` ein.
+    """
+
+    def verboten(*_args, **_kwargs):
+        raise AssertionError("Test versucht, den echten Elliott-Bericht abzurufen")
+
+    monkeypatch.setattr("momentum.konfluenz.urllib.request.urlopen", verboten)
+
+
+@pytest.fixture(autouse=True)
 def keine_bestandsliste_im_netz(monkeypatch):
     """Sperre: kein Test ruft iShares an.
 
