@@ -471,6 +471,7 @@ def _konfluenz_push_pruefen(
             f"[konfluenz] {len(neu)} neue(r) Treffer: "
             + ", ".join(f"{t['markt']}:{t['ticker']}" for t in neu)
         )
+        konfluenz.historie_anhaengen(neu, data_root / "konfluenz_historie.json")
         push_konfluenz_treffer(neu)
     else:
         log("[konfluenz] keine neuen Treffer.")
@@ -544,7 +545,6 @@ def main(
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     (DOCS_DIR / "index.html").write_text(render_index(views, today), encoding="utf-8")
     (DOCS_DIR / "methodik.html").write_text(render_methodik(), encoding="utf-8")
-    (DOCS_DIR / "konfluenz.html").write_text(render_konfluenz(), encoding="utf-8")
     evaluations = {m.key: all_evaluations(m.key) for m in MARKETS}
     (DOCS_DIR / "evaluation.html").write_text(
         render_evaluation(evaluations), encoding="utf-8"
@@ -569,6 +569,15 @@ def main(
     # wie fuer jeden anderen Push in diesem Lauf.
     if not args.no_push:
         _konfluenz_push_pruefen(views, DATA_DIR, elliott_oeffner=elliott_oeffner)
+
+    # ERST NACH dem Push-Abgleich schreiben: der rendert die Historie mit,
+    # die _konfluenz_push_pruefen soeben (bei einem neuen Treffer) ergaenzt
+    # hat. In der falschen Reihenfolge liefe die Seite dem heutigen Lauf um
+    # einen Lauf hinterher.
+    (DOCS_DIR / "konfluenz.html").write_text(
+        render_konfluenz(konfluenz.lies_historie(DATA_DIR / "konfluenz_historie.json")),
+        encoding="utf-8",
+    )
 
     _github_output("ranking_created", "true" if new_rankings else "false")
 

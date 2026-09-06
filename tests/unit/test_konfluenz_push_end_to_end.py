@@ -132,6 +132,15 @@ def test_neuer_treffer_loest_genau_einen_push_aus(welt, monkeypatch):
     )
     assert stand["treffer"] == ["us:DDD"]
 
+    historie = json.loads(
+        (tmp_path / "data/konfluenz_historie.json").read_text(encoding="utf-8")
+    )
+    assert [e["ticker"] for e in historie["eintraege"]] == ["DDD"]
+    assert historie["eintraege"][0]["momentum_rang"] == 1
+
+    seite = (tmp_path / "docs/konfluenz.html").read_text(encoding="utf-8")
+    assert "DDD" in seite, "die Seite muss die Historie DESSELBEN Laufs zeigen"
+
 
 def test_derselbe_treffer_am_naechsten_tag_loest_nichts_erneut_aus(welt, monkeypatch):
     """DER Kernfall des Auftrags: kein Ermuedungs-Alarm bei unveraendertem
@@ -215,3 +224,31 @@ def test_no_push_schalter_unterdrueckt_auch_den_konfluenz_push(welt, monkeypatch
     assert not (tmp_path / "data/konfluenz_stand.json").exists(), (
         "--no-push darf auch nicht heimlich den Stand fortschreiben"
     )
+    assert not (tmp_path / "data/konfluenz_historie.json").exists(), (
+        "--no-push darf auch nicht heimlich die Historie fortschreiben"
+    )
+
+
+def test_historie_waechst_ueber_mehrere_laeufe_statt_zu_ueberschreiben(welt, monkeypatch):
+    """Im Unterschied zum Stand (Momentaufnahme) darf die Historie NIE
+    schrumpfen -- ein spaeter verschwindender Treffer bleibt als
+    Vergangenheit stehen."""
+    tmp_path, downloader = welt
+    _push_aufzeichnen(monkeypatch)
+
+    run_modul.main(
+        ["--today", STICHTAG.isoformat()],
+        downloader=downloader,
+        elliott_oeffner=_elliott_opener(ELLIOTT_MIT_TREFFER_AUF_DDD),
+    )
+    # Naechster Lauf: der Treffer ist wieder weg (Stand wird geleert), die
+    # Historie darf den ersten Eintrag trotzdem nicht verlieren.
+    run_modul.main(
+        ["--today", (STICHTAG + _dt.timedelta(days=1)).isoformat()],
+        downloader=downloader,
+        elliott_oeffner=_elliott_opener(ELLIOTT_OHNE_TREFFER),
+    )
+    historie = json.loads(
+        (tmp_path / "data/konfluenz_historie.json").read_text(encoding="utf-8")
+    )
+    assert [e["ticker"] for e in historie["eintraege"]] == ["DDD"]

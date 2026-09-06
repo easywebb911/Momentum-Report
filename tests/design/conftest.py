@@ -224,6 +224,25 @@ ELLIOTT = {
 }
 
 
+# Historie-Karten mit allen Kanten: ein langer Firmenname (muss frei
+# umbrechen, siehe .konf-hist-karte in style.css) und ein Eintrag ohne
+# Elliott-Kurs (Fail-soft-Text statt erfundener Zahl).
+KONFLUENZ_HISTORIE = [
+    {
+        "markt": "us", "markt_name": "USA", "ticker": "BRK-B",
+        "name": LANGER_NAME, "momentum_rang": 1, "momentum_score": 96.8,
+        "momentum_stichtag": "2026-06-30", "elliott_score": 82.1,
+        "elliott_close": 987654.32,
+    },
+    {
+        "markt": "de", "markt_name": "Deutschland", "ticker": "SAP.DE",
+        "name": "SAP SE", "momentum_rang": 3, "momentum_score": 88.4,
+        "momentum_stichtag": "2026-08-31", "elliott_score": None,
+        "elliott_close": None,
+    },
+]
+
+
 @pytest.fixture(scope="session")
 def seite(tmp_path_factory):
     """Vollstaendige Seite mit allen Kanten: langer Name, Warnlage, grosse Zahlen."""
@@ -251,7 +270,9 @@ def seite(tmp_path_factory):
     ]
     (ziel / "index.html").write_text(render_index(views, Date(2026, 8, 3)), encoding="utf-8")
     (ziel / "methodik.html").write_text(render_methodik(), encoding="utf-8")
-    (ziel / "konfluenz.html").write_text(render_konfluenz(), encoding="utf-8")
+    (ziel / "konfluenz.html").write_text(
+        render_konfluenz(KONFLUENZ_HISTORIE), encoding="utf-8"
+    )
     # Synthetischer Rueckblick mit allen Kanten: langer Name, alle vier
     # Klassen (auch "unbekannt" -- Titel ohne Endkurs), zwei Monate fuer den
     # Gesamtrueckblick.

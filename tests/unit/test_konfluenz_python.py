@@ -48,9 +48,20 @@ def test_konfluenz_findet_den_gemeinsamen_titel():
     t = treffer[0]
     assert t["momentum_rang"] == 2  # TICK1 ist der zweite Titel in TOP5["us"]
     assert t["elliott_score"] == 76.4
+    assert t["momentum_stichtag"] == "2026-07-31"
+    assert t["elliott_close"] == 12.5
     assert set(t) == {
-        "ticker", "name", "momentum_rang", "momentum_score", "elliott_score",
+        "ticker", "name", "momentum_rang", "momentum_score", "momentum_stichtag",
+        "elliott_score", "elliott_close",
     }
+
+
+def test_elliott_long_liest_den_kurs():
+    """Die Historie braucht den Kurs zum Zeitpunkt des Treffers -- er kommt
+    aus Elliotts eigenem `close`, nicht aus einer zweiten Quelle."""
+    longs = konfluenz.elliott_long(ELLIOTT, "us")
+    tick1 = next(k for k in longs if k["ticker"] == "TICK1")
+    assert tick1["close"] == 12.5
 
 
 def test_de_markt_ohne_ueberschneidung_bleibt_leer():
@@ -169,6 +180,58 @@ def test_determinismus_gleiche_eingabe_immer_gleiches_ergebnis():
         top5_je_markt, markt_namen, ELLIOTT, bisheriger_stand=set()
     )
     assert lauf1 == lauf2
+
+
+# ------------------------------------------------------------- Historie
+
+
+def test_historie_ohne_datei_ist_eine_leere_liste(tmp_path):
+    assert konfluenz.lies_historie(tmp_path / "fehlt.json") == []
+
+
+def test_historie_anhaengen_schreibt_und_haengt_an(tmp_path):
+    pfad = tmp_path / "konfluenz_historie.json"
+    treffer_1 = [{"markt": "us", "ticker": "TICK1", "momentum_stichtag": "2026-07-31"}]
+    treffer_2 = [{"markt": "de", "ticker": "DTE.DE", "momentum_stichtag": "2026-08-31"}]
+
+    ergebnis_1 = konfluenz.historie_anhaengen(treffer_1, pfad)
+    assert ergebnis_1 == treffer_1
+    assert konfluenz.lies_historie(pfad) == treffer_1
+
+    ergebnis_2 = konfluenz.historie_anhaengen(treffer_2, pfad)
+    assert len(ergebnis_2) == 2, "der erste Eintrag darf nicht verloren gehen"
+    assert konfluenz.lies_historie(pfad) == ergebnis_2
+
+
+def test_historie_ist_sortiert_nach_stichtag_markt_ticker(tmp_path):
+    pfad = tmp_path / "konfluenz_historie.json"
+    konfluenz.historie_anhaengen(
+        [{"markt": "us", "ticker": "ZZZ", "momentum_stichtag": "2026-08-31"}], pfad
+    )
+    konfluenz.historie_anhaengen(
+        [{"markt": "de", "ticker": "AAA", "momentum_stichtag": "2026-07-31"}], pfad
+    )
+    ergebnis = konfluenz.lies_historie(pfad)
+    assert [t["ticker"] for t in ergebnis] == ["AAA", "ZZZ"]
+
+
+def test_historie_kaputte_datei_zaehlt_als_leer_nicht_als_fehler(tmp_path):
+    pfad = tmp_path / "kaputt.json"
+    pfad.write_text("{das ist kein json", encoding="utf-8")
+    assert konfluenz.lies_historie(pfad) == []
+
+
+def test_historie_anhaengen_ist_additiv_und_der_rueckweg_ist_klar(tmp_path):
+    """Wie schreibe_stand fuer den Stand: hier gibt's KEIN Ueberschreiben --
+    ein `git revert` dieser Funktion liesse nur die neue Datei zurueck,
+    nichts Bestehendes wuerde angefasst."""
+    pfad = tmp_path / "konfluenz_historie.json"
+    fremd = tmp_path / "sonst.json"
+    fremd.write_text('{"nicht": "anfassen"}', encoding="utf-8")
+    konfluenz.historie_anhaengen(
+        [{"markt": "us", "ticker": "TICK1", "momentum_stichtag": "2026-07-31"}], pfad
+    )
+    assert fremd.read_text(encoding="utf-8") == '{"nicht": "anfassen"}'
 
 
 # ------------------------------------------------------- Elliott-Abruf

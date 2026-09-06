@@ -350,3 +350,28 @@ def test_die_konfluenz_seite_passt_auf_390_px(oeffne, server, schriftgroesse):
             }"""
         )
         assert ueberstand == [], f"ausserhalb des Bildschirms: {ueberstand}"
+
+
+# ---------------------------------------------------- 3. Die Historie-Sektion
+#
+# Rein serverseitig gerendert aus KONFLUENZ_HISTORIE (siehe conftest.py) --
+# hier wird nur geprueft, dass sie tatsaechlich ankommt und lesbar bleibt,
+# nicht der Abgleich selbst (der lebt in tests/unit/test_konfluenz_python.py).
+
+
+def test_die_historie_zeigt_beide_kunstbeispiele(mit_elliott):
+    karten = mit_elliott.locator(".konf-hist-karte")
+    assert karten.count() == 2
+    text = mit_elliott.inner_text(".konf-hist-liste")
+    assert "BRK-B" in text
+    assert "SAP.DE" in text
+    # Fail-soft: fehlender Elliott-Kurs wird ausdruecklich benannt, nie als
+    # 0 oder leer dargestellt.
+    assert "Kurs unbekannt" in text
+
+
+def test_die_historie_verlinkt_den_elliott_report(mit_elliott):
+    ziele = mit_elliott.locator(".konf-hist-link").evaluate_all(
+        "a => a.map(x => x.getAttribute('href'))"
+    )
+    assert all("Elliott-Report" in z for z in ziele), ziele

@@ -1,17 +1,19 @@
-"""Serverseitiger Konfluenz-Abgleich -- NUR fuer den Push, nicht fuer die
-Seite.
+"""Serverseitiger Konfluenz-Abgleich -- fuer den Push UND fuer die
+Historie-Sektion der Seite.
 
-Die Konfluenz-SEITE (docs/konfluenz.html) bleibt unveraendert: sie laedt
-Top-5 und Elliott-Bericht weiterhin selbst im Browser und rechnet dort den
-Abgleich (app.js, Funktionen `elliottLong`/`konfluenz`). Dieses Modul
-dupliziert dieselbe, rein additive Vergleichslogik ein zweites Mal -- in
-Python, fuer den Lauf -- weil ein Push aus dem Browser heraus nicht
-verschickt werden kann. Beide Fassungen muessen bei gleichen Eingaben
-dasselbe Ergebnis liefern; tests/unit/test_konfluenz_python.py haelt das
-fest -- mit DENSELBEN Kunstdaten (TOP5, ELLIOTT), die auch
+Die Konfluenz-SEITE (docs/konfluenz.html) laedt Top-5 und Elliott-Bericht
+weiterhin selbst im Browser und rechnet dort den AKTUELLEN Abgleich
+(app.js, Funktionen `elliottLong`/`konfluenz`) -- daran aendert sich
+nichts. Dieses Modul dupliziert dieselbe, rein additive Vergleichslogik
+ein zweites Mal -- in Python, fuer den Lauf -- weil ein Push aus dem
+Browser heraus nicht verschickt werden kann. Beide Fassungen muessen bei
+gleichen Eingaben dasselbe Ergebnis liefern; tests/unit/test_konfluenz_python.py
+haelt das fest -- mit DENSELBEN Kunstdaten (TOP5, ELLIOTT), die auch
 tests/design/test_konfluenz.py fuer die JS-Fassung importiert (aus
 tests/design/conftest.py), nicht mit einer zweiten, abgeschriebenen
-Kopie.
+Kopie. Zusaetzlich liefert dieses Modul die HISTORIE-Sektion, die
+render_konfluenz() unterhalb der beiden Top-5-Listen serverseitig
+anhaengt -- siehe HISTORIE_PFAD unten.
 
 WOZU: Easy soll erfahren, wenn ein Titel NEU gleichzeitig im
 Momentum-Top-5 und bei Elliott als Long-Kandidat steht -- ohne die Seite
@@ -19,8 +21,13 @@ selbst regelmaessig zu oeffnen. Ein bereits bekannter, weiterhin
 bestehender Treffer loest NIE erneut einen Push aus (Ermuedungseffekt);
 nur ein Treffer, der beim UNMITTELBAR VORHERIGEN Lauf noch nicht da war,
 zaehlt als neu. Taucht ein einmal verschwundener Treffer spaeter wieder
-auf, zaehlt das erneut als neu -- es wird bewusst KEINE Vollhistorie
-gefuehrt, nur der jeweils letzte bekannte Stand (Easys Entscheid).
+auf, zaehlt das erneut als neu -- der STAND (schreibe_stand/lies_stand)
+ist bewusst KEINE Vollhistorie, nur der jeweils letzte bekannte Stand
+(Easys Entscheid). Die HISTORIE (lies_historie/historie_anhaengen) ist
+davon strukturell getrennt: sie haelt genau diese "neu"-Ereignisse
+dauerhaft fest, fuer die Anzeige auf der Seite -- ein Wiederauftauchen
+erzeugt dort folgerichtig einen ZWEITEN Eintrag, keinen Widerspruch zum
+Stand-Entscheid oben.
 
 WANN GEPRUEFT WIRD: bei JEDEM werktaeglichen Lauf, nicht nur an einem
 neuen Monats-Stichtag (Easys Entscheid) -- Elliotts Bericht kann sich
@@ -48,7 +55,9 @@ import urllib.request
 from pathlib import Path
 
 ELLIOTT_URL = "https://easywebb911.github.io/Elliott-Report/data/report.json"
+ELLIOTT_SEITE = "https://easywebb911.github.io/Elliott-Report/"
 STAND_PFAD = Path("data/konfluenz_stand.json")
+HISTORIE_PFAD = Path("data/konfluenz_historie.json")
 TIMEOUT_SECONDS = 20
 
 
@@ -98,6 +107,7 @@ def elliott_long(bericht: dict | None, markt_key: str) -> list[dict]:
                 "ticker": ticker,
                 "name": str(_feld(kandidat, ["company_name", "name", "firma"], "")),
                 "score": _feld(kandidat, ["score_heuristic", "score", "confidence"]),
+                "close": _feld(kandidat, ["close", "kurs", "price"]),
             }
         )
     return raus
@@ -118,7 +128,9 @@ def konfluenz(top5: list[dict], longs: list[dict]) -> list[dict]:
                 "name": e.get("name", ""),
                 "momentum_rang": m["rang"],
                 "momentum_score": m["score"],
+                "momentum_stichtag": m.get("stichtag"),
                 "elliott_score": e.get("score"),
+                "elliott_close": e.get("close"),
             }
         )
     treffer.sort(key=lambda t: t["ticker"])
@@ -171,6 +183,50 @@ def schreibe_stand(schluessel_menge: set[str], pfad: Path = STAND_PFAD) -> None:
         + "\n",
         encoding="utf-8",
     )
+
+
+def lies_historie(pfad: Path = HISTORIE_PFAD) -> list[dict]:
+    """Alle je gesehenen Konfluenz-Treffer, EIN Eintrag pro neu
+    aufgetauchtem Treffer (siehe historie_anhaengen). Fehlt die Datei oder
+    ist sie unlesbar, gilt das als "noch keine Historie" -- nicht als
+    Fehler, der die Seite kippen duerfte (die Historie-Sektion zeigt dann
+    einfach ihren Leerzustand)."""
+    if not pfad.exists():
+        return []
+    try:
+        daten = json.loads(pfad.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return []
+    eintraege = daten.get("eintraege")
+    return eintraege if isinstance(eintraege, list) else []
+
+
+def historie_anhaengen(
+    neue_treffer: list[dict], pfad: Path = HISTORIE_PFAD
+) -> list[dict]:
+    """Haengt die diesmal NEU aufgetauchten Treffer an die Historie an --
+    nie ueberschreiben, nur ergaenzen (im Unterschied zu schreibe_stand
+    oben, das bewusst eine Momentaufnahme ist). Jeder Eintrag in
+    `neue_treffer` ist bereits genau EIN Historie-Eintrag: nur der erste
+    Monat eines neuen Treffers zaehlt, weil neue_konfluenz_treffer() einen
+    fortbestehenden Treffer nie erneut als "neu" meldet (Easys Entscheid).
+
+    Sortiert wird deterministisch nach (momentum_stichtag, markt, ticker),
+    damit dieselbe Datei bei gleichem Inhalt immer gleich aussieht --
+    unabhaengig von der Reihenfolge der Laeufe, die zu ihr beigetragen
+    haben."""
+    bisherige = lies_historie(pfad)
+    gesamt = bisherige + list(neue_treffer)
+    gesamt.sort(
+        key=lambda t: (t.get("momentum_stichtag") or "", t.get("markt", ""), t["ticker"])
+    )
+    pfad.parent.mkdir(parents=True, exist_ok=True)
+    pfad.write_text(
+        json.dumps({"schema": 1, "eintraege": gesamt}, ensure_ascii=False, indent=2)
+        + "\n",
+        encoding="utf-8",
+    )
+    return gesamt
 
 
 def neue_konfluenz_treffer(
