@@ -16,6 +16,7 @@ from .config import (
     LIQUIDITY_MIN_MEDIAN_TURNOVER,
     LIQUIDITY_WINDOW_MONTHS,
     MARKETS,
+    MARKETS_BY_KEY,
     REPO_SLUG,
     TOP_N,
     WORKFLOW_LAUF,
@@ -23,6 +24,7 @@ from .config import (
     WEIGHT_MOMENTUM_12_1,
     Market,
 )
+from .konfluenz import ELLIOTT_SEITE
 from .sources import SCORE_COMPONENT_SOURCES, SOURCES, source
 
 Date = _dt.date
@@ -816,8 +818,76 @@ KONFLUENZ_LEER = (
     "Verschiedenes; ein gemeinsamer Treffer ist selten."
 )
 
+KONFLUENZ_HISTORIE_SATZ = (
+    "Jede Zeile ist der erste Monat, in dem ein Titel gleichzeitig im "
+    "Momentum-Top-5 und bei Elliott als Long-Kandidat stand — nicht "
+    "verrechnet, nur festgehalten. Ein fortbestehender Treffer erscheint "
+    "hier kein zweites Mal; taucht er nach einer Pause erneut auf, zählt "
+    "das als neuer Eintrag."
+)
 
-def render_konfluenz() -> str:
+KONFLUENZ_HISTORIE_LEER = (
+    "Noch keine Historie — das ist der Regelfall zu Beginn. Sobald ein "
+    "Titel je gleichzeitig in beiden Listen stand, bleibt er hier "
+    "dauerhaft verzeichnet."
+)
+
+
+def _konfluenz_historie_karte(eintrag: dict) -> str:
+    """Eine Karte, kein <table> (siehe _eval_monat_liste oben — derselbe
+    Grund: lange Firmennamen und grosse Schriftgroessen muessen umbrechen
+    koennen, nicht seitwaerts scrollen)."""
+    markt = MARKETS_BY_KEY.get(eintrag.get("markt"))
+    flag = markt.flag if markt else ""
+    monat = eintrag.get("momentum_stichtag")
+    monat_text = de_monat(monat[:7]) if monat else "Monat unbekannt"
+    momentum_score = eintrag.get("momentum_score")
+    momentum_zeile = f"Momentum Rang {eintrag.get('momentum_rang', '—')}" + (
+        f" · Score {de_num(momentum_score, 1)}" if momentum_score is not None else ""
+    )
+    elliott_score = eintrag.get("elliott_score")
+    elliott_close = eintrag.get("elliott_close")
+    symbol = markt.currency_symbol if markt else ""
+    kurs_text = (
+        f"Kurs {symbol}{NBSP}{de_num(elliott_close, 2)}"
+        if elliott_close is not None
+        else "Kurs unbekannt"
+    )
+    elliott_zeile = (
+        (f"Elliott-Score {de_num(elliott_score, 1)} · " if elliott_score is not None else "")
+        + kurs_text
+    )
+    return f"""    <li class="konf-hist-karte">
+      <div class="konf-hist-kopf">
+        <span class="flag" aria-hidden="true">{e(flag)}</span>
+        <span class="konf-hist-ticker">{e(eintrag["ticker"])}</span>
+        <span class="konf-hist-monat">{e(monat_text)}</span>
+      </div>
+      <span class="konf-hist-name">{e(eintrag.get("name", ""))}</span>
+      <span class="konf-hist-werte">{e(momentum_zeile)}</span>
+      <span class="konf-hist-werte">{e(elliott_zeile)}</span>
+      <a class="konf-hist-link" href="{e(ELLIOTT_SEITE)}" target="_blank"
+        rel="noopener">Elliott-Report ansehen ↗</a>
+    </li>"""
+
+
+def _konfluenz_historie_sektion(historie: list[dict] | None) -> str:
+    if not historie:
+        return f"""<h2>Historie</h2>
+<p class="lead">{e(KONFLUENZ_HISTORIE_SATZ)}</p>
+<p class="konf-hist-leer">{e(KONFLUENZ_HISTORIE_LEER)}</p>"""
+    # Neuester Eintrag zuerst; geschrieben wird aufsteigend sortiert (siehe
+    # konfluenz.historie_anhaengen), hier nur fuer die Anzeige umgedreht --
+    # dieselbe Reihenfolge bei gleichem Datenstand, jedes Mal.
+    zeilen = [_konfluenz_historie_karte(t) for t in reversed(historie)]
+    return f"""<h2>Historie</h2>
+<p class="lead">{e(KONFLUENZ_HISTORIE_SATZ)}</p>
+<ul class="konf-hist-liste">
+{chr(10).join(zeilen)}
+</ul>"""
+
+
+def render_konfluenz(historie: list[dict] | None = None) -> str:
     body = [
         _head(
             "Konfluenz — Momentum-Report",
@@ -841,6 +911,7 @@ in beiden, wird er hervorgehoben.</p>
 </div>""",
         '<div class="konf-hinweis" id="konf-hinweis" role="status" hidden></div>',
         '<div id="konf-inhalt"></div>',
+        _konfluenz_historie_sektion(historie),
         "</main>",
     ]
     return "\n".join(body) + _foot()

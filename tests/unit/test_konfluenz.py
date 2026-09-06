@@ -17,7 +17,9 @@ import re
 from pathlib import Path
 
 from momentum.config import MARKETS_BY_KEY
+from momentum.konfluenz import ELLIOTT_SEITE
 from momentum.render import (
+    KONFLUENZ_HISTORIE_LEER,
     KONFLUENZ_LEER,
     KONFLUENZ_SATZ,
     MarketView,
@@ -174,3 +176,72 @@ def test_das_menue_fuehrt_zur_konfluenz_seite():
 
     assert 'href="konfluenz.html"' in render_konfluenz()
     assert 'href="konfluenz.html"' in render_methodik()
+
+
+# --------------------------------------------------------------- Historie
+
+
+NEUER_TREFFER = {
+    "markt": "us",
+    "markt_name": "USA",
+    "ticker": "NVDA",
+    "name": "NVIDIA Corp",
+    "momentum_rang": 2,
+    "momentum_score": 91.3,
+    "momentum_stichtag": "2026-08-31",
+    "elliott_score": 76.4,
+    "elliott_close": 180.0,
+}
+
+
+def test_ohne_historie_erscheint_der_leerzustand_nicht_als_fehler():
+    """Eine leere Historie ist der Regelfall zu Beginn -- kein Fehlerbild,
+    keine Warnfarbe."""
+    for historie in (None, []):
+        html = render_konfluenz(historie)
+        assert KONFLUENZ_HISTORIE_LEER in html
+        assert "<h2>Historie</h2>" in html
+        assert 'class="konf-hist-leer"' in html
+        assert "konf-hist-karte" not in html
+
+
+def test_ein_historie_eintrag_zeigt_alle_zugesagten_werte():
+    html = render_konfluenz([NEUER_TREFFER])
+    assert KONFLUENZ_HISTORIE_LEER not in html
+    assert "NVDA" in html
+    assert "NVIDIA Corp" in html
+    assert "August 2026" in html
+    assert "Momentum Rang 2" in html
+    assert "91,3" in html
+    assert "76,4" in html
+    assert "180,00" in html
+    assert f'href="{ELLIOTT_SEITE}"' in html
+    # Kein Elliott-Wellen-Hinweistext -- der lebt im fremden Repo, das
+    # dieses Projekt nicht anfassen darf (Easys Entscheid).
+    assert "welle" not in html.lower()
+
+
+def test_historie_fehlende_werte_faellen_nicht_auf_null_zurueck():
+    """Fehlt ein Kurs, steht das ausdruecklich da -- nie eine erfundene
+    Zahl."""
+    treffer = {**NEUER_TREFFER, "elliott_close": None, "elliott_score": None}
+    html = render_konfluenz([treffer])
+    assert "Kurs unbekannt" in html
+    assert "Elliott-Score" not in html
+
+
+def test_historie_zeigt_neuestes_zuerst_und_bleibt_deterministisch():
+    aelter = {**NEUER_TREFFER, "ticker": "ALT", "momentum_stichtag": "2026-06-30"}
+    neuer = {**NEUER_TREFFER, "ticker": "NEU", "momentum_stichtag": "2026-08-31"}
+    html_1 = render_konfluenz([aelter, neuer])
+    html_2 = render_konfluenz([aelter, neuer])
+    assert html_1 == html_2
+    assert html_1.index("NEU") < html_1.index("ALT")
+
+
+def test_historie_verrechnet_nichts():
+    html = render_konfluenz([NEUER_TREFFER]).lower()
+    for wort in ("kombiniert", "gewichtet", "gesamtscore", "gesamt-score",
+                 "konfluenz-score", "trefferwahrscheinlichkeit von",
+                 "bestätigt", "signalstärke"):
+        assert wort not in html, f"Misch-Vokabel in der Historie: {wort}"

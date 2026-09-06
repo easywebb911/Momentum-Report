@@ -21,11 +21,14 @@ def main() -> int:
     ziel.write_text(render_methodik(), encoding="utf-8")
     print(f"geschrieben: {ziel}")
 
-    # Die Konfluenz-Seite ist ein statisches Geruest ohne Lauf-Daten --
-    # sie wird wie die Methodik immer neu erzeugt.
+    # Die Konfluenz-Seite traegt seit der Historie-Sektion echte Lauf-Daten
+    # (data/konfluenz_historie.json, siehe run.py) und darf hier -- wie
+    # index.html und evaluation.html -- nicht ueberbuegelt werden. Ohne
+    # vorhandene Datei entsteht der normale Leerzustand.
     konf = DOCS_DIR / "konfluenz.html"
-    konf.write_text(render_konfluenz(), encoding="utf-8")
-    print(f"geschrieben: {konf}")
+    if not konf.exists():
+        konf.write_text(render_konfluenz(), encoding="utf-8")
+        print(f"geschrieben: {konf} (Platzhalter, noch keine Historie)")
 
     # Startseite nur anlegen, wenn es noch keine gibt: eine vorhandene
     # Seite traegt echte Ranking-Daten und darf hier nicht ueberbuegelt

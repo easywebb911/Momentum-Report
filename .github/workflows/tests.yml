@@ -34,12 +34,16 @@ jobs:
 
       - name: Erzeugte Seiten muessen aktuell sein
         run: |
-          # build_pages erzeugt ZWEI Seiten aus dem Code: die Methodik aus
-          # sources.py und die Konfluenz-Seite aus render.py. Beide werden
-          # geprueft -- eine Aenderung an render_konfluenz() mit veralteter
-          # Seite waere sonst durchgerutscht.
+          # build_pages erzeugt die Methodik-Seite rein aus sources.py --
+          # sie wird geprueft, eine Aenderung an den Belegen mit veralteter
+          # Seite waere sonst durchgerutscht. docs/konfluenz.html gehoert
+          # NICHT mehr hierher: sie traegt seit der Historie-Sektion echte
+          # Lauf-Daten (data/konfluenz_historie.json) und wird von
+          # build_pages nur noch als Platzhalter angelegt, wenn sie fehlt
+          # (wie index.html/evaluation.html) -- ein diff waere hier immer
+          # falsch-positiv.
           python -m momentum.build_pages
-          for seite in docs/methodik.html docs/konfluenz.html; do
+          for seite in docs/methodik.html; do
             if ! git diff --quiet -- "$seite"; then
               echo "::error::$seite ist nicht auf dem Stand des Codes."
               echo "Bitte 'PYTHONPATH=src python -m momentum.build_pages' laufen lassen und mit committen."
