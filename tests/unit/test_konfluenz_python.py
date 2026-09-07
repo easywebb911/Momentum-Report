@@ -115,6 +115,19 @@ def test_kein_bisheriger_stand_macht_den_ersten_treffer_neu():
     assert aktuell == {"us:TICK1"}
 
 
+def test_automatisch_erfasste_treffer_tragen_die_quelle_automatisch():
+    """Unterscheidet sie von manuell nachgetragenen Historie-Eintraegen
+    (quelle == "manuell_rekonstruiert", siehe render.py) -- nur so bleiben
+    beide Arten auf der Seite auseinanderhaltbar, nie stillschweigend
+    vermischt."""
+    top5_je_markt = _top5_je_markt()
+    markt_namen = {"us": "USA", "de": "Deutschland"}
+    neu, _ = konfluenz.neue_konfluenz_treffer(
+        top5_je_markt, markt_namen, ELLIOTT, bisheriger_stand=set()
+    )
+    assert neu[0]["quelle"] == "automatisch"
+
+
 def test_bekannter_treffer_bleibt_bestehen_aber_loest_nichts_aus():
     """DER Kernfall: derselbe Treffer wie beim letzten Lauf darf NIE wieder
     als 'neu' gelten -- sonst gaebe es bei jedem Lauf denselben Alarm."""

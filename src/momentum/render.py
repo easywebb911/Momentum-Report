@@ -832,11 +832,32 @@ KONFLUENZ_HISTORIE_LEER = (
     "dauerhaft verzeichnet."
 )
 
+# Nur fuer Eintraege mit quelle == "manuell_rekonstruiert": Treffer, die vor
+# der Einfuehrung dieses Moduls (05./06.09.2026) live auf der Seite gesehen,
+# aber nie gespeichert wurden. Die Elliott-Seite (Score/Kurs) laesst sich fuer
+# sie GRUNDSAETZLICH nicht mehr belegen -- nur die Momentum-Seite kommt aus
+# Repo-Daten. Wortlaut mit Easy abgestimmt (siehe AskUserQuestion), niemals
+# mit einem automatisch erfassten Treffer verwechselbar.
+KONFLUENZ_HISTORIE_REKONSTRUIERT_LABEL = "Rekonstruiert"
+KONFLUENZ_HISTORIE_REKONSTRUIERT_TEXT = (
+    "Elliott-Werte nicht belegt — nur die Momentum-Seite stammt aus "
+    "Repo-Daten."
+)
+
+
+def _konfluenz_historie_sichtungen(eintrag: dict) -> str:
+    daten = eintrag.get("sichtungsdaten") or []
+    if not daten:
+        return ""
+    de_daten = [de_date(_dt.date.fromisoformat(d)) for d in daten]
+    return f"Live gesehen: {', '.join(de_daten)}"
+
 
 def _konfluenz_historie_karte(eintrag: dict) -> str:
     """Eine Karte, kein <table> (siehe _eval_monat_liste oben — derselbe
     Grund: lange Firmennamen und grosse Schriftgroessen muessen umbrechen
     koennen, nicht seitwaerts scrollen)."""
+    rekonstruiert = eintrag.get("quelle", "automatisch") == "manuell_rekonstruiert"
     markt = MARKETS_BY_KEY.get(eintrag.get("markt"))
     flag = markt.flag if markt else ""
     monat = eintrag.get("momentum_stichtag")
@@ -857,15 +878,32 @@ def _konfluenz_historie_karte(eintrag: dict) -> str:
         (f"Elliott-Score {de_num(elliott_score, 1)} · " if elliott_score is not None else "")
         + kurs_text
     )
-    return f"""    <li class="konf-hist-karte">
-      <div class="konf-hist-kopf">
+    css_klasse = "konf-hist-karte" + (
+        " konf-hist-karte--rekonstruiert" if rekonstruiert else ""
+    )
+    # Das Label steht ZUERST, noch vor Ticker/Monat -- wer nur die Kopfzeile
+    # liest, darf eine rekonstruierte Karte nie mit einem automatisch
+    # erfassten Treffer verwechseln (Easys Vorgabe: keine stillschweigende
+    # Vermischung).
+    badge = (
+        f"""<div class="konf-hist-badge">{e(KONFLUENZ_HISTORIE_REKONSTRUIERT_LABEL)}</div>
+      <p class="konf-hist-badge-text">{e(KONFLUENZ_HISTORIE_REKONSTRUIERT_TEXT)}</p>"""
+        if rekonstruiert
+        else ""
+    )
+    sichtung = _konfluenz_historie_sichtungen(eintrag)
+    sichtung_zeile = (
+        f'\n      <span class="konf-hist-werte">{e(sichtung)}</span>' if sichtung else ""
+    )
+    return f"""    <li class="{css_klasse}">
+      {badge}<div class="konf-hist-kopf">
         <span class="flag" aria-hidden="true">{e(flag)}</span>
         <span class="konf-hist-ticker">{e(eintrag["ticker"])}</span>
         <span class="konf-hist-monat">{e(monat_text)}</span>
       </div>
       <span class="konf-hist-name">{e(eintrag.get("name", ""))}</span>
       <span class="konf-hist-werte">{e(momentum_zeile)}</span>
-      <span class="konf-hist-werte">{e(elliott_zeile)}</span>
+      <span class="konf-hist-werte">{e(elliott_zeile)}</span>{sichtung_zeile}
       <a class="konf-hist-link" href="{e(ELLIOTT_SEITE)}" target="_blank"
         rel="noopener">Elliott-Report ansehen ↗</a>
     </li>"""

@@ -359,12 +359,13 @@ def test_die_konfluenz_seite_passt_auf_390_px(oeffne, server, schriftgroesse):
 # nicht der Abgleich selbst (der lebt in tests/unit/test_konfluenz_python.py).
 
 
-def test_die_historie_zeigt_beide_kunstbeispiele(mit_elliott):
+def test_die_historie_zeigt_alle_drei_kunstbeispiele(mit_elliott):
     karten = mit_elliott.locator(".konf-hist-karte")
-    assert karten.count() == 2
+    assert karten.count() == 3
     text = mit_elliott.inner_text(".konf-hist-liste")
     assert "BRK-B" in text
     assert "SAP.DE" in text
+    assert "TKA.DE" in text
     # Fail-soft: fehlender Elliott-Kurs wird ausdruecklich benannt, nie als
     # 0 oder leer dargestellt.
     assert "Kurs unbekannt" in text
@@ -375,3 +376,33 @@ def test_die_historie_verlinkt_den_elliott_report(mit_elliott):
         "a => a.map(x => x.getAttribute('href'))"
     )
     assert all("Elliott-Report" in z for z in ziele), ziele
+
+
+def test_rekonstruierte_karte_ist_sichtbar_anders_als_automatische(mit_elliott):
+    """Kernanforderung des Nachtrags: kein stillschweigendes Vermischen. Der
+    manuell nachgetragene TKA.DE-Eintrag muss Badge, Rahmenfarbe und die
+    Sichtungsdaten zeigen -- die automatischen Karten keins davon."""
+    rekonstruiert = mit_elliott.locator(".konf-hist-karte--rekonstruiert")
+    assert rekonstruiert.count() == 1
+    # .konf-hist-badge steht per CSS in Grossbuchstaben (text-transform) --
+    # innerText spiegelt das gerenderte Bild, deshalb hier case-insensitiv.
+    text = rekonstruiert.inner_text()
+    assert "rekonstruiert" in text.lower()
+    assert "Elliott-Werte nicht belegt" in text
+    assert "17.08.2026" in text and "24.08.2026" in text
+
+    automatisch = mit_elliott.locator(
+        ".konf-hist-karte:not(.konf-hist-karte--rekonstruiert)"
+    )
+    assert automatisch.count() == 2
+    for i in range(automatisch.count()):
+        automatisch_text = automatisch.nth(i).inner_text()
+        assert "rekonstruiert" not in automatisch_text.lower()
+        assert "Live gesehen" not in automatisch_text
+
+    # Der Rahmen ist die --disc-Farbe (Ehrlichkeits-Label), nicht die
+    # neutrale Kartenfarbe der automatischen Historie.
+    rahmen = rekonstruiert.first.evaluate(
+        "el => getComputedStyle(el).borderLeftColor"
+    )
+    assert rahmen == "rgb(202, 138, 4)", rahmen  # --disc

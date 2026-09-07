@@ -225,20 +225,30 @@ ELLIOTT = {
 
 
 # Historie-Karten mit allen Kanten: ein langer Firmenname (muss frei
-# umbrechen, siehe .konf-hist-karte in style.css) und ein Eintrag ohne
-# Elliott-Kurs (Fail-soft-Text statt erfundener Zahl).
+# umbrechen, siehe .konf-hist-karte in style.css), ein automatisch erfasster
+# Eintrag ohne Elliott-Kurs (Fail-soft-Text statt erfundener Zahl) und ein
+# manuell nachgetragener Eintrag (quelle == "manuell_rekonstruiert") -- muss
+# sich am Rahmen UND am Badge sichtbar von den automatischen unterscheiden,
+# nie stillschweigend vermischt werden (Easys Vorgabe).
 KONFLUENZ_HISTORIE = [
     {
         "markt": "us", "markt_name": "USA", "ticker": "BRK-B",
         "name": LANGER_NAME, "momentum_rang": 1, "momentum_score": 96.8,
         "momentum_stichtag": "2026-06-30", "elliott_score": 82.1,
-        "elliott_close": 987654.32,
+        "elliott_close": 987654.32, "quelle": "automatisch",
     },
     {
         "markt": "de", "markt_name": "Deutschland", "ticker": "SAP.DE",
         "name": "SAP SE", "momentum_rang": 3, "momentum_score": 88.4,
         "momentum_stichtag": "2026-08-31", "elliott_score": None,
-        "elliott_close": None,
+        "elliott_close": None, "quelle": "automatisch",
+    },
+    {
+        "markt": "de", "markt_name": "Deutschland", "ticker": "TKA.DE",
+        "name": "THYSSENKRUPP AG", "momentum_rang": 4, "momentum_score": 82.738095,
+        "momentum_stichtag": "2026-07-31", "elliott_score": None,
+        "elliott_close": None, "quelle": "manuell_rekonstruiert",
+        "sichtungsdaten": ["2026-08-17", "2026-08-24"],
     },
 ]
 

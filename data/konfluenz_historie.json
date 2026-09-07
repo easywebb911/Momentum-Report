@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "eintraege": [
+    {
+      "ticker": "SIE.DE",
+      "name": "SIEMENS N AG",
+      "momentum_rang": 5,
+      "momentum_score": 81.547619,
+      "momentum_stichtag": "2026-07-31",
+      "elliott_score": null,
+      "elliott_close": null,
+      "markt": "de",
+      "markt_name": "Deutschland",
+      "quelle": "manuell_rekonstruiert",
+      "sichtungsdaten": [
+        "2026-08-27"
+      ],
+      "notiz": "Von Easy live auf der Konfluenz-Seite gesehen (27.08.2026), bevor die Persistenz-Mechanik (PR #46/#47, 05./06.09.2026) ueberhaupt existierte. Momentum-Seite belegt aus docs/data/top5.json (Commit e695b54) bzw. data/rankings/de_2026-07.json; Elliott-Score/-Richtung zum Sichtungszeitpunkt nicht mehr rekonstruierbar."
+    },
+    {
+      "ticker": "TKA.DE",
+      "name": "THYSSENKRUPP AG",
+      "momentum_rang": 4,
+      "momentum_score": 82.738095,
+      "momentum_stichtag": "2026-07-31",
+      "elliott_score": null,
+      "elliott_close": null,
+      "markt": "de",
+      "markt_name": "Deutschland",
+      "quelle": "manuell_rekonstruiert",
+      "sichtungsdaten": [
+        "2026-08-17",
+        "2026-08-24"
+      ],
+      "notiz": "Von Easy live auf der Konfluenz-Seite gesehen (17.08. und 24.08.2026), bevor die Persistenz-Mechanik (PR #46/#47, 05./06.09.2026) ueberhaupt existierte. Momentum-Seite belegt aus docs/data/top5.json (Commit e695b54) bzw. data/rankings/de_2026-07.json; Elliott-Score/-Richtung zum Sichtungszeitpunkt nicht mehr rekonstruierbar."
+    }
+  ]
+}
