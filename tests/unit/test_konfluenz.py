@@ -20,6 +20,8 @@ from momentum.config import MARKETS_BY_KEY
 from momentum.konfluenz import ELLIOTT_SEITE
 from momentum.render import (
     KONFLUENZ_HISTORIE_LEER,
+    KONFLUENZ_HISTORIE_REKONSTRUIERT_LABEL,
+    KONFLUENZ_HISTORIE_REKONSTRUIERT_TEXT,
     KONFLUENZ_LEER,
     KONFLUENZ_SATZ,
     MarketView,
@@ -237,6 +239,56 @@ def test_historie_zeigt_neuestes_zuerst_und_bleibt_deterministisch():
     html_2 = render_konfluenz([aelter, neuer])
     assert html_1 == html_2
     assert html_1.index("NEU") < html_1.index("ALT")
+
+
+def test_ein_automatischer_treffer_zeigt_nie_das_rekonstruiert_label():
+    """Ohne quelle-Feld ODER mit quelle == "automatisch" darf das
+    Rekonstruiert-Label nie erscheinen -- weder heutiger Datenstand (Feld
+    fehlt noch ueberall) noch kuenftige automatisch erfasste Treffer."""
+    for treffer in (NEUER_TREFFER, {**NEUER_TREFFER, "quelle": "automatisch"}):
+        html = render_konfluenz([treffer])
+        assert KONFLUENZ_HISTORIE_REKONSTRUIERT_LABEL not in html
+        assert "konf-hist-karte--rekonstruiert" not in html
+        assert "Live gesehen" not in html
+
+
+def test_ein_manuell_rekonstruierter_treffer_ist_klar_gekennzeichnet():
+    """Kernanforderung: kein stillschweigendes Vermischen mit automatisch
+    erfassten Treffern -- weder in der Rohdaten- noch in der Anzeige-
+    Ebene."""
+    treffer = {
+        "markt": "de", "markt_name": "Deutschland", "ticker": "TKA.DE",
+        "name": "THYSSENKRUPP AG", "momentum_rang": 4,
+        "momentum_score": 82.738095, "momentum_stichtag": "2026-07-31",
+        "elliott_score": None, "elliott_close": None,
+        "quelle": "manuell_rekonstruiert",
+        "sichtungsdaten": ["2026-08-17", "2026-08-24"],
+    }
+    html = render_konfluenz([treffer])
+    assert 'class="konf-hist-karte konf-hist-karte--rekonstruiert"' in html
+    assert KONFLUENZ_HISTORIE_REKONSTRUIERT_LABEL in html
+    assert KONFLUENZ_HISTORIE_REKONSTRUIERT_TEXT in html
+    assert "Kurs unbekannt" in html
+    assert "Elliott-Score" not in html
+    assert "Live gesehen: 17.08.2026, 24.08.2026" in html
+
+
+def test_manuell_rekonstruierte_kurs_und_score_werden_nie_erfunden():
+    """Die Elliott-Seite ist fuer rekonstruierte Treffer nicht belegbar --
+    selbst wenn jemand versehentlich Werte einsetzt, bleibt der Karten-Bau
+    tolerant; hier wird nur der zugesagte Fail-soft-Pfad (None) geprueft,
+    das ist der einzige Zustand, den der Nachtrag tatsaechlich schreibt."""
+    treffer = {
+        "markt": "de", "markt_name": "Deutschland", "ticker": "SIE.DE",
+        "name": "SIEMENS N AG", "momentum_rang": 5,
+        "momentum_score": 81.547619, "momentum_stichtag": "2026-07-31",
+        "elliott_score": None, "elliott_close": None,
+        "quelle": "manuell_rekonstruiert", "sichtungsdaten": ["2026-08-27"],
+    }
+    html = render_konfluenz([treffer])
+    assert "Kurs unbekannt" in html
+    assert "None" not in html
+    assert "Live gesehen: 27.08.2026" in html
 
 
 def test_historie_verrechnet_nichts():

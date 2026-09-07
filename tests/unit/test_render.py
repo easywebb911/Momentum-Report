@@ -344,12 +344,21 @@ def test_disc_farbe_nur_fuer_ehrlichkeits_labels():
     ]
     assert treffer
     # Erlaubt ist --disc ausschliesslich an Ehrlichkeits-Aussagen. Das sind
-    # drei: die Labels der vier Karten (.disc-title), der Fusssatz auf jeder
-    # Titel-Karte (.card-ft) und der feste Satz auf der Konfluenz-Seite
-    # (.konf-regel: "Hier wird nichts verrechnet"). Die Liste waechst NUR um
-    # Stellen, die wirklich eine Einschraenkung aussprechen -- an Dekoration
-    # hat diese Farbe nichts verloren.
-    erlaubt = (".disc-title", ".card-ft", ".konf-regel")
+    # fuenf: die Labels der vier Karten (.disc-title), der Fusssatz auf
+    # jeder Titel-Karte (.card-ft), der feste Satz auf der Konfluenz-Seite
+    # (.konf-regel: "Hier wird nichts verrechnet") sowie -- seit dem
+    # manuellen Historie-Nachtrag (TKA.DE/SIE.DE, vor Einfuehrung der
+    # Persistenz live gesehen) -- Rahmen und Badge der rekonstruierten
+    # Historie-Karte (.konf-hist-karte--rekonstruiert, .konf-hist-badge):
+    # beide sprechen exakt dieselbe Einschraenkung aus wie die anderen vier
+    # ("dieser Wert ist nicht belegt/eingeschraenkt gueltig"), nur bezogen
+    # auf die Elliott-Seite eines einzelnen Treffers. Die Liste waechst NUR
+    # um Stellen, die wirklich eine Einschraenkung aussprechen -- an
+    # Dekoration hat diese Farbe nichts verloren.
+    erlaubt = (
+        ".disc-title", ".card-ft", ".konf-regel",
+        ".konf-hist-karte--rekonstruiert", ".konf-hist-badge",
+    )
     abschnitte = [
         block for block in css.split("}") if "var(--disc)" in block
     ]

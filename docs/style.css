@@ -976,6 +976,29 @@ main > h2::after {
 .konf-hist-werte { display: block; color: var(--txt-dim); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 .konf-hist-link { display: inline-block; margin-top: 0.375rem; font-size: 0.75rem; }
 
+/* Manuell nachgetragene Treffer (quelle == "manuell_rekonstruiert"): live
+   gesehen, BEVOR die Speicherung ueberhaupt existierte -- die Elliott-Seite
+   laesst sich fuer sie nicht mehr belegen. --disc ist im ganzen Projekt
+   ausschliesslich fuer Ehrlichkeits-Labels reserviert (siehe Kopf dieser
+   Datei); dieselbe Farbe hier zu verwenden ist bewusst, nicht zufaellig --
+   das IST ein Ehrlichkeits-Hinweis. Der linke Rahmen macht den Unterschied
+   schon sichtbar, bevor der Badge-Text gelesen wird. */
+.konf-hist-karte--rekonstruiert { border-left: 3px solid var(--disc); }
+.konf-hist-badge {
+  display: inline-block;
+  margin-bottom: 0.25rem;
+  color: var(--disc);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+.konf-hist-badge-text {
+  margin: 0 0 0.5rem;
+  color: var(--txt-sub);
+  font-size: 0.75rem;
+}
+
 /* --------------------------------------------------------- Evaluation */
 /* Reiner Rueckblick, kein Wirksamkeitsnachweis (siehe render.py,
    EVALUATION_HINWEIS). --grn/--red tragen hier ihre normale Bedeutung

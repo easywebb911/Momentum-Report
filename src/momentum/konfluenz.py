@@ -13,7 +13,14 @@ tests/design/test_konfluenz.py fuer die JS-Fassung importiert (aus
 tests/design/conftest.py), nicht mit einer zweiten, abgeschriebenen
 Kopie. Zusaetzlich liefert dieses Modul die HISTORIE-Sektion, die
 render_konfluenz() unterhalb der beiden Top-5-Listen serverseitig
-anhaengt -- siehe HISTORIE_PFAD unten.
+anhaengt -- siehe HISTORIE_PFAD unten. Jeder Historie-Eintrag traegt ein
+Feld `quelle`: "automatisch" fuer alles, was neue_konfluenz_treffer() hier
+selbst erzeugt hat, "manuell_rekonstruiert" fuer Treffer, die Easy von
+Hand nachgetragen hat, weil sie live gesehen wurden, bevor dieses Modul
+ueberhaupt existierte (05./06.09.2026) -- diese koennen die Elliott-Seite
+(Score/Kurs) grundsaetzlich nicht belegen, nur die Momentum-Seite aus
+Repo-Daten. render.py zeigt Letztere sichtbar anders an (siehe
+KONFLUENZ_HISTORIE_REKONSTRUIERT_*), nie unmarkiert vermischt.
 
 WOZU: Easy soll erfahren, wenn ein Titel NEU gleichzeitig im
 Momentum-Top-5 und bei Elliott als Long-Kandidat steht -- ohne die Seite
@@ -257,6 +264,13 @@ def neue_konfluenz_treffer(
                         **treffer,
                         "markt": markt_key,
                         "markt_name": markt_namen.get(markt_key, markt_key),
+                        # Unterscheidet automatisch erfasste Historie-Eintraege
+                        # von manuell nachgetragenen (siehe render.py,
+                        # KONFLUENZ_HISTORIE_REKONSTRUIERT_*) -- Treffer aus
+                        # der Zeit VOR diesem Modul (vor dem 05./06.09.2026)
+                        # koennen nur so nachgetragen werden, nie mit diesem
+                        # Wert.
+                        "quelle": "automatisch",
                     }
                 )
     neu.sort(key=lambda t: (t["markt"], t["ticker"]))
