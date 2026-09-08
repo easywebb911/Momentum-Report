@@ -5,7 +5,36 @@
 # liefern, von der der Lauf lebt. Ein roter Lauf am 27. ist ein ruhiger
 # Abend; derselbe Bruch am 31. waere ein verlorener Monat.
 #
-# Er schreibt nichts (contents: read) und schweigt im Normalfall.
+# Der `vertrag`-Job schreibt nichts (contents: read) und schweigt im
+# Normalfall.
+#
+# --------------------------------------------------------------------------
+# REPARATUR-AGENT, STUFE 3 -- erste, bewusst SCHMALE Ausbaustufe
+# (`agent-datumsformat`-Job unten). Deckt AUSSCHLIESSLICH eine einzige
+# Fehlerklasse ab: ein neues, unbekanntes Datumsformat im Vorspann einer
+# der drei DE-iShares-Bestandslisten. Er LAEUFT IM SELBEN WORKFLOW-RUN wie
+# der Vertragstest (nicht per workflow_run zeitversetzt) -- nur so laesst
+# sich die tatsaechlich fehlgeschlagene Vorspann-Zeile sicher festhalten,
+# bevor eine inzwischen geheilte Datei sie verdeckt (dieselbe Sorge, die
+# den `vertrag`-Job schon auf Werktage beschraenkt). Die beiden Jobs
+# bleiben trotzdem in ihren Rechten getrennt: `vertrag` bleibt read-only,
+# nur der zweite Job bekommt (ausschliesslich dort) Schreibrechte.
+#
+# HARTE GRENZEN, ALLE im Code erzwungen, nicht nur behauptet:
+#   * Der Agent OEFFNET PRs -- er merged NIE, unter keinen Umstaenden
+#     (kein Merge-Aufruf existiert in diesem Workflow).
+#   * Er aendert NIE eine Toleranzschwelle, ein Gatter-Kriterium oder
+#     Score-/Filter-Logik -- tools/agent_datumsformat.py kennt nur
+#     `_datum_aus_text`.
+#   * Jeder PR zitiert die rohe, tatsaechlich fehlgeschlagene Zeile
+#     woertlich (siehe tools/agent_datumsformat.py::pr_text).
+#   * Bei jeder Unsicherheit (siehe leite_muster_ab(): mehrdeutig, kein
+#     Jahr, kein bekannter Monatsname, ...) wird NICHT geoeffnet, nur per
+#     ntfy gemeldet (push_agent_datumsformat_unklar).
+#   * Hoechstens EIN offener Agent-PR je Bestandsquelle (Marker im
+#     PR-Titel, per `gh pr list` geprueft) -- kein PR-Gewitter bei
+#     wiederholt demselben Bruch.
+# --------------------------------------------------------------------------
 #
 # --------------------------------------------------------------------------
 # ZUM ZEITPLAN, und das ist eine Falle, die hier wirklich zuschlaegt:
@@ -84,4 +113,86 @@ jobs:
 
       - name: Vertraege pruefen
         if: steps.riegel.outputs.laufen == 'ja'
-        run: python tools/vertragstest.py
+        run: python tools/vertragstest.py --agent-befund agent_ishares_datumsformat.json
+
+      # Laeuft auch, wenn der Schritt oben rot endet (siehe `if: always()`)
+      # -- genau DAS ist der Fall, der den Agenten-Befund tragen kann.
+      # `if-no-files-found: ignore`, weil die Datei im Regelfall (alle
+      # Vertraege halten, oder ein Bruch ausserhalb der einen Fehlerklasse)
+      # gar nicht entsteht -- kein Fund ist kein Fehler dieses Schritts.
+      - name: Agenten-Befund als Artefakt sichern
+        if: always() && steps.riegel.outputs.laufen == 'ja'
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-ishares-datumsformat
+          path: agent_ishares_datumsformat.json
+          if-no-files-found: ignore
+          retention-days: 5
+
+  # Zweiter, staendig read-only-freier Job: nur ER bekommt Schreibrechte,
+  # und nur fuer die eine, im Kopf der Datei begruendete Fehlerklasse.
+  # `if: always()`, weil genau der interessante Fall (Vertragstest rot)
+  # den ersten Job als "failure" markiert -- ohne `always()` wuerde dieser
+  # Job dann uebersprungen, obwohl er gerade dann etwas zu tun haben kann.
+  agent-datumsformat:
+    needs: vertrag
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Agenten-Befund abholen
+        id: artefakt
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: agent-ishares-datumsformat
+
+      - name: Quelltext holen
+        if: steps.artefakt.outcome == 'success'
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        if: steps.artefakt.outcome == 'success'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Abhaengigkeiten
+        if: steps.artefakt.outcome == 'success'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Reine Ableitung (siehe tools/agent_datumsformat.py) -- schreibt
+      # NICHTS ins Repository, nur die lokale Vorschlags-Datei. Die
+      # "unklar"-Meldung (falls es welche gibt) geht hier bereits per
+      # ntfy raus, unabhaengig davon, ob unten ein PR entsteht.
+      - name: Vorschlaege ableiten
+        if: steps.artefakt.outcome == 'success'
+        run: >
+          python tools/agent_datumsformat.py agent_ishares_datumsformat.json
+          --ausgabe vorschlaege.json
+
+      # Je Vorschlag: hoechstens EIN offener Agent-PR je Quelle (Marker im
+      # Titel, per `gh pr list` geprueft). Existiert schon einer, wird
+      # NICHT erneut geoeffnet, nur geloggt -- die vereinbarte Bremse
+      # gegen PR-Flut bei wiederholt demselben Bruch. Git-/gh-Aufrufe
+      # selbst leben bewusst in einem eigenen Python-Skript (nicht als
+      # Inline-Bash) -- leichter zu lesen, leichter zu testen (siehe
+      # tests/unit/test_agent_datumsformat_oeffnen.py), kein
+      # Quoting-Risiko in einer Heredoc.
+      - name: PR je Vorschlag oeffnen (hoechstens einer je Quelle)
+        if: steps.artefakt.outcome == 'success'
+        run: python tools/agent_datumsformat_oeffnen.py vorschlaege.json
+
+      - name: Kein Agenten-Befund in diesem Lauf
+        if: steps.artefakt.outcome != 'success'
+        run: echo "Kein Datumsformat-Bruch dieser Fehlerklasse -- nichts zu tun."

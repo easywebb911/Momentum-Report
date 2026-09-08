@@ -83,6 +83,23 @@ def ishares_csv(
     return vorspann + kopfzeile + reihen + bargeld
 
 
+def ishares_csv_vorspann(index: str, zeilen: int, vorspann_zeile: str) -> str:
+    """Wie `ishares_csv`, aber mit einer ROHEN, frei waehlbaren Vorspann-
+    Zeile statt eines `Date` -- fuer Datumsformate, die der Parser (noch)
+    nicht liest. Genau das braucht der Agent-Befund (siehe unten)."""
+    spalten = ["Emittententicker", "Name", "Sektor", "Anlageklasse", "Marktwert",
+               "Gewichtung (%)", "Nominalwert", "Nominale", "ISIN", "Kurs",
+               "Standort", "Boerse", "Waehrung"]
+    kopfzeile = ";".join(spalten) + "\n"
+    vorspann = f"{vorspann_zeile}\n\n"
+    reihen = "".join(
+        ";".join([f"AKT{i:03d}", f"Firma {i}", "Industrie", "Aktien", "1.000,00",
+                   "1,00", "1", "1", f"DE000{i:07d}", "10,00", "Deutschland", "Xetra", "EUR"]) + "\n"
+        for i in range(zeilen)
+    )
+    return vorspann + kopfzeile + reihen
+
+
 def _us_ticker(i: int) -> str:
     """Rein alphabetisches Kuerzel -- echte US-Symbole tragen (anders als
     Xetra-Kuerzel wie 1COV, VOW3) keine Ziffern; US_SYMBOL_MUSTER laesst
@@ -210,6 +227,96 @@ def test_ishares_leer_ist_rot(dax):
     Verdikt weichzuspuelen."""
     v = vt.pruefe_ishares(ishares_csv("DAX", 0, None), dax, HEUTE)
     assert not v.ok
+
+
+# --------------------------------- 2c. Agent-Befund (Stufe 3, Datumsformat)
+#
+# Der Erkennungsanker fuer den Reparatur-Agenten: Verdikt.vorspann_zeilen
+# ist NUR bei "kein lesbarer Bestands-Stichtag" gefuellt -- bei jedem
+# anderen Bruch (veraltet, falsche Anzahl, keine Kurs-Spalte, ...) bleibt
+# es leer. Das ist die ganze Unterscheidung, kein Text-Raten.
+
+
+def test_unlesbares_datum_traegt_die_rohe_vorspann_zeile(dax):
+    v = vt.pruefe_ishares(
+        ishares_csv_vorspann("DAX", 40, "2026/Aug/06"), dax, HEUTE
+    )
+    assert not v.ok
+    assert v.vorspann_zeilen == ("2026/Aug/06",)
+
+
+def test_veraltetes_aber_lesbares_datum_traegt_keine_vorspann_zeile(dax):
+    """Der Unterschied zur Formatfrage: der Stichtag IST lesbar, nur zu alt
+    -- eine andere Fehlerklasse, der Agent darf hier nicht anspringen."""
+    v = vt.pruefe_ishares(ishares_csv("DAX", 40, Date(2026, 7, 1)), dax, HEUTE)
+    assert not v.ok
+    assert v.vorspann_zeilen == ()
+
+
+def test_falsche_anzahl_traegt_keine_vorspann_zeile(dax):
+    """Auch ein voellig anderer Bruch (Anzahl-Gatter) darf den Agenten nie
+    ausloesen."""
+    v = vt.pruefe_ishares(ishares_csv("DAX", 50, Date(2026, 8, 26)), dax, HEUTE)
+    assert not v.ok
+    assert v.vorspann_zeilen == ()
+
+
+def test_gesunde_quelle_traegt_keine_vorspann_zeile(dax):
+    v = vt.pruefe_ishares(ishares_csv("DAX", 40, Date(2026, 8, 26)), dax, HEUTE)
+    assert v.ok
+    assert v.vorspann_zeilen == ()
+
+
+def test_agent_befund_erfasst_nur_datumsformat_bei_de_bestandslisten():
+    """Kernanforderung: weder ein andersartiger Bruch (hier: ein
+    Kursvergleich-Abweichler) noch eine US-Fondsliste (v1 bewusst
+    aussen vor, siehe tools/vertragstest.py) landen im Agent-Befund --
+    nur die eine, genannte Fehlerklasse bei den drei DE-Quellen."""
+    verdikte = [
+        vt.Verdikt("iShares EXS1 (DAX)", "...", False, "...",
+                   vorspann_zeilen=("2026/Aug/06",)),
+        vt.Verdikt("iShares EXS3 (MDAX)", "...", False, "...",
+                   vorspann_zeilen=()),  # anderer Bruch, kein Datumsformat
+        vt.Verdikt("iShares SXR8 (SXR8)", "...", False, "...",
+                   vorspann_zeilen=("06/Aug/2026",)),  # US -- ausserhalb v1
+        vt.Verdikt("Kursvergleich DE", "...", False,
+                   "iShares 10.0000 vs. Kursquelle 20.0000"),
+    ]
+    funde = vt.agent_befund(verdikte)
+    assert len(funde) == 1
+    assert funde[0]["quelle"] == "iShares EXS1 (DAX)"
+    assert funde[0]["vorspann_zeilen"] == ["2026/Aug/06"]
+
+
+def test_agent_befund_leer_wenn_alles_haelt():
+    verdikte = vt.sammle_verdikte(HEUTE, **gesunde_naehte())
+    assert vt.agent_befund(verdikte) == []
+
+
+def test_schreibe_agent_befund_nur_bei_tatsaechlichem_fund(tmp_path):
+    pfad = tmp_path / "befund.json"
+    verdikte_ohne = vt.sammle_verdikte(HEUTE, **gesunde_naehte())
+    assert vt.schreibe_agent_befund(verdikte_ohne, pfad, HEUTE) is False
+    assert not pfad.exists()
+
+    naehte = gesunde_naehte()
+    naehte["hole_ishares"] = lambda q: (
+        ishares_csv_vorspann("DAX", 40, "2026/Aug/06")
+        if q.index_name == "DAX"
+        else (
+            ishares_csv_us(504, Date(2026, 8, 26))
+            if q.index_name in ("SXR8", "IUSA")
+            else ishares_csv(q.index_name, {"MDAX": 50, "TecDAX": 30}[q.index_name],
+                              Date(2026, 8, 26))
+        )
+    )
+    verdikte_mit = vt.sammle_verdikte(HEUTE, **naehte)
+    assert vt.schreibe_agent_befund(verdikte_mit, pfad, HEUTE) is True
+    import json as _json
+    inhalt = _json.loads(pfad.read_text(encoding="utf-8"))
+    assert inhalt["stichtag"] == HEUTE.isoformat()
+    assert [f["quelle"] for f in inhalt["funde"]] == ["iShares EXS1 (DAX)"]
+    assert inhalt["funde"][0]["vorspann_zeilen"] == ["2026/Aug/06"]
 
 
 # ------------------------------------------------- 2b. Die Kurs-Spalte
@@ -515,6 +622,44 @@ def test_der_vertragstest_schreibt_weder_in_data_noch_in_docs():
     assert (abdruck(Path("data")), abdruck(Path("docs"))) == vorher
 
 
+def test_ohne_agent_befund_option_entsteht_keine_datei(tmp_path, monkeypatch):
+    """Vorgabewert bewusst leer -- bestehende Aufrufe (auch dieser Test
+    selbst, ohne die neue Option) bleiben unveraendert."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "data").mkdir()
+    (tmp_path / "docs").mkdir()
+    vt.main(["--heute", HEUTE.isoformat()], melder=lambda _t: True, **gesunde_naehte())
+    assert list(tmp_path.glob("*.json")) == []
+
+
+def test_agent_befund_option_schreibt_beim_datumsformat_bruch(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "data").mkdir()
+    (tmp_path / "docs").mkdir()
+    naehte = gesunde_naehte()
+    naehte["hole_ishares"] = lambda q: (
+        ishares_csv_vorspann("DAX", 40, "2026/Aug/06")
+        if q.index_name == "DAX"
+        else (
+            ishares_csv_us(504, Date(2026, 8, 26))
+            if q.index_name in ("SXR8", "IUSA")
+            else ishares_csv(q.index_name, {"MDAX": 50, "TecDAX": 30}[q.index_name],
+                              Date(2026, 8, 26))
+        )
+    )
+    pfad = tmp_path / "agent_befund.json"
+    code = vt.main(
+        ["--heute", HEUTE.isoformat(), "--agent-befund", str(pfad)],
+        melder=lambda _t: True, **naehte,
+    )
+    assert code == 1, "der Datumsformat-Bruch bleibt ein roter Lauf"
+    assert pfad.exists()
+    # und nichts davon in data/ oder docs/ -- derselbe Nachweis wie oben,
+    # nur mit einem Fund statt ohne.
+    assert list((tmp_path / "data").iterdir()) == []
+    assert list((tmp_path / "docs").iterdir()) == []
+
+
 # ------------------------------------------- Das Fenster deckt den Stichtag
 
 
@@ -570,9 +715,43 @@ def test_der_workflow_kann_nicht_schreiben_und_faellt_nicht_auf_die_cron_falle()
     assert felder[4] == "*", "Wochentag im cron gesetzt — das waere ein ODER!"
     assert "date -u +%u" in text, "Wochentag-Riegel fehlt"
 
-    # Und der Riegel muss jeden inhaltlichen Schritt bewachen.
-    (job,) = daten["jobs"].values()
+    # Und der Riegel muss jeden inhaltlichen Schritt DES VERTRAGSTEST-JOBS
+    # bewachen -- der zweite Job (Agent, siehe unten) hat einen eigenen,
+    # anderen Riegel (den Artefakt-Download) und gehoert hier nicht dazu.
+    job = daten["jobs"]["vertrag"]
     schritte = [s for s in job["steps"] if s.get("id") != "riegel"]
     assert schritte and all(
-        s.get("if") == "steps.riegel.outputs.laufen == 'ja'" for s in schritte
+        "steps.riegel.outputs.laufen == 'ja'" in s.get("if", "") for s in schritte
     )
+
+
+def test_der_agent_job_hat_nur_die_rechte_die_er_braucht_sonst_nichts():
+    """Der Reparatur-Agent (Stufe 3) bekommt Schreibrechte -- aber NUR er,
+    NUR die zwei genannten, und der Vertragstest-Job bleibt read-only.
+    Kein `contents: read` -> `write`-Sprung schleicht sich unbemerkt ein."""
+    import yaml
+
+    daten = yaml.safe_load(Path(".github/workflows/vertrag.yml").read_text(encoding="utf-8"))
+    assert daten["permissions"] == {"contents": "read"}, (
+        "der Standard fuer das gesamte Workflow-File muss read-only bleiben"
+    )
+    assert "permissions" not in daten["jobs"]["vertrag"], (
+        "der Vertragstest-Job erbt read-only vom Datei-Standard -- "
+        "keine eigene, womoeglich weitere Erlaubnis"
+    )
+    agent_job = daten["jobs"]["agent-datumsformat"]
+    assert agent_job["permissions"] == {"contents": "write", "pull-requests": "write"}
+    assert agent_job["needs"] == "vertrag"
+    assert agent_job["if"] == "always()", (
+        "sonst wuerde er uebersprungen, wenn der Vertragstest-Job rot endet -- "
+        "genau der Fall, in dem er etwas zu tun haben kann"
+    )
+
+
+def test_der_agent_job_ruft_gh_pr_merge_nirgends_auf():
+    """Nicht nur im Python-Werkzeug (siehe
+    test_agent_datumsformat_oeffnen.py) -- auch im Workflow-Text selbst
+    darf kein Merge-Aufruf auftauchen."""
+    text = Path(".github/workflows/vertrag.yml").read_text(encoding="utf-8")
+    for verboten in ("pr merge", "--auto-merge", "enable-pr-auto-merge"):
+        assert verboten not in text.lower(), f"verbotener Merge-Bezug: {verboten!r}"

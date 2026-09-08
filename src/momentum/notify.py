@@ -476,3 +476,43 @@ def push_konfluenz_treffer(treffer: list[dict], **kwargs) -> bool:
         tags="link",
         **kwargs,
     )
+
+
+def push_agent_datumsformat_unklar(befunde: list[dict], **kwargs) -> bool:
+    """Push (8): der Reparatur-Agent (Stufe 3) hat einen Datumsformat-Bruch
+    gesehen, konnte die Vorspann-Zeile(n) aber NICHT zweifelsfrei einem
+    Tag/Monat/Jahr zuordnen (siehe tools/agent_datumsformat.py).
+
+    Das ist die "bei jeder Unsicherheit melden statt oeffnen"-Vorgabe aus
+    dem Auftrag: KEIN PR entsteht, nur diese Meldung, mit der rohen
+    Zeile(n) woertlich -- Easy soll selbst nachsehen, nicht dem Agenten
+    eine geratene Uebersetzung abnehmen.
+
+    Prioritaet "default": derselbe rote Vertragstest-Lauf hat den Bruch
+    bereits per push_vertrag_gebrochen gemeldet, das hier ist eine
+    Ergaenzung ("und der Agent konnte auch nicht helfen"), keine zweite
+    Sirene fuer dasselbe Ereignis.
+    """
+    if not befunde:
+        return False
+    lines = [
+        f"Reparatur-Agent (Datumsformat): {len(befunde)} Quelle(n) "
+        f"unklar, kein PR-Vorschlag.",
+        "",
+    ]
+    for b in befunde:
+        lines.append(f"* {b['quelle']}")
+        for zeile in b["rohzeilen"]:
+            lines.append(f"    {zeile!r}")
+    lines += [
+        "",
+        "Keine Zeile liess sich zweifelsfrei einem Tag/Monat/Jahr "
+        "zuordnen — lieber nichts vorschlagen als geraten.",
+    ]
+    return push(
+        "Momentum-Report: Datumsformat unklar, kein Agent-Vorschlag",
+        "\n".join(lines),
+        priority="default",
+        tags="question",
+        **kwargs,
+    )
