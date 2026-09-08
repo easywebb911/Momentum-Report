@@ -33,8 +33,9 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import json
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
@@ -120,6 +121,12 @@ class Verdikt:
     vertrag: str     # was versprochen ist
     ok: bool
     befund: str      # erwartet vs. vorgefunden -- immer, auch bei ok
+    # NUR gefuellt bei einem unlesbaren Datums-Vorspann (siehe
+    # QuelleUnbrauchbar.vorspann_zeilen) -- der Erkennungs-Anker fuer den
+    # Reparatur-Agenten (Stufe 3, siehe tools/agent_datumsformat.py). Fuer
+    # jeden anderen Bruch (Anzahl-Gatter, Veraltung, Kursvergleich, ...)
+    # bleibt es leer; DAS ist die ganze Unterscheidung, kein Text-Raten.
+    vorspann_zeilen: tuple[str, ...] = field(default_factory=tuple)
 
     def zeile(self) -> str:
         return f"[{'ok ' if self.ok else 'ROT'}] {self.quelle} — {self.vertrag}: {self.befund}"
@@ -196,8 +203,11 @@ def pruefe_ishares(
     try:
         befund = parse_ishares_holdings(inhalt, quelle.index_name, heute=heute, **kwargs)
     except QuelleUnbrauchbar as exc:
-        return Verdikt(wer, vertrag, False,
-                       f"erwartet: {vertrag} — vorgefunden: {exc}")
+        return Verdikt(
+            wer, vertrag, False,
+            f"erwartet: {vertrag} — vorgefunden: {exc}",
+            vorspann_zeilen=getattr(exc, "vorspann_zeilen", ()),
+        )
     if not befund.kandidaten:
         return Verdikt(
             wer, vertrag, False,
@@ -536,9 +546,66 @@ def sammle_verdikte(
     return verdikte
 
 
+# --------------------------------------------------------------------------
+# Befund fuer den Reparatur-Agenten (Stufe 3) -- NUR Datumsformat-Drift bei
+# den DREI DE-iShares-Bestandslisten (EXS1/DAX, EXS3/MDAX, EXS2/TecDAX).
+# Bewusst NICHT die US-Fondslisten (SXR8/IUSA): dieselbe Mechanik traegt sie
+# zwar technisch mit, aber der Agent ist erst fuer die eine, im Auftrag
+# genannte Fehlerklasse bestaetigt -- eine Ausweitung ist ein eigener,
+# spaeter zu stellender Auftrag, kein stillschweigendes Dazunehmen hier.
+# --------------------------------------------------------------------------
+
+_DE_QUELLEN_NAMEN = frozenset(
+    f"iShares {q.xetra} ({q.index_name})" for q in ISHARES_DE
+)
+
+
+def agent_befund(verdikte: list[Verdikt]) -> list[dict]:
+    """Reine Ableitung, kein Seiteneffekt: welche Verdikte zeigen einen
+    unlesbaren Datums-Vorspann bei einer der drei DE-Bestandslisten? Ein
+    leeres Ergebnis heisst zuverlaessig "kein Fall dieser Fehlerklasse in
+    diesem Lauf" -- die Unterscheidung liegt in Verdikt.vorspann_zeilen
+    (siehe dort), nicht in geratenem Log-Text."""
+    return [
+        {"quelle": v.quelle, "vorspann_zeilen": list(v.vorspann_zeilen)}
+        for v in verdikte
+        if v.vorspann_zeilen and v.quelle in _DE_QUELLEN_NAMEN
+    ]
+
+
+def schreibe_agent_befund(verdikte: list[Verdikt], pfad: Path, heute: Date) -> bool:
+    """Schreibt den Agenten-Befund als JSON-Artefakt, falls es einen gibt --
+    NICHTS ins Repository (dieser Workflow hat `contents: read`, siehe
+    vertrag.yml), nur eine lokale Datei auf dem Runner, die ein spaeterer
+    Workflow-Schritt als Artefakt hochlaedt. Gibt zurueck, ob geschrieben
+    wurde."""
+    funde = agent_befund(verdikte)
+    if not funde:
+        return False
+    pfad.write_text(
+        json.dumps(
+            {"schema": 1, "stichtag": heute.isoformat(), "funde": funde},
+            ensure_ascii=False, indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return True
+
+
 def main(argv: list[str] | None = None, *, melder=push_vertrag_gebrochen, **naehte) -> int:
     parser = argparse.ArgumentParser(description="Vertragstest der Fremdquellen")
     parser.add_argument("--heute", help="Pruefdatum JJJJ-MM-TT (nur fuer Tests)")
+    parser.add_argument(
+        "--agent-befund",
+        help=(
+            "Pfad, unter dem ein JSON-Befund fuer den Reparatur-Agenten "
+            "(Stufe 3) entsteht, falls ein Datumsformat-Vorspann bei einer "
+            "DE-Bestandsliste unlesbar war. Ohne diese Option wird nichts "
+            "geschrieben -- Vorgabewert bewusst leer, damit bestehende "
+            "Aufrufe (Tests, Handstart) unveraendert bleiben."
+        ),
+    )
     args = parser.parse_args(argv)
     heute = Date.fromisoformat(args.heute) if args.heute else Date.today()
 
@@ -552,6 +619,10 @@ def main(argv: list[str] | None = None, *, melder=push_vertrag_gebrochen, **naeh
     verdikte = sammle_verdikte(heute, **naehte)
     for v in verdikte:
         log(v.zeile())
+
+    if args.agent_befund:
+        if schreibe_agent_befund(verdikte, Path(args.agent_befund), heute):
+            log(f"\nAgenten-Befund geschrieben: {args.agent_befund}")
 
     kaputt = [v for v in verdikte if not v.ok]
     log()

@@ -238,7 +238,20 @@ class QuelleUnbrauchbar(Exception):
     den anderen nicht mitreissen. Genau das ist im ersten Lauf passiert --
     der TecDAX-Artikel riss das bereits fertige US-Universum mit ins Aus,
     weil der Prozess sofort endete und der Commit-Schritt uebersprungen wurde.
+
+    `vorspann_zeilen` ist NUR bei einem unlesbaren Datums-Vorspann gefuellt
+    (siehe pruefe_aktualitaet) -- die Rohzeilen, an denen `_datum_aus_text`
+    gescheitert ist. Fuer jeden anderen Abbruchgrund bleibt es leer. Das ist
+    reine Diagnose-Anreicherung fuer den Reparatur-Agenten (Stufe 3, siehe
+    tools/agent_datumsformat.py): sie aendert an Meldungstext, Gatter-Logik
+    oder Verhalten nichts, macht aber genau die Fehlerklasse "Datumsformat-
+    Drift" von jeder anderen unterscheidbar, OHNE Log-Text zu raten -- ein
+    leeres Tupel heisst zuverlaessig "eine andere Ursache".
     """
+
+    def __init__(self, message: str, *, vorspann_zeilen: tuple[str, ...] = ()):
+        super().__init__(message)
+        self.vorspann_zeilen = vorspann_zeilen
 
 
 @dataclass
@@ -369,6 +382,10 @@ def _datum_aus_text(text: str) -> _dt.date | None:
     treffer = re.search(r"(\d{1,2})[./](\d{1,2})[./](\d{4})", aufbereitet)
     if treffer:
         return _dt.date(int(treffer[3]), int(treffer[2]), int(treffer[1]))
+    # --- AGENT-ANKER (Stufe 3, siehe tools/agent_datumsformat.py): ein
+    # neues, additives Muster wird HIER eingefuegt, oberhalb dieser Zeile.
+    # Nichts an den Mustern darueber aendern -- nur ein weiterer
+    # `treffer = re.search(...)`-Block, wie die vier oben. ---
     return None
 
 
@@ -483,20 +500,31 @@ def handelstage_zwischen(frueher: _dt.date, spaeter: _dt.date) -> int:
 
 
 def pruefe_aktualitaet(
-    stand: _dt.date | None, heute: _dt.date, quelle: str, max_tage: int = MAX_ALTER_HANDELSTAGE
+    stand: _dt.date | None,
+    heute: _dt.date,
+    quelle: str,
+    max_tage: int = MAX_ALTER_HANDELSTAGE,
+    *,
+    vorspann_zeilen: tuple[str, ...] = (),
 ) -> None:
     """VERALTUNGS-GATTER. Ohne lesbaren Stichtag ebenfalls Abbruch.
 
     Das ist die Luecke, an der die alte Wikipedia-Quelle gescheitert ist:
     eine veraltete Liste sieht fehlerfrei aus, weil FEHLENDE Neuaufnahmen
     von keiner Pruefung entdeckt werden koennen. Nur ein Stichtag deckt das auf.
+
+    `vorspann_zeilen` (optional, nur fuer den "kein lesbarer Stichtag"-Fall
+    gedacht) wandert unveraendert in die Ausnahme -- siehe QuelleUnbrauchbar.
+    Der "zu alt"-Fall bekommt es bewusst NIE mit: ein zu alter, aber lesbarer
+    Stichtag ist keine Formatfrage, sondern eine andere Fehlerklasse.
     """
     if stand is None:
         raise QuelleUnbrauchbar(
             f"{quelle}: im Vorspann steht kein lesbarer Bestands-Stichtag. Ohne "
             f"Stichtag laesst sich nicht feststellen, ob die Liste aktuell ist "
             f"-- und eine veraltete Liste faellt sonst nirgends auf. "
-            f"Es wurde NICHTS geschrieben."
+            f"Es wurde NICHTS geschrieben.",
+            vorspann_zeilen=vorspann_zeilen,
         )
     alter = handelstage_zwischen(stand, heute)
     if alter > max_tage:
@@ -542,15 +570,19 @@ def parse_ishares_holdings(
     zeilen = inhalt.lstrip("﻿").splitlines()
     kopf_index, trenner, spalten = _kopfzeile_finden(zeilen)
 
+    vorspann = zeilen[:kopf_index]
     befund = Befund()
-    for zeile in zeilen[:kopf_index]:
+    for zeile in vorspann:
         gefunden = _datum_aus_text(zeile)
         if gefunden is not None:
             befund.bestand_stand = gefunden
             break
 
     quelle = f"{erwarteter_index}-Bestandsliste"
-    pruefe_aktualitaet(befund.bestand_stand, heute, quelle, max_alter)
+    pruefe_aktualitaet(
+        befund.bestand_stand, heute, quelle, max_alter,
+        vorspann_zeilen=tuple(z for z in vorspann if z.strip()),
+    )
 
     def feld(zeile: list[str], namen: tuple[str, ...]) -> str:
         for name in namen:

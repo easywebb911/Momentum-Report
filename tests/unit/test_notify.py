@@ -145,6 +145,26 @@ def test_konfluenz_treffer_nennt_ticker_markt_und_beide_scores():
     assert nachricht["priority"] == 3, "kein Fehlschlag -- keine Sirene"
 
 
+def test_agent_datumsformat_unklar_ohne_befunde_verschickt_nichts():
+    gesammelt = []
+    ergebnis = notify.push_agent_datumsformat_unklar(
+        [], topic="t", opener=_sammler(gesammelt)
+    )
+    assert ergebnis is False
+    assert gesammelt == []
+
+
+def test_agent_datumsformat_unklar_zitiert_die_rohen_zeilen():
+    befunde = [{"quelle": "iShares EXS3 (MDAX)", "rohzeilen": ["Jan Feb 2026", "-"]}]
+    gesammelt = []
+    notify.push_agent_datumsformat_unklar(befunde, topic="t", opener=_sammler(gesammelt))
+    nachricht = _payload(gesammelt[0])
+    assert "unklar" in nachricht["title"].lower()
+    assert "iShares EXS3 (MDAX)" in nachricht["message"]
+    assert "Jan Feb 2026" in nachricht["message"]
+    assert nachricht["priority"] == 3, "keine zweite Sirene neben dem roten Vertragstest"
+
+
 def test_konfluenz_treffer_ohne_elliott_score_zeigt_gedankenstrich():
     treffer = [{
         "ticker": "AAA", "markt": "de", "markt_name": "Deutschland",
@@ -198,6 +218,13 @@ def test_kein_herzschlag_push_vorhanden():
     # push_lauf_ueberfaellig ist ebenfalls KEIN Herzschlag: sie kommt zwar
     # aus einem Zeitplan (waechter.yml), aber ausschliesslich im ALARMFALL.
     assert sorted(funktionen) == [
+        # Ebenfalls kein Herzschlag: der Reparatur-Agent (Stufe 3) laeuft
+        # zwar im selben Vertragstest-Zeitplan mit, meldet sich aber
+        # ausschliesslich, wenn er einen Datumsformat-Bruch gesehen UND
+        # nicht zweifelsfrei uebersetzen konnte -- das setzt bereits einen
+        # roten Vertragstest-Lauf voraus (der ohnehin schon per
+        # push_vertrag_gebrochen meldet), kommt also nie bei "alles ok".
+        "push_agent_datumsformat_unklar",
         "push_data_conflict",
         # Auch kein Herzschlag: sie laeuft zwar bei JEDEM werktaeglichen
         # Lauf mit (siehe konfluenz.py), meldet sich aber ausschliesslich,
