@@ -163,3 +163,44 @@ def test_monatsraender_werden_korrekt_getroffen(bundle):
     from momentum.scoring import month_end_close
 
     assert month_end_close(bundle.adjusted["SPLITCO"], 2026, 1, ASOF) == pytest.approx(91.00)
+
+
+def test_close_bleibt_bei_ungueltigem_adj_close_im_vergleichspfad_erhalten():
+    """`series_roh` (PriceBundle.close) haengt NICHT von `Adj Close` ab.
+
+    Konstruiert einen Tag, an dem der unbereinigte Kurs ('Close', wie
+    gehandelt) gueltig ist, der bereinigte ('Adj Close') aber nicht --
+    z. B. eine noch nicht nachgetragene Bereinigung. Der score-unabhaengige
+    DE-Kursvergleich (kursvergleich.py, 'von Yahoo vollstaendig unabhaengig')
+    darf diesen Tag trotzdem sehen; der Score-Pfad (series_adj) dagegen
+    weiterhin nicht.
+    """
+    tag = Date(2026, 7, 15)
+    bereinigt = dict(BEREINIGT)
+    bereinigt[tag] = float("nan")  # macht Adj Close an diesem Tag ungueltig
+    bundle = download_prices(
+        ["SPLITCO"],
+        Date(2025, 1, 1),
+        ASOF,
+        downloader=make_downloader(
+            {"SPLITCO": bereinigt},
+            raw_close={"SPLITCO": {tag: 123.45}},
+        ),
+    )
+    # Score-Pfad: unveraendert weiterhin an Adj Close gebunden.
+    assert tag not in bundle.adjusted["SPLITCO"]
+    # Vergleichspfad: jetzt unabhaengig davon vorhanden.
+    assert bundle.close["SPLITCO"][tag] == pytest.approx(123.45)
+    # Nachbarn (an denen beide Reihen gueltig waren) sind unveraendert da.
+    nachbar = Date(2026, 6, 30)
+    assert nachbar in bundle.adjusted["SPLITCO"]
+    assert nachbar in bundle.close["SPLITCO"]
+
+
+def test_series_roh_ist_nie_kleiner_als_vorher_und_series_adj_unveraendert(bundle):
+    """Determinismus: series_roh enthaelt bei gleichen Eingaben mindestens
+    dieselben Tage wie vor der Entkopplung (hier: alle Tage sind bei
+    beiden Reihen gueltig, also identisch); series_adj ist exakt gleich.
+    """
+    assert set(bundle.close["SPLITCO"]) == set(BEREINIGT)
+    assert set(bundle.adjusted["SPLITCO"]) == set(BEREINIGT)

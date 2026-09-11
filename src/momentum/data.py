@@ -168,14 +168,25 @@ def download_prices(
                 adj = row.get("Adj Close")
                 close = row.get("Close")
                 volume = row.get("Volume")
+                # `close_valid` haengt bewusst NICHT von `adj` ab: series_roh
+                # ist der score-unabhaengige Vergleichspfad (siehe
+                # PriceBundle.close-Docstring), der laut Modulkopf von
+                # kursvergleich.py "von Yahoo vollstaendig unabhaengig" sein
+                # soll. Ein Tag mit gueltigem Close aber ungueltigem Adj
+                # Close (z. B. eine spaete Nachbereinigung) darf ihm daher
+                # nicht verlorengehen.
+                close_valid = is_finite(close) and close > 0
+                if close_valid:
+                    series_roh[day] = float(close)
                 if not is_finite(adj) or float(adj) <= 0:
                     stats.rows_dropped_nonfinite += 1
                     continue
+                # Ab hier unveraendert: series_adj (Score-Pfad) und
+                # series_turnover (Handelbarkeits-Filter, ebenfalls
+                # score-relevant) bleiben an die adj-Pruefung gebunden.
                 series_adj[day] = float(adj)
-                if is_finite(close) and close > 0:
-                    series_roh[day] = float(close)
-                    if is_finite(volume) and volume >= 0:
-                        series_turnover[day] = float(close) * float(volume)
+                if close_valid and is_finite(volume) and volume >= 0:
+                    series_turnover[day] = float(close) * float(volume)
             if not series_adj:
                 stats.empty_tickers.append(ticker)
                 continue
