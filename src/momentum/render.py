@@ -25,6 +25,11 @@ from .config import (
     Market,
 )
 from .konfluenz import ELLIOTT_SEITE
+from .kursvergleich import MIN_VERGLEICHSQUOTE as KV_MIN_VERGLEICHSQUOTE
+from .kursvergleich import TOLERANZ as KV_DE_TOLERANZ
+from .kursvergleich import ZULASS_ABWEICHLER as KV_DE_ZULASS
+from .kursvergleich_us import TOLERANZ as KV_US_TOLERANZ
+from .kursvergleich_us import ZULASS_ABWEICHLER as KV_US_ZULASS
 from .sources import SCORE_COMPONENT_SOURCES, SOURCES, source
 
 Date = _dt.date
@@ -775,6 +780,18 @@ def render_index(views: list[MarketView], run_date: Date) -> str:
     return "\n".join(body)
 
 
+def _kv_zulass_text() -> str:
+    """Zulass-Abweichler-Zahl fuer den Kursvergleich, DE und US.
+
+    Beide stehen aktuell zufaellig auf demselben Wert -- dieser Text bleibt
+    korrekt, sollten sie kuenftig auseinanderlaufen (siehe kursvergleich.py
+    bzw. kursvergleich_us.py, ZULASS_ABWEICHLER).
+    """
+    if KV_DE_ZULASS == KV_US_ZULASS:
+        return f"{KV_DE_ZULASS}"
+    return f"{KV_DE_ZULASS} (Deutschland) bzw. {KV_US_ZULASS} (USA)"
+
+
 def _method_card(title: str, keys: tuple[str, ...], body_html: str, anchor: str = "") -> str:
     footnotes = "".join(
         f'<li>{e(SOURCES[k].authors)} ({SOURCES[k].year}): '
@@ -1300,6 +1317,28 @@ Südkorea — lieber eine Lücke als eine unbelegte Aussage.</p>""",
 splitbereinigt. Zeilen ohne belastbare Zahl werden verworfen und gezählt;
 die Zahl steht im Lauf-Protokoll. Liefert die Quelle zu wenige Titel, wird
 bewusst <strong>kein</strong> Ranking gebildet, statt eines auf Lückenbasis.</p>""",
+        ),
+        _method_card(
+            "Kursvergleich (unabhängige Zweitquelle)",
+            (),
+            f"""<p>Zusätzlich zu den Yahoo-Kursen liest das Werkzeug dieselben
+iShares-Bestandslisten, die auch das Universum bilden — diesmal deren
+<strong>Kurs-Spalte</strong> (physisch replizierende ETFs): für Deutschland
+EXS1 (DAX), EXS3 (MDAX) und EXS2 (TecDAX); für die USA SXR8 primär mit
+IUSA als dokumentiertem Ausweich, beide S&amp;P-500-UCITS-Fonds. Verglichen
+wird je Titel gegen den eigenen Yahoo-Kurs — ein von Yahoo <strong>vollständig
+unabhängiger</strong> Kontrollmaßstab.</p>
+<p>Weicht ein Titel um mehr als {de_pct(KV_DE_TOLERANZ, 1, signed=False)}
+(Deutschland) bzw. {de_pct(KV_US_TOLERANZ, 2, signed=False)} (USA) ab, zählt
+das als Abweichler; mehr als {_kv_zulass_text()} Abweichler verweigern den
+Stichtag. Sind weniger als {de_pct(KV_MIN_VERGLEICHSQUOTE, 0, signed=False)}
+der Titel überhaupt vergleichbar, gilt der Vergleich als
+<strong>„entfällt"</strong> — kein Bruch, nur zu wenig Grundlage für eine
+Aussage.</p>
+<p><strong>Das ist reine Kontrolle, kein Bestandteil des Scores:</strong> der
+Kursvergleich verändert weder Rang noch Score noch den
+Handelbarkeits-Filter. Er kann ausschließlich den Lauf anhalten (ein rotes
+Signal im Vertragstest), nie ihn im Hintergrund verändern.</p>""",
         ),
         "</main>",
     ]

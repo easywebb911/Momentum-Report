@@ -141,6 +141,34 @@ def test_alle_vier_ehrlichkeits_anzeigen_stehen_in_der_methodik():
     assert 'id="trend-ampel"' in html, "der Anker, auf den verwiesen wird"
 
 
+def test_kursvergleich_zweitquelle_steht_vollstaendig_auf_der_methodik_seite():
+    """Nachtrag zum in SESSION_HANDOVER.md §4/§7.5 selbst gemeldeten Punkt:
+    die Kursvergleichs-Zweitquellen (Stufe 2a/2b) fehlten bislang auf der
+    Methodik-Seite. Beide Kartentypen (DE- und US-Quellen) muessen jetzt
+    konsistent und vollstaendig auftauchen, klar als NICHT score-bildend
+    abgegrenzt.
+    """
+    from momentum.kursvergleich import MIN_VERGLEICHSQUOTE, TOLERANZ, ZULASS_ABWEICHLER
+    from momentum.kursvergleich_us import TOLERANZ as TOLERANZ_US
+
+    html = render_methodik()
+    assert "<h3>Kursvergleich (unabhängige Zweitquelle)</h3>" in html
+    # DE-Zweitquelle
+    for token in ("EXS1", "EXS3", "EXS2"):
+        assert token in html
+    # US-Zweitquelle
+    for token in ("SXR8", "IUSA"):
+        assert token in html
+    # Zahlen konsistent aus denselben Konstanten wie die Gatter selbst.
+    assert f"{TOLERANZ * 100:.1f}".replace(".", ",") in html
+    assert f"{TOLERANZ_US * 100:.2f}".replace(".", ",") in html
+    assert str(ZULASS_ABWEICHLER) in html
+    assert f"{MIN_VERGLEICHSQUOTE * 100:.0f}" in html
+    # Explizite Abgrenzung vom Score -- nicht nur genannt, sondern verneint.
+    assert "kein Bestandteil des Scores" in html
+    assert "verändert weder Rang noch Score" in html
+
+
 def test_kein_verweis_zeigt_mehr_auf_den_alten_ort():
     """Nichts darf auf den Block auf der Uebersicht zeigen — den gibt es nicht."""
     index = render_index([_view(warnung=False)], Date(2026, 8, 3))

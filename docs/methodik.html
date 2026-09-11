@@ -307,6 +307,28 @@ die Zahl steht im Lauf-Protokoll. Liefert die Quelle zu wenige Titel, wird
 bewusst <strong>kein</strong> Ranking gebildet, statt eines auf Lückenbasis.</p>
   <ul class="src-list"><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Gemessen wurden Gesamtrenditen inklusive Dividenden. Deshalb rechnet dieses Tool ausschliesslich mit dividenden- und split-bereinigten Kursen.</li></ul>
 </article>
+<article class="card mcard">
+  <h3>Kursvergleich (unabhängige Zweitquelle)</h3>
+  <p>Zusätzlich zu den Yahoo-Kursen liest das Werkzeug dieselben
+iShares-Bestandslisten, die auch das Universum bilden — diesmal deren
+<strong>Kurs-Spalte</strong> (physisch replizierende ETFs): für Deutschland
+EXS1 (DAX), EXS3 (MDAX) und EXS2 (TecDAX); für die USA SXR8 primär mit
+IUSA als dokumentiertem Ausweich, beide S&amp;P-500-UCITS-Fonds. Verglichen
+wird je Titel gegen den eigenen Yahoo-Kurs — ein von Yahoo <strong>vollständig
+unabhängiger</strong> Kontrollmaßstab.</p>
+<p>Weicht ein Titel um mehr als 1,0 %
+(Deutschland) bzw. 0,25 % (USA) ab, zählt
+das als Abweichler; mehr als 3 Abweichler verweigern den
+Stichtag. Sind weniger als 80 %
+der Titel überhaupt vergleichbar, gilt der Vergleich als
+<strong>„entfällt"</strong> — kein Bruch, nur zu wenig Grundlage für eine
+Aussage.</p>
+<p><strong>Das ist reine Kontrolle, kein Bestandteil des Scores:</strong> der
+Kursvergleich verändert weder Rang noch Score noch den
+Handelbarkeits-Filter. Er kann ausschließlich den Lauf anhalten (ein rotes
+Signal im Vertragstest), nie ihn im Hintergrund verändern.</p>
+  <ul class="src-list"></ul>
+</article>
 </main>
 <footer class="foot">
   <p>Momentum-Report — Anwendungs-Werkzeug auf belegter Wissenschaft.
