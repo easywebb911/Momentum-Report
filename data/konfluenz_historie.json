@@ -45,6 +45,18 @@
       "markt": "de",
       "markt_name": "Deutschland",
       "quelle": "automatisch"
+    },
+    {
+      "ticker": "TKA.DE",
+      "name": "thyssenkrupp AG",
+      "momentum_rang": 2,
+      "momentum_score": 85.542169,
+      "momentum_stichtag": "2026-08-31",
+      "elliott_score": 82.56,
+      "elliott_close": 15.01,
+      "markt": "de",
+      "markt_name": "Deutschland",
+      "quelle": "automatisch"
     }
   ]
 }
