@@ -35,6 +35,18 @@
       "notiz": "Von Easy live auf der Konfluenz-Seite gesehen (17.08. und 24.08.2026), bevor die Persistenz-Mechanik (PR #46/#47, 05./06.09.2026) ueberhaupt existierte. Momentum-Seite belegt aus docs/data/top5.json (Commit e695b54) bzw. data/rankings/de_2026-07.json; Elliott-Score/-Richtung zum Sichtungszeitpunkt nicht mehr rekonstruierbar."
     },
     {
+      "ticker": "ALV.DE",
+      "name": "Allianz SE",
+      "momentum_rang": 3,
+      "momentum_score": 83.13253,
+      "momentum_stichtag": "2026-08-31",
+      "elliott_score": 76.21,
+      "elliott_close": 449.2,
+      "markt": "de",
+      "markt_name": "Deutschland",
+      "quelle": "automatisch"
+    },
+    {
       "ticker": "TKA.DE",
       "name": "thyssenkrupp AG",
       "momentum_rang": 2,
