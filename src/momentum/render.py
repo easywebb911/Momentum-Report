@@ -1339,9 +1339,14 @@ einen bewusst angestoßenen Vorgang geändert, nie automatisch im Hintergrund.</
 <p>Einziger Vorfilter: <strong>Handelbarkeit</strong>. Ein Titel muss in den
 letzten {LIQUIDITY_WINDOW_MONTHS} Monaten einen Median-Tagesumsatz von
 mindestens {int(LIQUIDITY_MIN_MEDIAN_TURNOVER / 1_000_000)} Mio. in
-Heimatwährung erreicht haben. Das ist <strong>kein Signal</strong> und keine
-Qualitätsaussage — es sorgt nur dafür, dass die Liste keine Titel zeigt, die
-praktisch kaum handelbar sind.</p>""",
+Heimatwährung erreicht haben — das sorgt nur dafür, dass die Liste keine
+praktisch kaum handelbaren Titel zeigt.</p>
+<p>Der Filter ist <strong>kein eigener Faktor im Score</strong> und keine
+Qualitätsaussage über einen Titel — er fließt in keine Kennzahl ein. Er
+verändert aber die Grundgesamtheit, aus der die Perzentil-Ränge gebildet
+werden: Fallen zum Beispiel 10 von 100 Titeln heraus, werden die Perzentile
+aus 90 statt 100 gebildet, und die relativen Ränge der übrigen verschieben
+sich — auch ohne dass sich an deren eigenen Werten etwas ändert.</p>""",
         ),
         "<h2>Was dieses Werkzeug bewusst NICHT tut</h2>",
         # „Keine Verlierer-Seite" und „der Effekt ist geschrumpft" standen

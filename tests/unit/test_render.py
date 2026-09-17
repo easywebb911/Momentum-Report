@@ -316,6 +316,19 @@ def test_die_methodik_erklaert_die_gleichgewichtung():
     assert "50 × Perzentil(52-Wochen-Hoch-Nähe)" in html
 
 
+def test_handelbarkeits_filter_methodik_praezisiert_die_rangwirkung():
+    """Praezisierung (externer Qualitaets-Check): der Filter ist kein
+    eigener Score-Faktor, veraendert aber die Grundgesamtheit, aus der die
+    Perzentil-Raenge gebildet werden -- die alte, zu pauschale "kein
+    Signal"-Formulierung darf auf der Methodik-Seite nicht mehr stehen."""
+    html = render_methodik()
+    assert "kein eigener Faktor im Score" in html
+    assert "Grundgesamtheit, aus der die Perzentil-Ränge gebildet" in html
+    assert "10 von 100 Titeln" in html
+    # Die alte, unpraezise Formulierung ist auf DIESER Seite verschwunden.
+    assert "Das ist <strong>kein Signal</strong> und keine" not in html
+
+
 def test_nirgends_steht_noch_ein_70_30():
     """Belegter Gegencheck ueber alles Ausgelieferte."""
     erzeugt = render_index([_view(warnung=False)], Date(2026, 8, 3)) + render_methodik()
