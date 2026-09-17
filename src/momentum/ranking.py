@@ -110,6 +110,29 @@ def resolve_asof(index_series: dict[Date, float], year: int, month: int, today: 
     return max(days)
 
 
+def zu_frueh_fuer_stichtag(market: Market, jetzt_utc: _dt.time) -> bool:
+    """True, wenn ein JETZT laufender Stichtags-Lauf fuer DIESEN Markt noch
+    keinen echten Tages-SCHLUSSkurs geliefert bekommen haben kann.
+
+    Nur relevant am letzten Werktag des Monats -- nur dann wuerde ein
+    "zu frueher" Lauf ueberhaupt einen Monats-Stichtag einfrieren (siehe
+    Aufrufstelle in run.py: die Pruefung greift ausschliesslich fuer den
+    LAUFENDEN Monat, nie fuer einen nachgeholten aelteren).
+
+    Bewusst KEIN Handelskalender und keine Feiertagsliste (siehe
+    resolve_asof) -- nur ein grober Vergleich gegen
+    `Market.stichtag_lauf_nicht_vor_utc`. Ob heute ueberhaupt ein
+    Handelstag war, entscheidet weiterhin ausschliesslich resolve_asof
+    anhand der Indexreihe; diese Funktion verhindert nur, dass ein
+    untertaegiger Zwischenkurs UEBERHAUPT ERST als Kandidat in Frage kommt.
+
+    Realer Anlass: Lauf 48, 31.08.2026 08:46 UTC (manueller Dispatch) --
+    der damals eingefrorene DE-Kurs war nachweislich untertaegig, nicht der
+    Endkurs (siehe SESSION_HANDOVER.md).
+    """
+    return jetzt_utc < market.stichtag_lauf_nicht_vor_utc
+
+
 # --------------------------------------------------------------------------
 # Handelbarkeits-Filter (KEIN Signal)
 # --------------------------------------------------------------------------

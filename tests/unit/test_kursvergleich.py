@@ -336,7 +336,7 @@ def kleines_anzahl_gatter(monkeypatch):
 def test_der_lauf_laeuft_normal_wenn_die_kurse_zusammenpassen(welt, kleines_anzahl_gatter):
     tmp_path, downloader = welt
     code = run_modul.main(
-        ["--today", STICHTAG.isoformat()],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
         downloader=downloader,
         bestand_oeffner=oeffner_mit(KURSE_AM_STICHTAG),
     )
@@ -362,7 +362,7 @@ def test_ein_manipulierter_kurs_stoppt_den_stichtags_lauf_wirklich(
 
     with pytest.raises(RankingNotPossible) as fehler:
         run_modul.main(
-            ["--today", STICHTAG.isoformat()],
+            ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
             downloader=downloader,
             bestand_oeffner=oeffner_mit(verbogen),
         )
@@ -387,7 +387,7 @@ def test_der_verweigerte_lauf_meldet_sich_laut(welt, kleines_anzahl_gatter, monk
     monkeypatch.setattr(
         run_modul, "main",
         lambda *a, **k: echtes_main(
-            ["--today", STICHTAG.isoformat()],
+            ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
             downloader=downloader, bestand_oeffner=oeffner,
         ),
     )
@@ -409,7 +409,7 @@ def test_die_zweitquelle_veraendert_keine_einzige_ranking_zahl(
         for datei in (tmp_path / "data" / "rankings").glob("*.json"):
             datei.unlink()
         run_modul.main(
-            ["--today", STICHTAG.isoformat()],
+            ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
             downloader=downloader,
             bestand_oeffner=oeffner_mit(kurse),
         )
@@ -434,7 +434,7 @@ def test_ohne_erreichbare_bestandsliste_laeuft_der_lauf_und_sagt_es(welt):
     """Fail-soft, aber sichtbar: die Sperre in conftest verhindert jeden
     echten Abruf — genau der Pfad, der auch bei einem Ausfall greift."""
     tmp_path, downloader = welt
-    assert run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader) == 0
+    assert run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"], downloader=downloader) == 0
     de = json.loads((tmp_path / "data/rankings/de_2026-07.json").read_text(encoding="utf-8"))
     assert de["kursvergleich"]["verdikt"] == "entfallen"
     assert de["kursvergleich"]["grund"], "entfallen ohne Grund waere still"
@@ -444,7 +444,7 @@ def test_der_schalter_setzt_das_gatter_sichtbar_aus(welt, kleines_anzahl_gatter)
     """Notausgang — aber nicht heimlich."""
     tmp_path, downloader = welt
     code = run_modul.main(
-        ["--today", STICHTAG.isoformat(), "--ohne-kursvergleich"],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59", "--ohne-kursvergleich"],
         downloader=downloader,
         bestand_oeffner=oeffner_mit({t: k * 5 for t, k in KURSE_AM_STICHTAG.items()}),
     )
@@ -461,7 +461,7 @@ def test_der_us_markt_traegt_den_grund_statt_eines_leeren_blocks(welt):
     Tests) und der Vergleich entfaellt mit einem ECHTEN Grund, nicht mehr
     mit dem festen "fuer diesen Markt nicht vorgesehen"."""
     tmp_path, downloader = welt
-    run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader)
+    run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"], downloader=downloader)
     us = json.loads((tmp_path / "data/rankings/us_2026-07.json").read_text(encoding="utf-8"))
     assert us["kursvergleich"]["verdikt"] == "entfallen"
     assert us["kursvergleich"]["grund"] != kv.NICHT_VORGESEHEN
@@ -478,14 +478,14 @@ def test_der_anzeige_lauf_ruehrt_die_bestandslisten_nicht_an(welt, kleines_anzah
         gerufen.append(quelle.index_name)
         return bestandsdatei(KURSE_AM_STICHTAG)
 
-    run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader,
+    run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"], downloader=downloader,
                    bestand_oeffner=oeffner)
     nach_stichtag = len(gerufen)
     # 3 DE-Dateien + SXR8 + IUSA (der US-Ausweich wird ebenfalls versucht,
     # weil die Kunst-Datei mit 5 Zeilen das US-ANZAHL-Gatter nicht besteht).
     assert nach_stichtag == 5, "am Stichtag werden alle fuenf Dateien geholt"
 
-    run_modul.main(["--today", "2026-08-05"], downloader=downloader,
+    run_modul.main(["--today", "2026-08-05", "--jetzt-utc", "23:59"], downloader=downloader,
                    bestand_oeffner=oeffner)
     assert len(gerufen) == nach_stichtag, "der Anzeige-Lauf hat Dateien geholt"
 
@@ -502,7 +502,7 @@ def test_der_push_traegt_den_entfallenen_vergleich(welt, monkeypatch):
         run_modul, "push_new_ranking",
         lambda entries, **kw: verschickt.append(kw.get("hinweise")) or True,
     )
-    run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader)
+    run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"], downloader=downloader)
     hinweise = verschickt[0]
     assert any("Kursvergleich entfiel" in h for h in hinweise)
     assert any(h.startswith("Deutschland:") for h in hinweise)

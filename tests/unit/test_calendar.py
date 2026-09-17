@@ -10,11 +10,13 @@ import datetime as _dt
 
 import pytest
 
+from momentum.config import MARKETS_BY_KEY
 from momentum.ranking import (
     RankingNotPossible,
     due_months,
     is_last_weekday_of_month,
     resolve_asof,
+    zu_frueh_fuer_stichtag,
 )
 from momentum.render import last_weekday_of_month
 from momentum.scoring import shift_month
@@ -77,6 +79,38 @@ def test_stichtag_ohne_indexdaten_bricht_laut_ab():
 def test_stichtag_greift_nie_in_die_zukunft():
     index = {Date(2026, 7, 29): 1.0, Date(2026, 7, 30): 1.0, Date(2026, 7, 31): 1.0}
     assert resolve_asof(index, 2026, 7, Date(2026, 7, 30)) == Date(2026, 7, 30)
+
+
+def test_der_reale_31_08_fall_waere_als_zu_frueh_erkannt_worden():
+    """Regressionsbeleg: Lauf 48, 31.08.2026 08:46 UTC (manueller Dispatch).
+
+    Der damals fuer DE eingefrorene Kurs war nachweislich untertaegig
+    (siehe SESSION_HANDOVER.md, Zahlenbeleg aus der letzten Diagnose) --
+    mit der neuen Pruefung waere das erkannt worden.
+    """
+    de = MARKETS_BY_KEY["de"]
+    assert zu_frueh_fuer_stichtag(de, _dt.time(8, 46)) is True
+
+
+def test_regulaerer_abend_lauf_bleibt_unveraendert():
+    """Der planmaessige 21:45-UTC-Lauf (nach Schluss beider Maerkte) darf
+    von der Haertung NIE ausgeloest werden -- fuer keinen der beiden
+    Maerkte."""
+    for markt in MARKETS_BY_KEY.values():
+        assert zu_frueh_fuer_stichtag(markt, _dt.time(21, 45)) is False
+
+
+@pytest.mark.parametrize(
+    "markt_key,zu_frueh,gerade_rechtzeitig",
+    [
+        ("de", _dt.time(16, 29), _dt.time(16, 30)),
+        ("us", _dt.time(20, 59), _dt.time(21, 0)),
+    ],
+)
+def test_schwelle_je_markt_greift_exakt_an_der_grenze(markt_key, zu_frueh, gerade_rechtzeitig):
+    markt = MARKETS_BY_KEY[markt_key]
+    assert zu_frueh_fuer_stichtag(markt, zu_frueh) is True
+    assert zu_frueh_fuer_stichtag(markt, gerade_rechtzeitig) is False
 
 
 @pytest.mark.parametrize(

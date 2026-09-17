@@ -106,7 +106,7 @@ def test_kein_ranking_und_kein_einziger_kursabruf(tmp_path, monkeypatch, beschre
         return echt(batch, start, end)
 
     with pytest.raises(UniverseNotReady):
-        run_modul.main(["--today", STICHTAG.isoformat()], downloader=mitschnitt)
+        run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"], downloader=mitschnitt)
 
     assert abrufe == [], f"{beschreibung}: es wurden Kurse abgerufen"
     assert not (tmp_path / "data").exists(), f"{beschreibung}: data/ entstand"
@@ -186,7 +186,7 @@ def test_nach_dem_universum_lauf_entsteht_das_ranking_rueckwirkend(tmp_path, mon
     serien["^SP500TR"] = index_series()
     serien["^GDAXI"] = index_series()
 
-    assert run_modul.main(["--today", "2026-08-05"], downloader=make_downloader(serien)) == 0
+    assert run_modul.main(["--today", "2026-08-05", "--jetzt-utc", "23:59"], downloader=make_downloader(serien)) == 0
     datei = tmp_path / "data/rankings/us_2026-07.json"
     assert datei.exists()
     nachtraeglich = datei.read_bytes()
@@ -200,7 +200,7 @@ def test_nach_dem_universum_lauf_entsteht_das_ranking_rueckwirkend(tmp_path, mon
         maerkte2.append(replace(MARKETS_BY_KEY[key], universe_file=str(pfad)))
     monkeypatch.chdir(zweit)
     monkeypatch.setattr(run_modul, "MARKETS", tuple(maerkte2))
-    assert run_modul.main(["--today", "2026-07-31"], downloader=make_downloader(serien)) == 0
+    assert run_modul.main(["--today", "2026-07-31", "--jetzt-utc", "23:59"], downloader=make_downloader(serien)) == 0
 
     am_stichtag = (zweit / "data/rankings/us_2026-07.json").read_bytes()
     assert nachtraeglich == am_stichtag, (

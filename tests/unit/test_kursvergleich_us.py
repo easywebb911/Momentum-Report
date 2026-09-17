@@ -336,7 +336,7 @@ def oeffner_us_mit(kurse: dict[str, float], **kw):
 def test_der_lauf_laeuft_normal_wenn_die_us_kurse_zusammenpassen(welt):
     tmp_path, downloader = welt
     code = run_modul.main(
-        ["--today", STICHTAG.isoformat()],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
         downloader=downloader,
         bestand_oeffner=oeffner_us_mit(KURSE_AM_STICHTAG),
         splits_oeffner=keine_splits,
@@ -360,7 +360,7 @@ def test_ein_manipulierter_kurs_ohne_split_beleg_stoppt_den_lauf_wirklich(welt):
 
     with pytest.raises(RankingNotPossible) as fehler:
         run_modul.main(
-            ["--today", STICHTAG.isoformat()],
+            ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
             downloader=downloader,
             bestand_oeffner=oeffner_us_mit(verbogen),
             splits_oeffner=keine_splits,
@@ -387,7 +387,7 @@ def test_ein_echter_split_stoppt_den_lauf_nicht(welt):
         return {STICHTAG: 2.0} if ticker in betroffene else {}
 
     code = run_modul.main(
-        ["--today", STICHTAG.isoformat()],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
         downloader=downloader,
         bestand_oeffner=oeffner_us_mit(verbogen),
         splits_oeffner=splits,
@@ -410,7 +410,7 @@ def test_die_zweitquelle_veraendert_keine_us_ranking_zahl(welt):
         for datei in (tmp_path / "data" / "rankings").glob("*.json"):
             datei.unlink()
         run_modul.main(
-            ["--today", STICHTAG.isoformat()],
+            ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
             downloader=downloader,
             bestand_oeffner=oeffner_us_mit(kurse),
             splits_oeffner=keine_splits,
@@ -447,7 +447,7 @@ def test_das_us_gatter_laesst_den_de_lauf_unberuehrt(welt):
         for datei in (tmp_path / "data" / "rankings").glob("*.json"):
             datei.unlink()
         run_modul.main(
-            ["--today", STICHTAG.isoformat()],
+            ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
             downloader=downloader,
             bestand_oeffner=oeffner_us_mit(kurse),
             splits_oeffner=keine_splits,

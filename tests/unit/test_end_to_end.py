@@ -66,7 +66,7 @@ def test_kompletter_lauf_erzeugt_alles(welt, monkeypatch):
         run_modul, "push_new_ranking", lambda entries, **kw: verschickt.append(entries) or True
     )
 
-    code = run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader)
+    code = run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"], downloader=downloader)
     assert code == 0
 
     # Rankings geschrieben, je Markt eines
@@ -134,7 +134,7 @@ def test_der_euro_zins_erreicht_das_ranking(welt, monkeypatch):
     antwort = "\n".join([kopf, *zeilen]) + "\n"
 
     code = run_modul.main(
-        ["--today", STICHTAG.isoformat()],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
         downloader=downloader,
         zins_oeffner=lambda _url: antwort,
     )
@@ -154,11 +154,11 @@ def test_zweiter_lauf_am_selben_tag_aendert_nichts(welt, monkeypatch):
     tmp_path, downloader = welt
     monkeypatch.setattr(run_modul, "push_new_ranking", lambda *a, **k: True)
 
-    assert run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader) == 0
+    assert run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"], downloader=downloader) == 0
     vorher = {
         p.name: p.read_bytes() for p in (tmp_path / "data/rankings").glob("*.json")
     }
-    assert run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader) == 0
+    assert run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"], downloader=downloader) == 0
     nachher = {
         p.name: p.read_bytes() for p in (tmp_path / "data/rankings").glob("*.json")
     }
@@ -171,7 +171,7 @@ def test_kein_push_mit_no_push(welt, monkeypatch):
     monkeypatch.setattr(
         run_modul, "push_new_ranking", lambda entries, **kw: verschickt.append(entries) or True
     )
-    run_modul.main(["--today", STICHTAG.isoformat(), "--no-push"], downloader=downloader)
+    run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59", "--no-push"], downloader=downloader)
     assert verschickt == []
 
 
@@ -181,10 +181,10 @@ def test_github_ausgabe_meldet_neues_ranking(welt, monkeypatch, tmp_path_factory
     ausgabe = tmp_path_factory.mktemp("gh") / "out.txt"
     monkeypatch.setenv("GITHUB_OUTPUT", str(ausgabe))
 
-    run_modul.main(["--today", STICHTAG.isoformat()], downloader=downloader)
+    run_modul.main(["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"], downloader=downloader)
     assert "ranking_created=true" in ausgabe.read_text(encoding="utf-8")
 
-    run_modul.main(["--today", "2026-08-05"], downloader=downloader)
+    run_modul.main(["--today", "2026-08-05", "--jetzt-utc", "23:59"], downloader=downloader)
     assert "ranking_created=false" in ausgabe.read_text(encoding="utf-8")
 
 
@@ -223,7 +223,7 @@ def test_ohne_den_schalter_geht_keine_probe_raus(welt, monkeypatch):
     monkeypatch.setattr(run_modul, "push_test", lambda **kw: proben.append(kw) or True)
     monkeypatch.setattr(run_modul, "push_new_ranking", lambda *a, **k: True)
 
-    assert run_modul.main(["--today", "2026-07-31"], downloader=downloader) == 0
+    assert run_modul.main(["--today", "2026-07-31", "--jetzt-utc", "23:59"], downloader=downloader) == 0
     assert proben == [], "es ging ein Testpush raus, ohne dass er angefordert wurde"
 
 
@@ -234,7 +234,7 @@ def test_mit_dem_schalter_geht_genau_eine_probe_raus(welt, monkeypatch, capsys):
     monkeypatch.setattr(run_modul, "push_new_ranking", lambda *a, **k: True)
 
     assert run_modul.main(
-        ["--today", "2026-07-31", "--testpush"], downloader=downloader
+        ["--today", "2026-07-31", "--jetzt-utc", "23:59", "--testpush"], downloader=downloader
     ) == 0
     assert len(proben) == 1, "genau eine Probe, nicht mehr und nicht weniger"
     assert "Testpush: verschickt." in capsys.readouterr().out
@@ -246,14 +246,14 @@ def test_die_probe_aendert_nichts_an_den_daten(welt, monkeypatch):
     monkeypatch.setattr(run_modul, "push_new_ranking", lambda *a, **k: True)
     monkeypatch.setattr(run_modul, "push_test", lambda **kw: True)
 
-    run_modul.main(["--today", "2026-07-31"], downloader=downloader)
+    run_modul.main(["--today", "2026-07-31", "--jetzt-utc", "23:59"], downloader=downloader)
     ohne = {
         p.relative_to(tmp_path): p.read_bytes()
         for p in sorted(tmp_path.rglob("*"))
         if p.is_file()
     }
 
-    run_modul.main(["--today", "2026-07-31", "--testpush"], downloader=downloader)
+    run_modul.main(["--today", "2026-07-31", "--jetzt-utc", "23:59", "--testpush"], downloader=downloader)
     mit = {
         p.relative_to(tmp_path): p.read_bytes()
         for p in sorted(tmp_path.rglob("*"))
@@ -272,7 +272,7 @@ def test_ein_fehlschlag_der_probe_steht_im_protokoll(welt, monkeypatch, capsys):
     monkeypatch.setattr(run_modul, "push_test", lambda **kw: False)
 
     assert run_modul.main(
-        ["--today", "2026-07-31", "--testpush"], downloader=downloader
+        ["--today", "2026-07-31", "--jetzt-utc", "23:59", "--testpush"], downloader=downloader
     ) == 0, "eine misslungene Probe darf den Lauf nicht rot machen"
     ausgabe = capsys.readouterr().out
     assert "Testpush: NICHT verschickt" in ausgabe
@@ -285,7 +285,7 @@ def test_ohne_push_schlaegt_die_probe_nicht_durch(welt, monkeypatch, capsys):
     monkeypatch.setattr(run_modul, "push_test", lambda **kw: proben.append(kw) or True)
 
     run_modul.main(
-        ["--today", "2026-07-31", "--testpush", "--no-push"], downloader=downloader
+        ["--today", "2026-07-31", "--jetzt-utc", "23:59", "--testpush", "--no-push"], downloader=downloader
     )
     assert proben == []
     assert "uebersprungen, weil --no-push" in capsys.readouterr().out

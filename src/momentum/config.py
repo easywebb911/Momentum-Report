@@ -7,6 +7,7 @@ das wird beim Import geprueft und bricht sonst sofort ab.
 
 from __future__ import annotations
 
+import datetime as _dt
 from dataclasses import dataclass
 
 from .sources import SCORE_COMPONENT_SOURCES
@@ -87,6 +88,15 @@ class Market:
     index_ticker: str
     index_name: str
     universe_file: str
+    # Fruehester UTC-Zeitpunkt, ab dem ein Lauf am letzten Werktag des
+    # Monats ueberhaupt einen echten Tages-SCHLUSSkurs geliefert bekommen
+    # haben kann -- siehe ranking.zu_frueh_fuer_stichtag(). BEWUSST kein
+    # Handelskalender und keine Feiertagsliste (siehe resolve_asof): nur
+    # ein grober Riegel gegen einen zu frueh ausgeloesten manuellen Lauf,
+    # der sonst einen untertaegigen Zwischenkurs als Monats-Stichtag
+    # einfrieren wuerde (realer Fall: Lauf 48, 31.08.2026 08:46 UTC,
+    # DE-Kurs nachweislich untertaegig -- siehe SESSION_HANDOVER.md).
+    stichtag_lauf_nicht_vor_utc: _dt.time
 
 
 MARKETS: tuple[Market, ...] = (
@@ -104,6 +114,12 @@ MARKETS: tuple[Market, ...] = (
         index_ticker="^SP500TR",
         index_name="S&P 500",
         universe_file="universe/universe_us.txt",
+        # NYSE schliesst lokal immer 16:00 ET -- in UTC je nach Jahreszeit
+        # 20:00 (EDT, Sommer) oder 21:00 (EST, Winter). Absichtlich die
+        # SPAETERE (Winter-)Zeit als Schwelle: im Sommer bis zu eine Stunde
+        # konservativer als noetig, aber nie zu frueh -- unkritisch, da nur
+        # den seltenen, verfrueht ausgeloesten Lauf betrifft.
+        stichtag_lauf_nicht_vor_utc=_dt.time(21, 0),
     ),
     Market(
         key="de",
@@ -114,6 +130,10 @@ MARKETS: tuple[Market, ...] = (
         index_ticker="^GDAXI",
         index_name="DAX",
         universe_file="universe/universe_de.txt",
+        # Xetra schliesst lokal immer 17:30 MEZ/MESZ -- in UTC je nach
+        # Jahreszeit 15:30 (MESZ, Sommer) oder 16:30 (MEZ, Winter). Wie bei
+        # den USA die SPAETERE (Winter-)Zeit als Schwelle.
+        stichtag_lauf_nicht_vor_utc=_dt.time(16, 30),
     ),
 )
 
