@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from momentum.config import MARKETS_BY_KEY
-from momentum.render import NBSP, MarketView, render_index, render_methodik
+from momentum.render import NBSP, MarketView, render_evaluation, render_index, render_methodik
 
 Date = _dt.date
 
@@ -710,3 +710,92 @@ def test_der_tacho_traegt_eine_sprechende_beschriftung():
     assert 'role="img"' in svg
     assert "aria-label=\"Trend-Kriterium S&amp;P 500: +18,1" in svg
     assert "kein Alarm" in svg
+
+
+# --------------------------------------------------------------------------
+# Evaluation-Seite: Index-Vergleich (schema 2)
+# --------------------------------------------------------------------------
+
+
+def _eval_titel(ticker: str, veraenderung: float | None, klasse: str) -> dict:
+    return {
+        "ticker": ticker,
+        "name": f"Firma {ticker}",
+        "kurs_start": 100.0,
+        "kurs_end": None if veraenderung is None else 100.0 * (1 + veraenderung),
+        "veraenderung": veraenderung,
+        "klasse": klasse,
+    }
+
+
+def _evaluation(*, index_vergleich: dict | None = "weglassen") -> dict:
+    ev = {
+        "schema": 2,
+        "markt": "us",
+        "ausgewerteter_monat": "2026-07",
+        "start_stichtag": "2026-07-31",
+        "end_stichtag": "2026-08-31",
+        "neutral_schwelle": 0.02,
+        "titel": [
+            _eval_titel("AAA", 0.10, "positiv"),
+            _eval_titel("BBB", 0.06, "positiv"),
+        ],
+    }
+    if index_vergleich != "weglassen":
+        ev["index_vergleich"] = index_vergleich
+    return ev
+
+
+def test_evaluation_seite_zeigt_top5_index_und_differenz():
+    ev = _evaluation(
+        index_vergleich={
+            "index_ticker": "^SP500TR",
+            "index_name": "S&P 500",
+            "start": 4000.0,
+            "end": 4200.0,
+            "veraenderung": 0.05,
+            "top5_veraenderung": 0.08,
+            "differenz": 0.03,
+        }
+    )
+    html = render_evaluation({"us": [ev]})
+    assert "Top-5 (gleichgewichtet): +8,0&nbsp;%" in html.replace(NBSP, "&nbsp;")
+    assert "Index (S&amp;P 500): +5,0&nbsp;%" in html.replace(NBSP, "&nbsp;")
+    assert "Differenz: +3,0&nbsp;Pp" in html.replace(NBSP, "&nbsp;")
+    # Kein Erfolgs-Vokabular (siehe EVALUATION_HINWEIS-Erweiterung).
+    assert "outperform" not in html.lower()
+    assert "underperform" not in html.lower()
+    assert "Erfolgsnachweis" in html  # steht im Pflicht-Hinweis, nicht als Lob
+
+
+def test_evaluation_seite_zeigt_luecke_wenn_index_fehlt():
+    ev = _evaluation(
+        index_vergleich={
+            "index_ticker": "^SP500TR",
+            "index_name": "S&P 500",
+            "start": None,
+            "end": None,
+            "veraenderung": None,
+            "top5_veraenderung": 0.08,
+            "differenz": None,
+        }
+    )
+    html = render_evaluation({"us": [ev]})
+    assert "Index-Vergleich nicht verfügbar (Datenlücke)." in html
+    assert "eval-index--leer" in html
+
+
+def test_evaluation_seite_vertraegt_aelteren_rueckblick_ohne_index_vergleich():
+    """Rueckwaertskompatibilitaet: ein vor dieser Aenderung geschriebener
+    Rueckblick (schema 1) hat gar kein `index_vergleich`-Feld -- das darf
+    nicht abstuerzen, sondern zeigt denselben Luecken-Hinweis."""
+    ev = _evaluation(index_vergleich="weglassen")
+    assert "index_vergleich" not in ev
+    html = render_evaluation({"us": [ev]})
+    assert "Index-Vergleich nicht verfügbar (Datenlücke)." in html
+
+
+def test_evaluation_hinweis_nennt_den_benchmark_vorbehalt():
+    html = render_evaluation({"us": [_evaluation(index_vergleich="weglassen")]})
+    assert "kein Erfolgsnachweis" in html
+    assert "nur zusätzliche Einordnung" in html

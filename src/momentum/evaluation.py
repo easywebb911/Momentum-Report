@@ -20,6 +20,24 @@ gefuehrt, nicht als 0 % oder stillschweigend weggelassen.
 
 Wie eingefrorene Rankings (siehe ranking.py) wird ein einmal geschriebener
 Rueckblick NIE wieder ueberschrieben.
+
+INDEX-VERGLEICH (schema 2, additiv): "Top-5 +8 %" ist ohne Vergleichsmass-
+stab bedeutungslos -- war der Marktindex im selben Fenster bei +10 %, war
+die Auswahl schwaecher als der Markt, nicht staerker. Deshalb traegt jeder
+Rueckblick zusaetzlich `index_vergleich`: dieselbe Indexreihe, die der Lauf
+ohnehin fuer die Trend-Ampel abruft (^SP500TR/^GDAXI, siehe run.py), auf
+genau demselben Fenster [start_stichtag, end_stichtag] ausgewertet, plus
+die gleichgewichtete Top-5-Durchschnittsrendite und deren Differenz zum
+Index. Genau wie die Klassenzaehlung daneben ist das bei n=5 statistisch
+NICHT belastbar -- reine Einordnung, kein Erfolgsnachweis (siehe
+EVALUATION_HINWEIS in render.py, um den Vergleichs-Vorbehalt erweitert).
+Bewusst NICHT rueckwirkend fuer bereits bestehende Rueckblicke ergaenzt
+(Easys Entscheidung): erstens haelt "einmal geschrieben, nie ueberschrieben"
+auch fuer Zusatzfelder, zweitens truege ein rueckwirkender DE/Juli-Vergleich
+den bekannten Datenmakel aus dem 31.08.2026-Vorfall (untertaegiger statt
+endgueltiger Kurs, siehe SESSION_HANDOVER.md) in eine neue Kennzahl hinein --
+nicht nur beim Top-5-Endkurs, sondern zusaetzlich beim Index-Endwert
+desselben Tages.
 """
 
 from __future__ import annotations
@@ -63,11 +81,80 @@ def klassifiziere(veraenderung: float | None, schwelle: float = NEUTRAL_SCHWELLE
     return "neutral"
 
 
+def _top5_veraenderung(titel: list[dict]) -> float | None:
+    """Gleichgewichtete Durchschnittsrendite der (bis zu) fuenf Top-Titel.
+
+    Titel ohne Endkurs ("unbekannt", z. B. delistet/aussortiert) gehen NICHT
+    als 0 % ein, sondern fallen aus dem Mittel heraus -- dieselbe Regel, die
+    klassifiziere() schon fuer die einzelne Klassifikation haelt. Sind ALLE
+    fuenf Titel unbekannt, ist auch der Durchschnitt unbekannt (None), nicht
+    0 %.
+    """
+    werte = [t["veraenderung"] for t in titel if t["veraenderung"] is not None]
+    if not werte:
+        return None
+    return round(sum(werte) / len(werte), 8)
+
+
+def _index_vergleich(
+    market: Market,
+    index_series: dict[Date, float] | None,
+    start: Date,
+    end: Date,
+    top5_veraenderung: float | None,
+) -> dict:
+    """Reiner ZUSATZ-Vergleich Top-5 vs. Marktindex -- geht in KEINE
+    Rechnung des Tools ein, weder Score noch Ranking noch Filter, nur
+    nachtraegliche Einordnung (siehe Modul-Docstring).
+
+    Dieselbe Indexreihe wie die Trend-Ampel (siehe scoring.index_12m_return)
+    -- kein zusaetzlicher Abruf, kein zweiter Datenpfad zu denselben Werten.
+
+    Fail-soft: fehlt der Index-Kurs zu Start oder Ende in der uebergebenen
+    Reihe (oder liegt keine Reihe vor), bleiben `start`/`end`/`veraenderung`/
+    `differenz` explizit `None` -- sichtbar als Luecke, nie geraten oder
+    stillschweigend auf 0 gesetzt (siehe VORGEHEN, fail-soft wie beim
+    Trend-Kriterium).
+    """
+    index_start = (index_series or {}).get(start)
+    index_end = (index_series or {}).get(end)
+    if index_start is None or index_end is None or index_start <= 0:
+        return {
+            "index_ticker": market.index_ticker,
+            "index_name": market.index_name,
+            "start": None,
+            "end": None,
+            "veraenderung": None,
+            "top5_veraenderung": top5_veraenderung,
+            "differenz": None,
+        }
+    # ERST runden, DANN die Differenz bilden -- dasselbe Prinzip wie bei
+    # der Einzeltitel-Klassifikation oben: Anzeige und weitere Rechnung
+    # sehen immer denselben, bereits gerundeten Wert (Determinismus).
+    index_veraenderung = round(float(index_end) / float(index_start) - 1, 8)
+    differenz = (
+        None
+        if top5_veraenderung is None
+        else round(top5_veraenderung - index_veraenderung, 8)
+    )
+    return {
+        "index_ticker": market.index_ticker,
+        "index_name": market.index_name,
+        "start": round(float(index_start), 4),
+        "end": round(float(index_end), 4),
+        "veraenderung": index_veraenderung,
+        "top5_veraenderung": top5_veraenderung,
+        "differenz": differenz,
+    }
+
+
 def build_evaluation(
     prev_ranking: dict,
     market: Market,
     bundle: PriceBundle,
     end_asof: Date,
+    *,
+    index_series: dict[Date, float] | None = None,
 ) -> dict:
     """Der Rueckblick auf EIN abgeschlossenes Monats-Ranking (`prev_ranking`).
 
@@ -75,6 +162,12 @@ def build_evaluation(
     an dem der Kurs in `bundle` nachgeschlagen wird, als auch der Wert, der
     als `end_stichtag` im Ergebnis steht (siehe Modul-Docstring: beides ist
     absichtlich derselbe Tag).
+
+    `index_series` ist optional (Vorgabe None -- fail-soft, siehe
+    _index_vergleich): dieselbe Indexreihe, die der Lauf ohnehin fuer die
+    Trend-Ampel abruft (siehe run.py). Ohne sie -- oder falls sie Start-
+    oder End-Tag nicht enthaelt -- bleibt der Index-Vergleich sichtbar leer,
+    der Rest des Rueckblicks ist davon unberuehrt.
     """
     titel = []
     for row in prev_ranking["rangliste"][:TOP_N]:
@@ -102,14 +195,19 @@ def build_evaluation(
             }
         )
     year, month = (int(x) for x in prev_ranking["ranking_monat"].split("-"))
+    start = Date.fromisoformat(prev_ranking["stichtag"])
+    top5_veraenderung = _top5_veraenderung(titel)
     return {
-        "schema": 1,
+        "schema": 2,
         "markt": market.key,
         "ausgewerteter_monat": f"{year:04d}-{month:02d}",
         "start_stichtag": prev_ranking["stichtag"],
         "end_stichtag": end_asof.isoformat(),
         "neutral_schwelle": NEUTRAL_SCHWELLE,
         "titel": titel,
+        "index_vergleich": _index_vergleich(
+            market, index_series, start, end_asof, top5_veraenderung
+        ),
     }
 
 
