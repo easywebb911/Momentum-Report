@@ -24,14 +24,14 @@ LANGER_NAME = (
 )
 
 
-def _ranking(*, warnung: bool, name: str = "Beispiel AG") -> dict:
+def _ranking(*, warnung: bool, name: str = "Beispiel AG", stichtag: str = "2026-07-31") -> dict:
     return {
         "schema": 1,
         "markt": "us",
         "markt_name": "USA",
         "waehrung": "USD",
         "ranking_monat": "2026-07",
-        "stichtag": "2026-07-31",
+        "stichtag": stichtag,
         "universum": {
             "bezeichnung": "S&P 500",
             "herkunft": "Testquelle",
@@ -105,6 +105,52 @@ def _view_de(**kwargs) -> MarketView:
 def test_kopfzeile_zeigt_ranking_naechsten_stichtag_und_kursdatum():
     html = render_index([_view(warnung=False)], Date(2026, 8, 3))
     assert "Ranking vom 31.07. · nächstes am 31.08. · Kurse vom 03.08.2026" in html
+
+
+def test_kopfzeile_bei_gleichem_stichtag_beider_maerkte_unveraendert():
+    """Testfall VORGEHEN 6, Normalfall: haben beide Maerkte denselben
+    Stichtag, bleibt die Kopfzeile exakt wie bisher -- EIN Datum, keine
+    Marktnamen."""
+    html = render_index(
+        [_view(warnung=False), _view_de(warnung=False)], Date(2026, 8, 3)
+    )
+    assert "Ranking vom 31.07. · nächstes am 31.08. · Kurse vom 03.08.2026" in html
+    assert "Ranking je Markt" not in html
+
+
+def test_kopfzeile_bei_unterschiedlichem_stichtag_zeigt_beide_maerkte():
+    """Testfall VORGEHEN 6, Haertungsfall: unterschiedliche Stichtage duerfen
+    nicht mehr durch max() zu einem einzigen, falschen Datum verschmelzen."""
+    html = render_index(
+        [_view(warnung=False, stichtag="2026-07-28"), _view_de(warnung=False)],
+        Date(2026, 8, 3),
+    )
+    assert "Ranking je Markt: USA 28.07. · Deutschland 31.07." in html
+    # Reihenfolge ist die der Maerkte (US zuerst), NICHT nach Datum sortiert
+    # -- deterministisch, unabhaengig davon, welcher Markt spaeter dran ist.
+    assert "Deutschland 31.07. · USA" not in html
+    assert "nächstes am 31.08. · Kurse vom 03.08.2026" in html
+
+
+def test_kopfzeile_realer_31_08_fall_als_regressionsbeleg():
+    """Regressionsbeleg mit den ECHTEN Werten des 31.08.2026-Vorfalls: US
+    28.08., DE 31.08. -- genau das, was der externe Pruefbericht beanstandet
+    hatte (siehe vorherige Diagnose). Beide Daten muessen jetzt im Kopf
+    auftauchen, nicht nur das spaetere (bisher: max() -> nur "31.08.")."""
+    html = render_index(
+        [
+            _view(warnung=False, stichtag="2026-08-28"),
+            _view_de(warnung=False, stichtag="2026-08-31"),
+        ],
+        Date(2026, 9, 17),
+    )
+    assert "Ranking je Markt: USA 28.08. · Deutschland 31.08." in html
+    # Nur der KOPF wird geprueft (kein Jahr, gefolgt von "· naechstes am") --
+    # die DE-Markt-Sektion darf weiterhin zu Recht "Ranking vom 31.08.2026"
+    # zeigen, das ist ihr eigener, korrekter Wert (siehe _market_section).
+    assert "Ranking vom 31.08. · nächstes am" not in html, (
+        "das alte, irrefuehrende Einzeldatum im Kopf darf nicht mehr auftauchen"
+    )
 
 
 def test_die_uebersicht_traegt_den_ehrlichkeits_block_nicht_mehr():

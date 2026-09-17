@@ -733,12 +733,32 @@ def _foot(extra: str = "") -> str:
 def render_index(views: list[MarketView], run_date: Date) -> str:
     ranked = [v for v in views if v.ranking]
     if ranked:
-        stichtag = max(Date.fromisoformat(v.ranking["stichtag"]) for v in ranked)
+        # Reihenfolge bewusst die von `ranked` (== MARKETS, siehe run.py) --
+        # NIE nach Datum sortiert. Sonst haenge die Reihenfolge im Text vom
+        # Zufall ab, welcher Markt gerade den spaeteren Stichtag hat
+        # (Determinismus, siehe zu_frueh_fuer_stichtag-PR #53).
+        stichtage = [(v.market.name, Date.fromisoformat(v.ranking["stichtag"])) for v in ranked]
+        if len({tag for _, tag in stichtage}) == 1:
+            ranking_teil = f"Ranking vom {de_daymonth(stichtage[0][1])}"
+        else:
+            # Die Maerkte haben in diesem Monat TATSAECHLICH verschiedene
+            # Stichtage (realer Fall: US 28.08./DE 31.08.2026, siehe
+            # SESSION_HANDOVER -- ein zu frueh ausgeloester Lauf fror den
+            # DE-Kurs vor US-Marktschluss ein; PR #53 haertet dagegen, ein
+            # bereits eingefrorener Monat bleibt aber so stehen). Ein
+            # gemeinsames Datum (bisher `max()` beider Werte) waere hier
+            # keine Vereinfachung, sondern eine falsche Behauptung -- es
+            # gibt keinen gemeinsamen Stichtag. Die Markt-Sektionen zeigen
+            # ihren jeweils eigenen Stichtag ohnehin schon korrekt (siehe
+            # _market_section); der Kopf tut es hier ab jetzt auch.
+            ranking_teil = "Ranking je Markt: " + " · ".join(
+                f"{name} {de_daymonth(tag)}" for name, tag in stichtage
+            )
         nxt = min(v.next_ranking_date for v in ranked)
         price_days = [v.price_asof for v in ranked if v.price_asof]
         price_txt = de_date(max(price_days)) if price_days else "—"
         subline = (
-            f"Ranking vom {de_daymonth(stichtag)} · nächstes am "
+            f"{ranking_teil} · nächstes am "
             f"{de_daymonth(nxt)} · Kurse vom {price_txt}"
         )
     else:
