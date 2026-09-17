@@ -345,7 +345,12 @@ def process_market(
             eval_datei = evaluation_path(market.key, prev_year, prev_month, evaluation_root)
             if prev_ranking_datei.exists() and not eval_datei.exists():
                 prev_ranking = read_ranking(prev_ranking_datei)
-                evaluation = build_evaluation(prev_ranking, market, bundle, asof)
+                # `index_series` ist dieselbe Reihe, die oben schon fuer
+                # resolve_asof/die Trend-Ampel abgerufen wurde -- kein
+                # zweiter Abruf fuer den Index-Vergleich (siehe evaluation.py).
+                evaluation = build_evaluation(
+                    prev_ranking, market, bundle, asof, index_series=index_series
+                )
                 write_evaluation(evaluation, evaluation_root)
                 log(
                     f"[{market.key}] Monats-Rueckblick {prev_year:04d}-{prev_month:02d} "

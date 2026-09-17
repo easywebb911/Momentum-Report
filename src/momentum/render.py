@@ -74,9 +74,18 @@ HONESTY = (
 # keine "Erfolgsrate", kein Track-Record-Vokabular. Bei 5 Werten je Markt
 # und Monat ist jede einzelne Monats-Aufteilung statistisch reines
 # Rauschen; das sagt dieser Satz, nicht mehr und nicht weniger.
+#
+# Um den Index-Vergleich erweitert (siehe evaluation.py, index_vergleich):
+# derselbe Vorbehalt gilt fuer ihn genauso -- bei n=5 ist auch "besser/
+# schlechter als der Index" statistisch nicht belastbar, nur eine weitere
+# Zahl zur Einordnung. Bewusst KEIN "outperformed"/"underperformed" oder
+# aehnliches Erfolgs-Vokabular; die Anzeige (siehe _eval_monat_liste) nennt
+# nur die Differenz, wertet sie nicht.
 EVALUATION_HINWEIS = (
     "Nur 5 Werte pro Markt und Monat — einzelne Monate sagen nichts über "
-    "die Methode aus, dient nur der eigenen Nachvollziehbarkeit."
+    "die Methode aus, dient nur der eigenen Nachvollziehbarkeit. Das gilt "
+    "auch für den Index-Vergleich unten: kein Erfolgsnachweis, nur "
+    "zusätzliche Einordnung."
 )
 
 
@@ -128,6 +137,15 @@ def de_num(value: float, digits: int = 2) -> str:
 def de_pct(value: float, digits: int = 1, signed: bool = True) -> str:
     sign = "+" if signed and value > 0 else ""
     return f"{sign}{de_num(value * 100, digits)}{NBSP}%"
+
+
+def de_pp(value: float, digits: int = 1) -> str:
+    """Differenz zweier Prozentwerte, als Prozent-PUNKTE -- bewusst NICHT
+    "%" als Einheit (evaluation.index_vergleich["differenz"]): "%" waere
+    hier mehrdeutig (Differenz von Prozentwerten ist selbst kein Prozentsatz
+    einer Grundgesamtheit)."""
+    sign = "+" if value > 0 else ""
+    return f"{sign}{de_num(value * 100, digits)}{NBSP}Pp"
 
 
 def e(text: object) -> str:
@@ -1034,6 +1052,33 @@ def _eval_bar(counts: dict[str, int]) -> str:
     )
 
 
+def _eval_index_vergleich(evaluation: dict) -> str:
+    """Zusatz-Zeile: Top-5 (gleichgewichtet) vs. Marktindex im selben
+    Fenster (siehe evaluation.py, index_vergleich). Fail-soft sichtbar wie
+    beim Trend-Kriterium: fehlt der Index-Endwert -- oder handelt es sich
+    um einen aelteren Rueckblick ohne dieses Feld (schema 1, vor dieser
+    Aenderung) -- steht das ausdruecklich da, statt zu raten oder still
+    wegzulassen. Bewusst kein "outperformed"/"underperformed"-Vokabular
+    (siehe EVALUATION_HINWEIS): nur die drei Zahlen, keine Bewertung."""
+    iv = evaluation.get("index_vergleich") or {}
+    if iv.get("veraenderung") is None:
+        return (
+            '<p class="eval-index eval-index--leer">Index-Vergleich nicht '
+            "verfügbar (Datenlücke).</p>"
+        )
+    top5 = (
+        de_pct(iv["top5_veraenderung"], 1)
+        if iv.get("top5_veraenderung") is not None
+        else "—"
+    )
+    differenz = de_pp(iv["differenz"]) if iv.get("differenz") is not None else "—"
+    return (
+        f'<p class="eval-index">Top-5 (gleichgewichtet): {top5} · '
+        f'Index ({e(iv["index_name"])}): {de_pct(iv["veraenderung"], 1)} · '
+        f"Differenz: {differenz}</p>"
+    )
+
+
 def _eval_monat_liste(evaluation: dict, market: Market) -> str:
     """Kein <table>: bei sehr langen Firmennamen oder grosser Textgroesse
     (siehe tests/design, 390px/20px) muss jede Zeile umbrechen koennen,
@@ -1063,6 +1108,7 @@ def _eval_monat_liste(evaluation: dict, market: Market) -> str:
     return f"""<div class="eval-monat">
   <h4><span class="flag" aria-hidden="true">{e(market.flag)}</span>
     {e(market.name)} — {e(de_monat(evaluation["ausgewerteter_monat"]))}</h4>
+  {_eval_index_vergleich(evaluation)}
   <ul class="eval-titelliste">
 {chr(10).join(zeilen)}
   </ul>
