@@ -4,6 +4,15 @@ name: Momentum-Lauf
 # NYSE 22:00 MEZ / 21:00 MESZ ... deshalb bewusst spaet). Der Lauf erkennt
 # selbst, ob heute der letzte Handelstag des Monats war, und bildet dann
 # das neue Ranking; an allen anderen Tagen werden nur Kurse aktualisiert.
+#
+# Ein manueller "Neu berechnen"-Dispatch (workflow_dispatch unten) kann
+# diesen Zeitpunkt umgehen. Trifft ein solcher Dispatch auf den letzten
+# Werktag des Monats, BEVOR der jeweilige Markt plausibel geschlossen haben
+# kann, haelt run.zu_frueh_fuer_stichtag() das Einfrieren fuer DIESEN
+# einen Markt still zurueck (kein Alarm, kein Abbruch fuer den anderen
+# Markt) -- der naechste Lauf versucht es erneut. Realer Anlass: Lauf 48,
+# 31.08.2026 08:46 UTC, DE-Kurs nachweislich untertaegig eingefroren
+# (siehe SESSION_HANDOVER.md).
 on:
   schedule:
     - cron: "45 21 * * 1-5"

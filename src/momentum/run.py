@@ -11,6 +11,11 @@ Ablauf je Markt:
 Punkt 3/4 ist die technische Durchsetzung der Monats-Einfrierung: an einem
 gewoehnlichen Tag werden die Daten, die ein Ranking veraendern koennten,
 gar nicht erst beschafft.
+
+Zusaetzliche Haertung vor Punkt 3, nur am letzten Werktag des Monats: ein
+zu frueh ausgeloester Lauf (siehe ranking.zu_frueh_fuer_stichtag) haelt
+das Einfrieren fuer den betroffenen Markt still zurueck, statt einen
+untertaegigen Zwischenkurs als Monats-Stichtag einzufrieren.
 """
 
 from __future__ import annotations
@@ -63,6 +68,7 @@ from .ranking import (
     read_ranking,
     resolve_asof,
     write_ranking,
+    zu_frueh_fuer_stichtag,
 )
 from .meta import load_meta
 from .riskfree import IRX_TICKER, QUELLE_FEHLT, riskfree_12m
@@ -227,6 +233,11 @@ def process_market(
     bestand_oeffner=None,
     splits_oeffner=None,
     kursvergleich_aktiv: bool = True,
+    # `_dt.time.max` (23:59:59.999999) haelt die Haertung fuer jeden
+    # Aufrufer wirkungslos, der die Laufzeit nicht kennt oder sie bewusst
+    # nicht mitgibt (u. a. alle bestehenden Tests) -- nur main() gibt die
+    # ECHTE Uhrzeit weiter. Siehe zu_frueh_fuer_stichtag().
+    jetzt_utc: _dt.time = _dt.time.max,
 ) -> tuple[MarketView, dict | None, dict]:
     """Einen Markt verarbeiten. Gibt (Ansicht, neues Ranking oder None, Status)."""
     universe = load_universe(market.universe_file)
@@ -241,6 +252,26 @@ def process_market(
         "markt": market.key,
         "faellige_monate_offen": [f"{y:04d}-{m:02d}" for y, m in needed],
     }
+
+    # Haertung gegen einen zu frueh ausgeloesten Lauf am letzten Werktag des
+    # Monats (siehe zu_frueh_fuer_stichtag): NUR der LAUFENDE Monat kann
+    # betroffen sein -- ein nachgeholter, aelterer Monat ist immer schon
+    # abgeschlossen und braucht diese Pruefung nicht. Der Monat bleibt in
+    # diesem Fall einfach weiter faellig; der naechste Lauf versucht es
+    # erneut (dasselbe Muster wie bei jedem anderen RankingNotPossible-
+    # Grund -- nur eben still, ohne Alarm, weil kein echter Fehler
+    # vorliegt, sondern nur eine planmaessig zu frueh gekommene Anfrage).
+    aktueller_monat = (today.year, today.month)
+    if aktueller_monat in needed and zu_frueh_fuer_stichtag(market, jetzt_utc):
+        log(
+            f"[{market.key}] Stichtag {today} zurueckgehalten: Lauf um "
+            f"{jetzt_utc.strftime('%H:%M')} UTC liegt vor "
+            f"{market.stichtag_lauf_nicht_vor_utc.strftime('%H:%M')} UTC -- "
+            f"ein jetzt eingefrorener Kurs waere untertaegig, kein "
+            f"Endkurs. Naechster Lauf versucht {today} erneut."
+        )
+        status["stichtag_zurueckgehalten"] = True
+        needed = [m for m in needed if m != aktueller_monat]
 
     new_ranking: dict | None = None
 
@@ -503,6 +534,13 @@ def main(
     parser = argparse.ArgumentParser(description="Momentum-Report Lauf")
     parser.add_argument("--today", help="Laufdatum JJJJ-MM-TT (nur fuer Tests)")
     parser.add_argument(
+        "--jetzt-utc",
+        help=(
+            "Laufzeit HH:MM UTC (nur fuer Tests). Ohne diese Angabe gilt "
+            "die echte aktuelle UTC-Uhrzeit -- siehe zu_frueh_fuer_stichtag()."
+        ),
+    )
+    parser.add_argument(
         "--no-push", action="store_true", help="Keinen ntfy-Push verschicken"
     )
     parser.add_argument(
@@ -522,7 +560,12 @@ def main(
     )
     args = parser.parse_args(argv)
     today = Date.fromisoformat(args.today) if args.today else Date.today()
-    log(f"Momentum-Report Lauf, Datum {today}")
+    jetzt_utc = (
+        _dt.datetime.strptime(args.jetzt_utc, "%H:%M").time()
+        if args.jetzt_utc
+        else _dt.datetime.now(_dt.timezone.utc).time()
+    )
+    log(f"Momentum-Report Lauf, Datum {today}, {jetzt_utc.strftime('%H:%M')} UTC")
 
     views: list[MarketView] = []
     new_rankings: list[dict] = []
@@ -536,6 +579,7 @@ def main(
             bestand_oeffner=bestand_oeffner,
             splits_oeffner=splits_oeffner,
             kursvergleich_aktiv=not args.ohne_kursvergleich,
+            jetzt_utc=jetzt_utc,
         )
         views.append(view)
         statuses.append(status)

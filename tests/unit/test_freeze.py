@@ -157,6 +157,96 @@ def test_naechster_stichtag_bildet_ein_neues_ranking(tmp_path):
     assert all(t["veraenderung"] == pytest.approx(0.1) for t in rueckblick["titel"])
 
 
+def test_regulaerer_abend_lauf_bildet_stichtag_trotz_haertung(tmp_path):
+    """Testfall (VORGEHEN 5, regulaerer Fall): eine explizit MITGEGEBENE,
+    plausibel-spaete Laufzeit (hier: der planmaessige 21:45-UTC-Lauf) muss
+    sich exakt wie vor der Haertung verhalten -- unveraendert."""
+    markt = _markt(tmp_path)
+    wurzel = tmp_path / "rankings"
+    daten = tmp_path / "data"
+    evaluation_wurzel = tmp_path / "evaluation"
+    process_market(
+        markt, STICHTAG, downloader=make_downloader(_daten()), ranking_root=wurzel,
+        data_root=daten, evaluation_root=evaluation_wurzel,
+        jetzt_utc=_dt.time(21, 45),
+    )
+
+    serien = _daten()
+    for ticker in ("AAA", "BBB", "CCC", "DDD", "EEE"):
+        serien[ticker][Date(2026, 8, 31)] = serien[ticker][Date(2026, 7, 31)] * 1.1
+    serien["^SP500TR"][Date(2026, 8, 31)] = 4300.0
+
+    view, neu, status = process_market(
+        markt,
+        Date(2026, 8, 31),
+        downloader=make_downloader(serien),
+        ranking_root=wurzel,
+        data_root=daten,
+        evaluation_root=evaluation_wurzel,
+        jetzt_utc=_dt.time(21, 45),
+    )
+    assert neu is not None, "nach Marktschluss muss der Stichtag ganz normal entstehen"
+    assert neu["stichtag"] == "2026-08-31"
+    assert "stichtag_zurueckgehalten" not in status
+
+
+def test_zu_frueher_lauf_haelt_den_stichtag_zurueck(tmp_path):
+    """Testfall (VORGEHEN 5, Haertungsfall) + Regressionsbeleg (VORGEHEN 6):
+    derselbe Aufbau wie oben, aber mit der Laufzeit des realen 31.08.-
+    Vorfalls (Lauf 48, 08:46 UTC, weit vor 21:00 UTC fuer die USA). Der
+    Monat darf NICHT eingefroren werden -- der Lauf faellt fuer diesen
+    Markt auf den normalen Anzeige-Lauf (altes Ranking, neue Kurse) zurueck,
+    genau wie an jedem gewoehnlichen Tag."""
+    markt = _markt(tmp_path)
+    wurzel = tmp_path / "rankings"
+    daten = tmp_path / "data"
+    evaluation_wurzel = tmp_path / "evaluation"
+    process_market(
+        markt, STICHTAG, downloader=make_downloader(_daten()), ranking_root=wurzel,
+        data_root=daten, evaluation_root=evaluation_wurzel,
+        jetzt_utc=_dt.time(21, 45),
+    )
+
+    serien = _daten()
+    for ticker in ("AAA", "BBB", "CCC", "DDD", "EEE"):
+        serien[ticker][Date(2026, 8, 31)] = serien[ticker][Date(2026, 7, 31)] * 1.1
+    serien["^SP500TR"][Date(2026, 8, 31)] = 4300.0
+
+    view, neu, status = process_market(
+        markt,
+        Date(2026, 8, 31),
+        downloader=make_downloader(serien),
+        ranking_root=wurzel,
+        data_root=daten,
+        evaluation_root=evaluation_wurzel,
+        jetzt_utc=_dt.time(8, 46),
+    )
+    assert neu is None, "ein untertaegiger Kurs darf nicht eingefroren werden"
+    assert status["stichtag_zurueckgehalten"] is True
+    assert not (wurzel / "us_2026-08.json").exists()
+    # Fallback: der Lauf zeigt weiterhin das alte (Juli-)Ranking, keinen Absturz.
+    assert view.ranking["stichtag"] == "2026-07-31"
+    assert (wurzel / "us_2026-07.json").exists(), "das alte Ranking bleibt erhalten"
+    assert not (evaluation_wurzel / "us_2026-07.json").exists(), (
+        "ohne neuen August-Stichtag darf auch kein Juli-Rueckblick entstehen"
+    )
+
+    # Naechster Lauf, diesmal rechtzeitig: der Monat wird ganz normal
+    # nachgeholt -- die Haertung blockiert nicht dauerhaft.
+    view2, neu2, status2 = process_market(
+        markt,
+        Date(2026, 8, 31),
+        downloader=make_downloader(serien),
+        ranking_root=wurzel,
+        data_root=daten,
+        evaluation_root=evaluation_wurzel,
+        jetzt_utc=_dt.time(21, 45),
+    )
+    assert neu2 is not None
+    assert neu2["stichtag"] == "2026-08-31"
+    assert "stichtag_zurueckgehalten" not in status2
+
+
 def test_bestehendes_ranking_wird_nie_ueberschrieben(tmp_path):
     ranking = {"markt": "us", "ranking_monat": "2026-07", "rangliste": []}
     write_ranking(ranking, tmp_path)

@@ -115,7 +115,7 @@ def test_neuer_treffer_loest_genau_einen_push_aus(welt, monkeypatch):
     verschickt = _push_aufzeichnen(monkeypatch)
 
     code = run_modul.main(
-        ["--today", STICHTAG.isoformat()],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
         downloader=downloader,
         elliott_oeffner=_elliott_opener(ELLIOTT_MIT_TREFFER_AUF_DDD),
     )
@@ -150,7 +150,7 @@ def test_derselbe_treffer_am_naechsten_tag_loest_nichts_erneut_aus(welt, monkeyp
 
     # Tag 1: der Treffer entsteht.
     run_modul.main(
-        ["--today", STICHTAG.isoformat()],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
         downloader=downloader,
         elliott_oeffner=_elliott_opener(ELLIOTT_MIT_TREFFER_AUF_DDD),
     )
@@ -172,7 +172,7 @@ def test_lauf_ohne_ueberschneidung_loest_keinen_push_aus(welt, monkeypatch):
     verschickt = _push_aufzeichnen(monkeypatch)
 
     code = run_modul.main(
-        ["--today", STICHTAG.isoformat()],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
         downloader=downloader,
         elliott_oeffner=_elliott_opener(ELLIOTT_OHNE_TREFFER),
     )
@@ -192,7 +192,7 @@ def test_nicht_erreichbarer_bericht_loescht_den_stand_nicht(welt, monkeypatch):
     verschickt = _push_aufzeichnen(monkeypatch)
 
     run_modul.main(
-        ["--today", STICHTAG.isoformat()],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
         downloader=downloader,
         elliott_oeffner=_elliott_opener(ELLIOTT_MIT_TREFFER_AUF_DDD),
     )
@@ -215,7 +215,7 @@ def test_no_push_schalter_unterdrueckt_auch_den_konfluenz_push(welt, monkeypatch
     verschickt = _push_aufzeichnen(monkeypatch)
 
     code = run_modul.main(
-        ["--today", STICHTAG.isoformat(), "--no-push"],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59", "--no-push"],
         downloader=downloader,
         elliott_oeffner=_elliott_opener(ELLIOTT_MIT_TREFFER_AUF_DDD),
     )
@@ -237,7 +237,7 @@ def test_historie_waechst_ueber_mehrere_laeufe_statt_zu_ueberschreiben(welt, mon
     _push_aufzeichnen(monkeypatch)
 
     run_modul.main(
-        ["--today", STICHTAG.isoformat()],
+        ["--today", STICHTAG.isoformat(), "--jetzt-utc", "23:59"],
         downloader=downloader,
         elliott_oeffner=_elliott_opener(ELLIOTT_MIT_TREFFER_AUF_DDD),
     )
