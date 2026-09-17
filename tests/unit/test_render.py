@@ -329,6 +329,47 @@ def test_handelbarkeits_filter_methodik_praezisiert_die_rangwirkung():
     assert "Das ist <strong>kein Signal</strong> und keine" not in html
 
 
+def test_alphabetischer_tie_breaker_wird_als_bedeutungslos_ausgewiesen():
+    """Praezisierung (externer Qualitaets-Check): der bereits bestehende
+    Hinweis auf den alphabetischen Gleichstandsbruch bekommt einen
+    expliziten Zusatz, dass das rein technisch ist -- keine inhaltliche
+    Bevorzugung frueh im Alphabet stehender Ticker."""
+    html = render_methodik()
+    assert "Bei exakt gleichem Wert entscheidet die alphabetische Reihenfolge" in html
+    assert "rein technischer Tie-Breaker ohne" in html
+    assert "kein Vorteil für früh im Alphabet stehende Ticker" in html
+
+
+def test_lead_absatz_stellt_score_als_eigene_konstruktion_dar():
+    """Praezisierung (externer Qualitaets-Check): die Bausteine sind
+    belegt, ihre Kombination zu GENAU DIESEM Score ist eine eigene
+    Konstruktion -- nicht selbst aus einer Studie entnommen. Die
+    Grundlage (wissenschaftlich fundierte Bausteine) darf dabei nicht
+    abgewertet werden."""
+    html = render_methodik()
+    assert "eigene Konstruktion" in html
+    assert "wissenschaftlich" in html and "fundierter Composite-Screener" in html
+    assert "keine selbst aus einer Studie übernommene" in html
+    # Die Bausteine selbst bleiben klar als belegt/geprueft ausgewiesen.
+    assert "stammen aus" in html and "veröffentlicht und geprüft" in html
+    # Die alte, ueberdehnte Formulierung ("EINE Vorschrift ... veroeffentlicht
+    # und geprueft") steht auf der Methodik-Seite nicht mehr.
+    assert "Vorschrift nach" not in html
+
+
+def test_52_wochen_hoch_karte_begruendet_bereinigte_kurse():
+    """Praezisierung (externer Qualitaets-Check): ein 52-Wochen-Hoch ist
+    konzeptionell ein reiner Preis-Anker, kein Rendite-Konzept -- die
+    Verwendung bereinigter Kurse ist hier eine bewusste Konsistenz-
+    Entscheidung (Total-Return-kompatible Replikation zum 12-1-Momentum),
+    keine unreflektierte Standardwahl. Muss explizit dastehen."""
+    html = render_methodik()
+    assert "reiner Preis-Anker, kein Rendite-Konzept" in html
+    assert "Konsistenz-Entscheidung" in html
+    assert "Total-Return-kompatiblen Kursreihe" in html
+    assert "würde ein Aktiensplit" in html
+
+
 def test_nirgends_steht_noch_ein_70_30():
     """Belegter Gegencheck ueber alles Ausgelieferte."""
     erzeugt = render_index([_view(warnung=False)], Date(2026, 8, 3)) + render_methodik()

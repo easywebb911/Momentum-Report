@@ -1198,11 +1198,14 @@ def render_methodik() -> str:
         _head("Methodik — Momentum-Report", "Jede Zutat mit Primaerquelle."),
         _header("Wie gerechnet wird — und was bewusst fehlt", zurueck=True),
         "<main>",
-        """<p class="lead">Dieses Werkzeug erfindet nichts. Es rechnet eine
-Vorschrift nach, die in wissenschaftlichen Aufsätzen veröffentlicht und
-geprüft wurde. Unten steht jede einzelne Zutat: was gerechnet wird, in
-einfacher Sprache, und woher sie stammt. Was hier keine Quelle hat, steht
-nicht im Score.</p>""",
+        """<p class="lead">Dieses Werkzeug erfindet nichts. Die beiden
+Zutaten — 12-1-Momentum und Nähe zum 52-Wochen-Hoch — stammen aus
+wissenschaftlichen Aufsätzen, veröffentlicht und geprüft. Ihre Kombination
+zu diesem Score ist dagegen eine eigene Konstruktion: ein wissenschaftlich
+fundierter Composite-Screener, keine selbst aus einer Studie übernommene
+Formel. Unten steht jede einzelne Zutat: was gerechnet wird, in einfacher
+Sprache, und woher sie stammt. Was hier keine Quelle hat, steht nicht im
+Score.</p>""",
         # Zuerst die Grenzen, dann die Rechnung: Wer wissen will, wie das
         # Werkzeug rechnet, soll vorher wissen, was es NICHT behauptet.
         "<h2>Ehrlich gesagt</h2>",
@@ -1235,7 +1238,14 @@ letzten Jahres?</p>
 <p>Das Ergebnis liegt zwischen 0 und 1; 100 % heißt: die Aktie steht genau
 auf ihrem Jahreshoch. Das Hoch wird aus <strong>Tages-Schlusskursen</strong>
 gebildet, nicht aus Intraday-Hochs — das ist die übliche Konvention beim
-Nachbilden dieser Arbeit.</p>""",
+Nachbilden dieser Arbeit.</p>
+<p>Auch hier wird mit <strong>bereinigten Kursen</strong> gerechnet — wie
+beim 12-1-Momentum. Zwingend ist das nicht: ein 52-Wochen-Hoch ist für sich
+genommen ein reiner Preis-Anker, kein Rendite-Konzept. Es ist eine bewusste
+Konsistenz-Entscheidung: beide Bausteine sollen auf derselben,
+Total-Return-kompatiblen Kursreihe rechnen. Sonst würde ein Aktiensplit
+diese Zutat verzerren, während das bereits bereinigte 12-1-Momentum davon
+unberührt bliebe.</p>""",
         ),
         _method_card(
             "So entsteht der Score von 0 bis 100",
@@ -1264,7 +1274,8 @@ Bei exakt gleichem Wert entscheidet die alphabetische Reihenfolge des Tickers;
 dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar. Bei
 Gleichgewichtung kommt das häufiger vor als vorher — zwei Titel mit
 spiegelbildlichen Teil-Rängen landen exakt gleichauf. Auch dann entscheidet
-allein das Alphabet, nie der Zufall.</p>""",
+allein das Alphabet, nie der Zufall — ein rein technischer Tie-Breaker ohne
+inhaltliche Bedeutung, kein Vorteil für früh im Alphabet stehende Ticker.</p>""",
         ),
         _method_card(
             "Warum nur fünf Titel — und was das kostet",
