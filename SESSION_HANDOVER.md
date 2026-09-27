@@ -1,8 +1,10 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 11.09.2026**, nach PR #49 (Reparatur-Agent Stufe 3, erste
-Ausbaustufe). Repo `easywebb911/Momentum-Report`, Branch `main` — den
-aktuellen Stand nennt `git log -1`, er steht hier bewusst nicht als Zahl.
+**Stand: 27.09.2026**, nach PR #57 (drei weitere Formulierungsschärfungen
+auf der Methodik-Seite). Nachgezogen: PRs #51–#57, die seit der letzten
+Pflege (PR #50, 11.09.) ungepflegt blieben. Repo
+`easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand nennt
+`git log -1`, er steht hier bewusst nicht als Zahl.
 
 Dieses Dokument ist der Übergabepunkt zwischen zwei Arbeits-Sitzungen. Es
 beantwortet drei Fragen: *Was läuft gerade?*, *Was ist offen?*, *Was darf
@@ -23,7 +25,13 @@ Dokument mit falschen Zahlen wird nicht mehr gelesen.
 11):** Dieses Dokument selbst braucht einen Anlass zum Nachziehen, nicht
 nur den nächsten Auftrag, der zufällig danach fragt — es stand vom
 16.08. bis zum 11.09.2026 (drei Wochen, zehn PRs, ein echter
-Betriebsvorfall) unverändert und kannte nichts davon.
+Betriebsvorfall) unverändert und kannte nichts davon. **Dasselbe Muster
+wiederholte sich sofort danach:** vom 11.09. bis zum 27.09.2026 (16 Tage,
+sieben weitere PRs, #51–#57) stand es erneut unverändert — Lesson 11
+beschreibt die Ursache, verhindert die Wiederholung aber nicht von
+selbst, weil kein Automatismus dagegen eingerichtet ist (dort so
+benannt). Diese Nachziehung ist damit selbst ein zweiter Beleg für
+Lesson 11, keine Widerlegung.
 
 ---
 
@@ -52,7 +60,7 @@ Betriebsvorfall) unverändert und kannte nichts davon.
 
 | Workflow | Auslöser | Datei |
 |---|---|---|
-| Momentum-Lauf | `45 21 * * 1-5` (werktags 21:45 UTC) + manuell | `lauf.yml` |
+| Momentum-Lauf | `45 21 * * 1-5` (werktags 21:45 UTC) + manuell | `lauf.yml` — ein manueller Dispatch am letzten Werktag des Monats vor Marktschluss hält das Einfrieren für den betroffenen Markt seit PR #53 still zurück (siehe §4 Punkt 2, §7.2) |
 | Datenquelle prüfen | `15 6 * * 1` (montags 06:15 UTC) + manuell | `datenquelle.yml` |
 | Vertragstest | `0 8 25-31 * *` + Wochentag-Riegel im Job + manuell | `vertrag.yml` — Job `vertrag` schweigt im Normalfall, ein Push mit allen Brüchen; seit PR #49 ein zweiter Job `agent-datumsformat` im selben Run (eigene, sonst nirgends vergebene Schreib-/PR-Rechte, siehe §2 #49) |
 | Wächter (Totmannschalter) | `30 7 * * 1` (montags 07:30 UTC) + manuell | `waechter.yml` — schweigt im Normalfall, Alarm-Push + roter Lauf ab > 4 Tagen Stille |
@@ -64,7 +72,17 @@ kein Ausfall, sondern der Fahrplan.
 
 ---
 
-## 2. Gemergte Arbeit (#1–#21, #40–#49 vollständig)
+## 2. Gemergte Arbeit (#1–#21, #40–#57 vollständig)
+
+**Kontext #51–#57 (nicht wiederholt, nur einmal hier vermerkt):** Easy
+ließ Mitte September einen externen Qualitäts-Check auf Repo und
+Methodik-Seite laufen. Dessen Befunde sind der Auslöser für #51 (Kurs-
+vergleich-Entkopplung), #52 (Zweitquellen-Doku), #54 (Kopfzeile),
+#56/#57 (Formulierungsschärfungen) und mittelbar für #55 (Benchmark-
+Vergleich, Top-5-Prozentzahl ohne Maßstab). #53 hat einen eigenen,
+unabhängigen Auslöser (Lauf 48, siehe §4 Punkt 2). Der volle Bericht
+lebt außerhalb dieses Repos und wird hier nicht reproduziert — jeder
+einzelne Befund steht stattdessen konkret im jeweiligen PR-Text.
 
 Alle Merge-Commits liegen auf `main`. Die Merge-Klasse steht ab #14 im
 PR-Titel; davor wurde sie je Auftrag im Chat vereinbart und ist im Repo
@@ -108,12 +126,20 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #47 | `353f7b9`→`ba99293` | 06.09. | Konfluenz-Historie-Sektion — alle je gesehenen Treffer, unterhalb der Top-5-Listen | MANUAL |
 | #48 | `1f1bd47`→`c9e5688` | 07.09. | Zwei rekonstruierte, klar gekennzeichnete Konfluenz-Nachträge (TKA.DE, SIE.DE) + neues Schema-Feld `quelle` | MANUAL |
 | #49 | `0f2702b`→`a2343cc` | 08.09. | Reparatur-Agent Stufe 3, erste Ausbaustufe — schmal auf Datumsformat-Drift bei iShares begrenzt | MANUAL |
+| #50 | `f24b868`→`932f73f` | 11.09. | SESSION_HANDOVER.md auf Stand nach PR #49 gebracht | SELF |
+| #51 | `610c033`→`2b648c3` | 11.09. | `series_roh`/Adj-Close-Kopplung entkoppelt — score-unabhängiger DE-Kursvergleichspfad härtend, Kausalität zum 31.08.-Vorfall weiterhin unbewiesen | SELF |
+| #52 | `cdf1d87`→`37cfcb2` | 11./12.09. | Kursvergleichs-Zweitquellen (Stufe 2a/2b) auf der Methodik-Seite ergänzt — schließt die in §4 Punkt 5/§7.5 selbst gemeldete Doku-Lücke | SELF |
+| #53 | `819e155`→`62223af` | 17.09. | Zu früh ausgelösten Lauf gegen untertägigen Monats-Stichtag gehärtet (realer Anlass: Lauf 48, 31.08., DE-Kurs untertägig eingefroren) | MANUAL |
+| #54 | `87a313c`→`72d301e` | 17.09. | Kopfzeile zeigt beide Stichtage, wenn US/DE tatsächlich abweichen (statt eines gemeinsamen `max()`-Datums) | SELF |
+| #55 | `4f7c96d`→`4c822dd` | 17.09. | Index-Benchmark-Vergleich auf der Evaluation-Seite (additives Schema 1→2, Juli-Eintrag bewusst nicht rückwirkend ergänzt) | MANUAL |
+| #56 | `cddef36`→`9538477` | 17.09. | Handelbarkeits-Filter-Text auf der Methodik-Seite präzisiert (Rangwirkung statt pauschalem „kein Signal") | SELF |
+| #57 | `fda07b0`→`4782de8` | 17.09. | Drei weitere Formulierungsschärfungen auf der Methodik-Seite (Tie-Breaking, Methoden-Anspruch, bereinigte Kurse beim 52W-Hoch) | SELF |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
-#40/#41/#42/#43/#44/#45 tragen keinen eigenen „Merge pull request"-Commit
-im linearen Verlauf (Squash bzw. Fast-Forward) — die Inhalts-Hashes sind
-über `gh`/die PR-Ansicht verifiziert, nicht geraten.
+#40/#41/#42/#43/#44/#45/#50/#51/#52/#54/#56 tragen keinen eigenen „Merge
+pull request"-Commit im linearen Verlauf (Squash bzw. Fast-Forward) — die
+Inhalts-Hashes sind über `gh`/die PR-Ansicht verifiziert, nicht geraten.
 
 ---
 
@@ -125,12 +151,14 @@ im linearen Verlauf (Squash bzw. Fast-Forward) — die Inhalts-Hashes sind
 | **25.–30.09.2026** | **Zweites Vertragstest-Fenster.** Erst jetzt gibt es eine ZWEITE Woche echter DE-Abweichungszahlen zum Vergleich mit dem ersten Fenster (25.–31.08.). | Siehe §4 Punkt 1 (DE-Toleranz) — eine einzelne Woche reicht nicht zur Kalibrierung, siehe dortige Begründung. |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **offen, keine Frist** | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
-| **offen, keine Frist** | **`series_roh`/`Adj Close`-Kopplung in `src/momentum/data.py` beheben — oder bewusst lassen?** Siehe §4 Punkt 4. Eine kleine, additive Entkopplung wäre möglich, wurde aber bisher nicht gebaut (nur diagnostiziert). | Kausalität zum 31.08.-Vorfall unbestätigt (siehe §4) — der Bau selbst wäre unabhängig davon vertretbar, aber ein eigener, von Easy anzustoßender Auftrag. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
 Stichtag selbst (samt Überschuss-Ampel-Realprobe), der erste Vergleich
 zweier Monats-Ranglisten (01.09., Top-5-Wechsel real beobachtet), sowie
-Hygiene-Backlog Punkt 1 (default-deny, #40).
+Hygiene-Backlog Punkt 1 (default-deny, #40). Ebenfalls erledigt: die
+`series_roh`/`Adj Close`-Kopplung in `src/momentum/data.py` (#51, siehe
+§4 Punkt 2) — die Kausalität zum 31.08.-Vorfall selbst bleibt dabei
+unbewiesen, das war nie Teil dieser Wiedervorlage.
 
 ---
 
@@ -171,15 +199,16 @@ Diagnose ergab zwei Befunde:
   Moduls `close` ausdrücklich als „von Yahoo vollständig unabhängig"
   beschreibt. Ein Tag, an dem `Adj Close` für praktisch alle DE-Titel
   gleichzeitig fehlschlägt, würde exakt das beobachtete Bild erzeugen.
-  **Code-bestätigt, nicht behoben.**
-- **Befund B, unbestätigt:** dass Befund A tatsächlich die Ursache des
-  31.08.-Vorfalls war. Das lässt sich nicht mehr beweisen — die
-  yfinance-Antwort von damals ist nicht reproduzierbar, ein heutiger
-  Abruf liefert den heutigen Stand.
-
-Eine Entkopplung (`close` unabhängig von `adj` prüfen) wäre eine kleine,
-additive Änderung, die den Score-Pfad (`adjusted`) nicht berührt — aber
-noch nicht gebaut, siehe §3.
+  **Code-bestätigt, seit PR #51 behoben:** die Prüfung `close_valid` wird
+  jetzt VOR und unabhängig von der Adj-Close-Prüfung ausgewertet;
+  `series_adj`/`series_turnover` (Score-Pfad) bleiben unverändert an die
+  adj-Prüfung gebunden.
+- **Befund B, unbestätigt und bleibt es dauerhaft:** dass Befund A
+  tatsächlich die Ursache des 31.08.-Vorfalls war. Das lässt sich nicht
+  mehr beweisen — die yfinance-Antwort von damals ist nicht
+  reproduzierbar, ein heutiger Abruf liefert den heutigen Stand. PR #51
+  ist deshalb eine eigenständige Härtung, keine bestätigte
+  Ursachenkorrektur (so auch im PR-Text festgehalten).
 
 **3. Reparatur-Agent Stufe 3 — erste Ausbaustufe gebaut, keine
 automatische Fortsetzung.** *(siehe §3, Easys Entscheid nötig)*
@@ -200,17 +229,6 @@ Reihe an einem künftigen Stichtag nicht, greift der laute Abbruch
 (`Keine Indexdaten … ohne Handelskalender kein Stichtag`), kein stiller
 Rückfall. Träte das ein, wäre die Frage: Kursindex als Notnagel (nein) oder
 Stichtag verschieben (ja).
-
-**5. §7.5 (Quellen, extern verifiziert) führt die Kursvergleich-Quellen
-(iShares-Kurs-Spalte, SXR8/IUSA) nicht auf.** *(gemeldet, nicht in
-dieser Nachziehung behoben)*
-
-Die Rubrik deckt bisher nur Universum, Indizes, Geldmarktsätze und
-Literatur ab — die beiden Kursvergleichs-Zweitquellen (Stufe 2a/2b, PRs
-#26/#35, längst gebaut und scharf) fehlen dort strukturell. Das ist eine
-eigene, kleine Doku-Ergänzung, absichtlich nicht Teil dieses Auftrags
-(der Auftrag nannte sie nicht) — hier nur gemeldet, damit sie nicht
-untergeht.
 
 ---
 
@@ -328,7 +346,7 @@ ab, wenn eine gewichtete Komponente keinen Beleg hat
 | **Anzahl (Vertauschungsschutz)** | DAX 38–42, MDAX 48–52, TecDAX 28–32 — überlappungsfrei | `tools/build_universe.py:183` (`ANZAHL_ERWARTET`) |
 | **Gesamtzahl je Markt** | US 495–510, DE 95–125 | `tools/build_universe.py:165` (`ERWARTET`) |
 | **Mindestabdeckung** | < 90 % verwertbare Kurse → kein Ranking, lauter Abbruch | `config.py:71` (`MIN_UNIVERSE_COVERAGE`) |
-| **Handelbarkeit** | Median-Tagesumsatz ≥ 5 Mio. über 3 Monate — **kein Signal**, nur Vorfilter | `config.py:46` |
+| **Handelbarkeit** | Median-Tagesumsatz ≥ 5 Mio. über 3 Monate — kein eigener Faktor im Score, verändert aber die Grundgesamtheit, aus der die Perzentil-Ränge gebildet werden (seit PR #56 so auf der Methodik-Seite präzisiert) | `config.py:46` |
 | **Kursvergleich DE/US** | ≤ 3 Abweichler über Toleranz, sonst Stichtag verweigert; < 80 % vergleichbar → „entfällt", kein Bruch | `src/momentum/kursvergleich.py` (`ZULASS_ABWEICHLER`, `MIN_VERGLEICHSQUOTE`), `kursvergleich_us.py` — siehe §4 Punkt 2 für den realen Fall |
 | **Einfrierung** | Eine geschriebene Ranking-Datei wird **nie** überschrieben | `ranking.write_ranking` |
 
@@ -392,8 +410,20 @@ Vergleich zweier verschiedener Dinge:
   Code und auf der Methodik-Seite. **Erste echte Produktionszahlen** siehe
   §1 (US +3,67 %, DE +1,98 %).
 
-*Kursvergleich-Zweitquellen (Stufe 2a/2b) fehlen hier noch als eigene
-Zeile — siehe §4 Punkt 5, gemeldet, nicht in dieser Nachziehung ergänzt.*
+**Kursvergleich-Zweitquellen** (Stufe 2a/2b — unabhängige Kontrolle,
+**kein Bestandteil des Scores**, siehe §7.2; seit PR #52 auch auf der
+Methodik-Seite erklärt — damit ist der zuvor an dieser Stelle selbst
+gemeldete Doku-Rückstand geschlossen, siehe §10):
+
+| Markt | Quelle | Toleranz | Zulass. Abweichler | Mindest-Vergleichsquote |
+|---|---|---|---|---|
+| DE | iShares-Bestandslisten, Spalte „Kurs" (BlackRock-Bewertungskurs; DAX/MDAX/TecDAX = EXS1/EXS3/EXS2) | 1,0 % | 3 | 80 % |
+| US | iShares S&P-500-UCITS-Bestandslisten, Spalte „Kurs" (SXR8 primär, IUSA als dokumentierter Ausweich) | 0,25 % | 3 | 80 % |
+
+Werte importiert aus `kursvergleich.py`/`kursvergleich_us.py` (`TOLERANZ`,
+`ZULASS_ABWEICHLER`, `MIN_VERGLEICHSQUOTE`) — sowohl hier als auch auf der
+Methodik-Seite, damit keine der beiden Stellen von den tatsächlichen
+Gattern abweichen kann.
 
 **Literatur** — vollständig in `src/momentum/sources.py`, wörtlich auf der
 Methodik-Seite: Jegadeesh & Titman (1993), Jegadeesh (1990), George & Hwang
@@ -405,9 +435,14 @@ Moskowitz (2016), Jegadeesh & Titman (2023), Fama & French (2012), Asness
 
 `Score 0–100 = 50 × Perzentil(12-1) + 50 × Perzentil(52W-Nähe)`,
 Perzentile **immer nur innerhalb eines Marktes**, Gleichstände deterministisch
-(höherer Score zuerst, dann Ticker A→Z). **50/50, weil die Literatur kein
-Mischverhältnis liefert** — jedes andere Verhältnis wäre eine unbelegte
-Setzung. Beide Teil-Ränge stehen sichtbar auf jeder Karte.
+(höherer Score zuerst, dann Ticker A→Z; seit PR #57 auf der Methodik-Seite
+explizit als rein technischer Tie-Breaker ohne inhaltliche Bedeutung
+ausgewiesen). Beide Teil-Ränge (Momentum-Rang X von N, 52W-Rang Y von N,
+N = `abdeckung.bewertet`) stehen sichtbar auf jeder Karte — unverändert
+seit #8, zuletzt gegen den realen VLO-Fall aus dem externen
+Qualitäts-Check (Mitte September, siehe §2) nachgerechnet: Score 97,9,
+Momentum-Rang 22/497, 52W-Rang 1/497, deckungsgleich mit
+`data/rankings/us_2026-08.json`.
 
 Die Trend-Ampel ist **reine Anzeige** und rührt Score, Perzentile und
 Rangfolge nie an — festgehalten in
@@ -459,6 +494,21 @@ Rangfolge nie an — festgehalten in
   bewusst kein „Erfolgsrate"/„Trefferquote"-Vokabular, nur Zähler und
   Kurse. Eigenes, additives Schema `data/evaluation/{markt}_{jjjj-mm}.json`,
   nie überschrieben, gleiches Einfrierungsprinzip wie `data/rankings/`.
+  Seit #55 zusätzlich, je Monat: Index-Benchmark-Vergleich (schema 1→2,
+  `index_vergleich`-Feld) — Top-5-Rendite (gleichgewichtetes Mittel)
+  neben Index-Rendite und Differenz in Prozentpunkten (`de_pp()`),
+  dieselbe `index_series` wie die Trend-Ampel, fail-soft bei Datenlücke
+  („Index-Vergleich nicht verfügbar"). Der bestehende Juli-Eintrag bleibt
+  bewusst auf schema 1 (kein rückwirkendes Nachtragen) — Begründung:
+  DE/Juli endet am 31.08.2026, demselben Tag mit dem untertägigen
+  Kursvorfall (siehe §4 Punkt 2), ein rückwirkender Indexwert desselben
+  Tages trüge denselben Makel.
+- **Kopfzeile bei abweichenden Markt-Stichtagen (seit #54):** zeigt bei
+  gleichem US-/DE-Stichtag weiterhin „Ranking vom {Datum}"; weichen beide
+  ab, „Ranking je Markt: USA {Datum} · Deutschland {Datum}" — Reihenfolge
+  immer US zuerst (deterministisch, nicht nach Datum). Ersetzt das alte,
+  über `max()` gebildete Einzeldatum, das den realen US/DE-Unterschied
+  (28.08./31.08.) verschleierte.
 - **Alles rendert aus `render.py`.** Sichtbar wird eine Änderung erst, wenn
   der nächste `Momentum-Lauf` `docs/index.html` neu erzeugt.
   `docs/index.html` wird **niemals** von Hand gelöscht und neu gebaut — dort
@@ -583,3 +633,10 @@ hier, damit niemand sie erneut aufmacht.
 | Neuberechnen-Sekundenanzeige entkoppelt | #45 | siehe §2, §7.7 |
 | Konfluenz-Push, -Historie, manuelle Nachträge mit `quelle`-Feld | #46/#47/#48 | siehe §1, §2, §7.7 |
 | Reparatur-Agent Stufe 3, erste Ausbaustufe | #49 | siehe §1, §2, §4 Punkt 3 |
+| `series_roh`/Adj-Close-Kopplung entkoppelt (DE-Kursvergleichspfad gehärtet, Kausalität zum 31.08.-Vorfall bleibt unbewiesen) | #51 | siehe §2, §4 Punkt 2 |
+| Kursvergleich-Zweitquellen (Stufe 2a/2b) auf der Methodik-Seite dokumentiert — vormals in §4 Punkt 5/§7.5 selbst gemeldeter Doku-Rückstand geschlossen | #52 | siehe §2, §7.5 |
+| Zu früh ausgelösten Lauf gegen untertägigen Monats-Stichtag gehärtet | #53 | siehe §1, §2, §4 Punkt 2 |
+| Kopfzeile zeigt beide Stichtage, wenn US/DE tatsächlich abweichen | #54 | siehe §2, §7.7 |
+| Index-Benchmark-Vergleich auf der Evaluation-Seite | #55 | siehe §2, §7.7 |
+| Handelbarkeits-Filter-Text auf der Methodik-Seite präzisiert (und §7.2-Zeile in diesem Dokument entsprechend korrigiert) | #56 | siehe §2, §7.2 |
+| Drei weitere Formulierungsschärfungen auf der Methodik-Seite (Tie-Breaking, Methoden-Anspruch, bereinigte Kurse beim 52W-Hoch) | #57 | siehe §2, §7.6 |
