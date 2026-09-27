@@ -407,6 +407,30 @@ def push_handover_pflege_faellig(text: str, **kwargs) -> bool:
     )
 
 
+def push_pr_verwaist(text: str, **kwargs) -> bool:
+    """Push (10): der PR-Verwaisungs-Waechter (siehe
+    pr_verwaisung_waechter.py) hat einen oder mehrere offene PRs gesehen,
+    die laenger als die Schwelle unangetastet liegen -- oder konnte das
+    nicht ermitteln.
+
+    LAUTLOS wie push_waechter_ok/push_handover_pflege_faellig, aus
+    demselben Grund: eine Erinnerung, kein Alarm. Das eigentliche Mergen/
+    Kommentieren bleibt Easys bewusste Entscheidung -- dieser Push
+    ersetzt nur das Erinnern daran.
+    """
+    return push(
+        "🕸️ PR-Verwaisungs-Wächter",
+        (
+            f"{text}\n\n"
+            "Diese Nachricht kommt lautlos. Das eigentliche Nachsehen/"
+            "Mergen bleibt Easys Entscheidung -- dieser Push ersetzt nur "
+            "das Erinnern daran."
+        ),
+        priority="min",
+        **kwargs,
+    )
+
+
 def push_vertrag_gebrochen(bericht: str, **kwargs) -> bool:
     """Push (5): mindestens eine Fremdquelle haelt ihre Form nicht mehr.
 

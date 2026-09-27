@@ -42,6 +42,10 @@ def test_es_gibt_die_erwarteten_workflows():
         # wenn SESSION_HANDOVER.md gegenueber dem PR-Stand zu weit
         # zurueckliegt, das kein Commit auf die Datei selbst melden kann.
         "handover_waechter.yml",
+        # Der PR-Verwaisungs-Waechter (siehe pr_verwaisung_waechter.py) --
+        # er meldet offene PRs, die laenger als die Schwelle unangetastet
+        # liegen, das kein PR selbst melden kann.
+        "pr_verwaisung_waechter.yml",
     }
 
 

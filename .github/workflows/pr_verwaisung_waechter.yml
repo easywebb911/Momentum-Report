@@ -1,0 +1,62 @@
+# PR-VERWAISUNGS-WAECHTER. Offene PRs -- insbesondere Manual-Merge-
+# Klasse, die auf Easys bewusste Entscheidung warten -- melden ihr
+# eigenes Liegenbleiben nie selbst. Dieser Workflow prueft woechentlich,
+# ob mindestens ein offener PR laenger als SCHWELLE_WERKTAGE Werktage
+# ohne neuen Commit, Kommentar oder Review liegt, und meldet das
+# lautlos (ntfy-Prioritaet "min").
+#
+# Bewusst ein EIGENER Workflow, getrennt von waechter.yml (Lauf) und
+# handover_waechter.yml (Doku): drittes Symptom, dritte Datenquelle
+# (offene PRs statt data/status.json bzw. SESSION_HANDOVER.md-Historie).
+#
+# HARTE GRENZE: dieser Workflow MELDET nur, er KOMMENTIERT, MERGT und
+# SCHLIESST NIE einen PR -- serverseitig erzwungen durch die Rechte
+# unten (nur `contents: read`, `pull-requests: read`, `issues: read` --
+# PR-Kommentare laufen ueber die Issues-API, deshalb die dritte
+# Berechtigung; kein `pr comment`/`pr merge`/`pr close` waere damit
+# bereits am Token abgelehnt) UND durch einen statischen Test
+# (tests/unit/test_pr_verwaisung_waechter.py), der den Quelltext von
+# pr_verwaisung_waechter.py auf jeden entsprechenden Aufruf durchsucht.
+name: PR-Verwaisungs-Wächter
+
+on:
+  schedule:
+    # Derselbe Zeitpunkt wie die beiden anderen Waechter (waechter.yml,
+    # handover_waechter.yml) -- gemeinsamer Rhythmus, keine neue Zeit
+    # eingefuehrt. Drei eigene, leichtgewichtige Workflows im selben
+    # Cron-Slot sind fuer GitHub Actions kein Konflikt (siehe
+    # handover_waechter.yml fuer dieselbe Begruendung).
+    - cron: "30 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+concurrency:
+  group: pr-verwaisung-waechter
+  cancel-in-progress: false
+
+jobs:
+  wache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: pr_verwaisung_waechter.py und notify.py sind
+      # reine Standardbibliothek. `gh` steht auf den GitHub-Runnern
+      # bereits vorinstalliert bereit.
+      - name: Offene PRs auf Verwaisung pruefen
+        run: python -m momentum.pr_verwaisung_waechter

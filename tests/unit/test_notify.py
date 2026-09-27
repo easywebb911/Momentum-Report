@@ -243,6 +243,11 @@ def test_kein_herzschlag_push_vorhanden():
         "push_konfluenz_treffer",
         "push_lauf_ueberfaellig",
         "push_new_ranking",
+        # Kein Herzschlag, aus demselben Grund wie push_handover_pflege_
+        # faellig direkt oben: Prioritaet min, UND kommt nur ab der
+        # Schwelle verwaister PRs oder bei technischem Fehlschlag, nie
+        # unbedingt bei jedem woechentlichen Lauf.
+        "push_pr_verwaist",
         "push_run_failed",
         "push_test",
         # Auch kein Herzschlag: der Vertragstest laeuft zwar nach
