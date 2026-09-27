@@ -226,6 +226,14 @@ def test_kein_herzschlag_push_vorhanden():
         # push_vertrag_gebrochen meldet), kommt also nie bei "alles ok".
         "push_agent_datumsformat_unklar",
         "push_data_conflict",
+        # Kein Herzschlag, aus demselben Grund wie push_waechter_ok
+        # weiter unten (Prioritaet min, siehe dort) -- UND zusaetzlich
+        # noch enger: sie kommt anders als push_waechter_ok nicht bei
+        # JEDEM woechentlichen Lauf des Doku-Waechters (handover_
+        # waechter.py), sondern ausschliesslich ab der Schwelle
+        # ungepflegter PRs oder bei einem technischen Fehlschlag der
+        # Ermittlung. Unter der Schwelle bleibt der Lauf komplett stumm.
+        "push_handover_pflege_faellig",
         # Auch kein Herzschlag: sie laeuft zwar bei JEDEM werktaeglichen
         # Lauf mit (siehe konfluenz.py), meldet sich aber ausschliesslich,
         # wenn sich die Konfluenz-Menge gegenueber dem letzten bekannten

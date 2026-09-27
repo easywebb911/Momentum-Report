@@ -38,6 +38,10 @@ def test_es_gibt_die_erwarteten_workflows():
         # Fenster vor dem Stichtag, ob die Fremdquellen noch ihre Form
         # halten.
         "vertrag.yml",
+        # Der Doku-Waechter (siehe handover_waechter.py) -- er meldet,
+        # wenn SESSION_HANDOVER.md gegenueber dem PR-Stand zu weit
+        # zurueckliegt, das kein Commit auf die Datei selbst melden kann.
+        "handover_waechter.yml",
     }
 
 

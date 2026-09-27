@@ -1,0 +1,68 @@
+# DOKU-WAECHTER. SESSION_HANDOVER.md meldet sein eigenes Zurueckliegen
+# nie selbst -- die Pflege braucht immer einen bewusst gewaehlten Anlass
+# (siehe SESSION_HANDOVER.md, Lesson 11 und ihre Wiederholung in der
+# Kopf-Notiz: sieben PRs, #51-#57, blieben diese Woche unbemerkt liegen).
+# Dieser Workflow zaehlt woechentlich, wie viele auf `main` gemergte PRs
+# seit dem letzten Commit auf SESSION_HANDOVER.md dazugekommen sind, und
+# meldet ab vier ungepflegten PRs -- lautlos, per ntfy-Prioritaet "min".
+#
+# Bewusst ein EIGENER Workflow, getrennt vom Lauf-Waechter (waechter.yml):
+# anderes Symptom, andere Datenquelle (GitHub-PR-Historie statt
+# data/status.json), keine Vermischung der beiden Zustaende.
+#
+# HARTE GRENZE: dieser Workflow MELDET nur, er SCHREIBT NIE in
+# SESSION_HANDOVER.md und OEFFNET KEINEN PR -- serverseitig erzwungen
+# durch die Rechte unten (nur `contents: read` und `pull-requests: read`;
+# ein `gh pr create` waere damit bereits am Token abgelehnt, nicht nur
+# durch Programmierdisziplin vermieden) UND durch einen statischen Test
+# (tests/unit/test_handover_waechter.py), der den Quelltext von
+# handover_waechter.py auf jeden Schreib- oder PR-Erzeugungs-Aufruf
+# durchsucht.
+name: Handover-Wächter
+
+on:
+  schedule:
+    # Derselbe Zeitpunkt wie der Lauf-Waechter (waechter.yml) --
+    # gemeinsamer Rhythmus, keine neue Zeit eingefuehrt. Zwei eigene,
+    # leichtgewichtige Workflows (kein pip install, wenige API-Aufrufe)
+    # im selben Cron-Slot sind fuer GitHub Actions kein Konflikt -- beide
+    # laufen als unabhaengige Jobs, es gibt kein gemeinsames Zeit- oder
+    # Rate-Limit-Budget, das sie sich teilen muessten.
+    - cron: "30 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: handover-waechter
+  cancel-in-progress: false
+
+jobs:
+  wache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+        with:
+          # Volle Historie noetig -- `git log` auf SESSION_HANDOVER.md
+          # braucht mehr als den flachen Standard-Klon, sonst waere jeder
+          # aeltere Handover-Commit unsichtbar.
+          fetch-depth: 0
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: handover_waechter.py und notify.py sind reine
+      # Standardbibliothek. `gh` steht auf den GitHub-Runnern bereits
+      # vorinstalliert bereit.
+      - name: Handover-Rueckstand pruefen
+        run: python -m momentum.handover_waechter
