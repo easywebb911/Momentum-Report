@@ -381,6 +381,32 @@ def push_waechter_ok(stand: str, **kwargs) -> bool:
     )
 
 
+def push_handover_pflege_faellig(text: str, **kwargs) -> bool:
+    """Push (9): der Doku-Waechter (siehe handover_waechter.py) hat gesehen,
+    dass SESSION_HANDOVER.md gegenueber dem PR-Stand zu weit zurueckliegt --
+    oder konnte das nicht ermitteln.
+
+    LAUTLOS wie push_waechter_ok, und aus demselben Grund: das ist eine
+    Erinnerung, kein Alarm. Die eigentliche Pflege bleibt ein bewusst
+    angestossener, geprüfter PR (siehe SESSION_HANDOVER.md selbst, §2/§10)
+    -- dieser Push ersetzt nur das Erinnern daran, nicht die Pruefung.
+    Ein klingelnder Push wuerde eine Dokumentations-Rueckstands-Meldung auf
+    dieselbe Stufe wie "der Lauf schreibt nicht mehr" stellen, und das ist
+    sie nicht.
+    """
+    return push(
+        "📋 Handover-Wächter",
+        (
+            f"{text}\n\n"
+            "Diese Nachricht kommt lautlos. Die eigentliche Pflege ist ein "
+            "eigener, geprüfter PR -- dieser Push ersetzt nur das Erinnern "
+            "daran."
+        ),
+        priority="min",
+        **kwargs,
+    )
+
+
 def push_vertrag_gebrochen(bericht: str, **kwargs) -> bool:
     """Push (5): mindestens eine Fremdquelle haelt ihre Form nicht mehr.
 
