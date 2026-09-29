@@ -65,6 +65,38 @@ open` liefert. Ein PR, der zwischenzeitlich per Draft/Ready-Wechsel
 oder Label beruehrt wurde, aber ohne Commit/Kommentar/Review, zaehlt
 weiterhin als unangetastet -- das ist so gewollt (ein Label-Wechsel ist
 kein inhaltlicher Fortschritt).
+
+ZWEI-SCHRITT-ABFRAGE (behoben nach echtem Fehlschlag, Actions-Run
+36446094919 am 28.09.2026, Zeitpunkt der Behebung): `gh pr list --json
+...,commits,...` bricht mit `GraphQL: ... requesting up to 1,000,000
+possible nodes which exceeds the maximum limit of 500,000` ab -- und
+zwar UNABHAENGIG von der tatsaechlichen PR-Zahl (bewiesen: der
+Fehlschlag trat auch bei null offenen PRs auf). Ursache: `Commit.
+authors` ist im GitHub-GraphQL-Schema selbst eine Connection (ein
+Commit kann mehrere Autoren haben), keine einfache Referenz. Die von
+`gh` intern gebaute Abfrage schaetzt die maximale Knotenzahl als
+PRODUKT der verschachtelten Seitengroessen (PRs x Commits je PR x
+Autoren je Commit) -- bei `--limit 200` weit ueber der 500.000-Grenze,
+egal wie viele PRs es wirklich gibt. `comments`/`reviews` loesen das
+NICHT aus: beide sind zwar auch Connections, ihre Autor-Unterfelder
+sind aber einfache Referenzen, keine weitere Connection (die
+Fehlermeldung nennt explizit "authors", nicht "comments"/"reviews").
+
+Deshalb jetzt zweistufig: Schritt 1 (`_offene_prs_ohne_commits`) holt
+ALLE offenen PRs in einem Rutsch, aber OHNE `commits` -- bleibt bei
+`number,title,createdAt,comments,reviews`, alles unproblematisch.
+Schritt 2 (`_commits_nachladen`) laedt die Commit-Liste JE OFFENEM PR
+EINZELN nach (`gh pr view <n> --json commits`), nur fuer die PRs, die
+Schritt 1 tatsaechlich liefert -- typischerweise 0-3, nie alle 200 auf
+einmal. Selbst im unguenstigsten Einzelfall (ein PR mit 250 Commits x
+100 Autoren = 25.000 Knoten) bleibt das weit unter der 500.000-Grenze.
+
+Rate-Limit-Ueberlegung (Kriterium 2, hier durchgerechnet statt
+angenommen): Schritt 2 braucht einen zusaetzlichen `gh`-Aufruf JE
+offenem PR. Selbst bei (fuer dieses Repo unrealistisch hohen) 50
+gleichzeitig offenen PRs waeren das 51 Aufrufe in einem Lauf -- gegen
+das REST-/GraphQL-Rate-Limit von 5.000 Anfragen/Stunde des
+GITHUB_TOKEN vernachlaessigbar. Kein Grund, vorsorglich zu bremsen.
 """
 
 from __future__ import annotations
@@ -131,18 +163,21 @@ def werktage_seit(letzter: Date, heute: Date) -> int:
     return werktage
 
 
-def offene_prs(
+def _offene_prs_ohne_commits(
     *, laeufer=subprocess.run, limit: int = PR_LISTEN_LIMIT
 ) -> tuple[list[dict] | None, str | None]:
-    """(rohe PR-Datensaetze aller offenen PRs, Fehlergrund). Genau einer
-    der beiden ist None."""
+    """Schritt 1: alle offenen PRs in einem Rutsch, OHNE `commits` --
+    dieses Feld allein loeste den echten GraphQL-Node-Limit-Fehlschlag
+    aus (siehe Modul-Docstring). `number,title,createdAt,comments,
+    reviews` sind ausschliesslich Skalare bzw. unproblematische
+    Connections und bleiben deshalb in der Sammel-Abfrage."""
     try:
         ergebnis = laeufer(
             [
                 "gh", "pr", "list",
                 "--state", "open",
                 "--limit", str(limit),
-                "--json", "number,title,createdAt,commits,comments,reviews",
+                "--json", "number,title,createdAt,comments,reviews",
             ],
             capture_output=True,
             text=True,
@@ -158,6 +193,55 @@ def offene_prs(
         return json.loads(ergebnis.stdout), None
     except json.JSONDecodeError as exc:
         return None, f"gh pr list lieferte kein gueltiges JSON ({exc})."
+
+
+def _commits_nachladen(
+    nummer: int, *, laeufer=subprocess.run
+) -> tuple[list[dict] | None, str | None]:
+    """Schritt 2: die Commit-Liste EINES einzelnen PR nachladen. Bei
+    genau einem PR pro Aufruf bleibt selbst der unguenstigste Fall (250
+    Commits x 100 Autoren = 25.000 Knoten) weit unter der 500.000-
+    Knoten-Grenze -- die Multiplikation mit der PR-Zahl aus der alten
+    Sammel-Abfrage entfaellt dadurch vollstaendig."""
+    try:
+        ergebnis = laeufer(
+            ["gh", "pr", "view", str(nummer), "--json", "commits"],
+            capture_output=True,
+            text=True,
+        )
+    except OSError as exc:
+        return None, f"gh liess sich nicht aufrufen ({type(exc).__name__}: {exc})."
+    if ergebnis.returncode != 0:
+        return None, (
+            f"gh pr view {nummer} endete mit rc={ergebnis.returncode}: "
+            f"{ergebnis.stderr.strip()}"
+        )
+    try:
+        daten = json.loads(ergebnis.stdout)
+    except json.JSONDecodeError as exc:
+        return None, f"gh pr view {nummer} lieferte kein gueltiges JSON ({exc})."
+    return daten.get("commits") or [], None
+
+
+def offene_prs(
+    *, laeufer=subprocess.run, limit: int = PR_LISTEN_LIMIT
+) -> tuple[list[dict] | None, str | None]:
+    """(rohe PR-Datensaetze aller offenen PRs, je PR bereits mit
+    nachgeladener `commits`-Liste, Fehlergrund). Genau einer der beiden
+    ist None.
+
+    Ruft Schritt 2 NUR fuer PRs auf, die Schritt 1 tatsaechlich liefert
+    -- bei null offenen PRs (der reale, bisher fehlschlagende Fall)
+    passiert also genau EIN `gh`-Aufruf, kein einziger mehr."""
+    prs, grund = _offene_prs_ohne_commits(laeufer=laeufer, limit=limit)
+    if grund is not None:
+        return None, grund
+    for pr in prs:
+        commits, grund = _commits_nachladen(pr["number"], laeufer=laeufer)
+        if grund is not None:
+            return None, grund
+        pr["commits"] = commits
+    return prs, None
 
 
 def verwaiste_prs(

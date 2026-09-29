@@ -17,6 +17,7 @@ Kernaussagen, die hier festgehalten werden:
 from __future__ import annotations
 
 import datetime as _dt
+import json
 import subprocess
 from pathlib import Path
 
@@ -25,6 +26,8 @@ import yaml
 
 from momentum.pr_verwaisung_waechter import (
     SCHWELLE_WERKTAGE,
+    _commits_nachladen,
+    _offene_prs_ohne_commits,
     letzter_kontakt,
     main,
     offene_prs,
@@ -121,33 +124,126 @@ def test_zwei_kalenderwochen_sind_zehn_werktage():
 
 
 # ------------------------------------------------------------ offene_prs
+#
+# Zweistufig seit der Behebung des echten GraphQL-Node-Limit-Fehlschlags
+# (Actions-Run 36446094919, 28.09.2026): Schritt 1 holt alle offenen PRs
+# OHNE `commits`, Schritt 2 laedt die Commit-Liste JE PR einzeln nach.
 
 
-def test_offene_prs_liest_die_erwarteten_felder():
+def _laeufer_fuer(bulk_ergebnis, commits_je_pr=None):
+    """Ein Fake-Laeufer, der `gh pr list` vom `gh pr view <n>` unterscheidet."""
+    commits_je_pr = commits_je_pr or {}
+
+    def laeufer(cmd, **kw):
+        if cmd[:3] == ["gh", "pr", "list"]:
+            return bulk_ergebnis
+        assert cmd[:3] == ["gh", "pr", "view"], cmd
+        nummer = int(cmd[3])
+        return commits_je_pr.get(nummer, _run(stdout='{"commits": []}'))
+
+    return laeufer
+
+
+def test_schritt_1_fragt_die_erwarteten_felder_ohne_commits():
     gesehen = []
 
     def laeufer(cmd, **kw):
         gesehen.append(cmd)
         return _run(stdout="[]")
 
-    offene, grund = offene_prs(laeufer=laeufer)
+    offene, grund = _offene_prs_ohne_commits(laeufer=laeufer)
     assert grund is None and offene == []
     assert gesehen == [[
         "gh", "pr", "list",
         "--state", "open",
         "--limit", "200",
-        "--json", "number,title,createdAt,commits,comments,reviews",
+        "--json", "number,title,createdAt,comments,reviews",
     ]]
+    # Der frueher problematische Feldname darf in Schritt 1 nicht mehr
+    # auftauchen -- das war die eigentliche Ursache des Fehlschlags.
+    assert "commits" not in gesehen[0][-1]
 
 
-def test_gh_fehlschlag_ist_ein_befund():
-    laeufer = lambda *a, **kw: _run(returncode=1, stderr="HTTP 403: rate limit exceeded")
+def test_schritt_2_fragt_commits_fuer_genau_einen_pr_ab():
+    gesehen = []
+
+    def laeufer(cmd, **kw):
+        gesehen.append(cmd)
+        return _run(stdout='{"commits": [{"committedDate": "2026-09-11T00:00:00Z"}]}')
+
+    commits, grund = _commits_nachladen(51, laeufer=laeufer)
+    assert grund is None
+    assert commits == [{"committedDate": "2026-09-11T00:00:00Z"}]
+    assert gesehen == [["gh", "pr", "view", "51", "--json", "commits"]]
+
+
+def test_bei_null_offenen_prs_passiert_nur_der_eine_bulk_aufruf():
+    """Nachweis (Kriterium 3): der reale, bisher fehlschlagende Fall --
+    null offene PRs -- braucht jetzt genau EINEN `gh`-Aufruf und laeuft
+    fehlerfrei durch. Kein `gh pr view` wird je aufgerufen, wenn
+    Schritt 1 keine PRs liefert."""
+    aufrufe = []
+
+    def laeufer(cmd, **kw):
+        aufrufe.append(cmd)
+        return _run(stdout="[]")
+
+    offene, grund = offene_prs(laeufer=laeufer)
+    assert grund is None
+    assert offene == []
+    assert len(aufrufe) == 1, "bei 0 offenen PRs darf kein zweiter Aufruf entstehen"
+    assert aufrufe[0][:3] == ["gh", "pr", "list"]
+
+
+def test_commits_werden_pro_pr_nachgeladen_und_zusammengefuehrt():
+    bulk = _run(stdout=json.dumps([
+        {"number": 51, "title": "a", "createdAt": "2026-09-01T00:00:00Z", "comments": [], "reviews": []},
+        {"number": 52, "title": "b", "createdAt": "2026-09-02T00:00:00Z", "comments": [], "reviews": []},
+    ]))
+    laeufer = _laeufer_fuer(bulk, {
+        51: _run(stdout='{"commits": [{"committedDate": "2026-09-10T00:00:00Z"}]}'),
+        52: _run(stdout='{"commits": [{"committedDate": "2026-09-15T00:00:00Z"}]}'),
+    })
+    offene, grund = offene_prs(laeufer=laeufer)
+    assert grund is None
+    assert offene[0]["commits"] == [{"committedDate": "2026-09-10T00:00:00Z"}]
+    assert offene[1]["commits"] == [{"committedDate": "2026-09-15T00:00:00Z"}]
+
+
+def test_ein_verwaister_pr_wird_ueber_die_nachgeladenen_commits_erkannt():
+    """Nachweis (Kriterium 3): mehrere offene PRs, davon einer alt genug
+    -- muss ueber den neuen Zwei-Schritt-Weg weiterhin zuverlaessig als
+    verwaist erkannt werden."""
+    bulk = _run(stdout=json.dumps([
+        {"number": 51, "title": "frisch", "createdAt": "2026-09-20T00:00:00Z", "comments": [], "reviews": []},
+        {"number": 40, "title": "alt", "createdAt": "2026-09-05T09:00:00Z", "comments": [], "reviews": []},
+    ]))
+    laeufer = _laeufer_fuer(bulk, {
+        51: _run(stdout='{"commits": [{"committedDate": "2026-09-20T00:00:00Z"}]}'),
+        # Zwei Kalenderwochen vor HEUTE (21.9.) -- 10 Werktage, verwaist.
+        40: _run(stdout='{"commits": [{"committedDate": "2026-09-07T09:00:00Z"}]}'),
+    })
+    offene, grund = offene_prs(laeufer=laeufer)
+    assert grund is None
+    verwaist, grund = verwaiste_prs(offene, HEUTE)
+    assert grund is None
+    assert [n for n, *_ in verwaist] == [40]
+
+
+def test_schritt_1_fehlschlag_ist_ein_befund_kein_schritt_2_folgt():
+    aufrufe = []
+
+    def laeufer(cmd, **kw):
+        aufrufe.append(cmd)
+        return _run(returncode=1, stderr="HTTP 403: rate limit exceeded")
+
     offene, grund = offene_prs(laeufer=laeufer)
     assert offene is None
     assert grund is not None and "rate limit" in grund
+    assert len(aufrufe) == 1, "nach einem Schritt-1-Fehlschlag darf kein gh pr view folgen"
 
 
-def test_kaputtes_json_ist_ein_befund():
+def test_kaputtes_json_in_schritt_1_ist_ein_befund():
     laeufer = lambda *a, **kw: _run(stdout="{nicht valide")
     offene, grund = offene_prs(laeufer=laeufer)
     assert offene is None and grund is not None
@@ -160,6 +256,21 @@ def test_gh_liess_sich_nicht_aufrufen_ist_ein_befund():
     offene, grund = offene_prs(laeufer=laeufer)
     assert offene is None
     assert grund is not None and "gh nicht gefunden" in grund
+
+
+def test_schritt_2_fehlschlag_wird_durchgereicht():
+    """Ein PR-view-Fehlschlag (z. B. der PR wurde zwischen Schritt 1 und
+    Schritt 2 geschlossen) ist genauso ein lauter Befund wie ein
+    Schritt-1-Fehlschlag -- kein stilles Ueberspringen."""
+    bulk = _run(stdout=json.dumps([
+        {"number": 51, "title": "a", "createdAt": "2026-09-01T00:00:00Z", "comments": [], "reviews": []},
+    ]))
+    laeufer = _laeufer_fuer(bulk, {
+        51: _run(returncode=1, stderr="HTTP 404: Not Found"),
+    })
+    offene, grund = offene_prs(laeufer=laeufer)
+    assert offene is None
+    assert grund is not None and "51" in grund and "404" in grund
 
 
 # -------------------------------------------------------- verwaiste_prs
