@@ -1,0 +1,59 @@
+{
+  "ausgewerteter_monat": "2026-08",
+  "end_stichtag": "2026-09-30",
+  "index_vergleich": {
+    "differenz": 0.01670589,
+    "end": 25199.1895,
+    "index_name": "DAX",
+    "index_ticker": "^GDAXI",
+    "start": 26258.1094,
+    "top5_veraenderung": -0.02362146,
+    "veraenderung": -0.04032735
+  },
+  "markt": "de",
+  "neutral_schwelle": 0.02,
+  "schema": 2,
+  "start_stichtag": "2026-08-31",
+  "titel": [
+    {
+      "klasse": "negativ",
+      "kurs_end": 70.9,
+      "kurs_start": 76.1,
+      "name": "DWS GROUP & GMBH CO KGAA",
+      "ticker": "DWS.DE",
+      "veraenderung": -0.06833112
+    },
+    {
+      "klasse": "neutral",
+      "kurs_end": 14.64,
+      "kurs_start": 14.545,
+      "name": "THYSSENKRUPP AG",
+      "ticker": "TKA.DE",
+      "veraenderung": 0.00653148
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 416.3,
+      "kurs_start": 452.8,
+      "name": "ALLIANZ",
+      "ticker": "ALV.DE",
+      "veraenderung": -0.08060957
+    },
+    {
+      "klasse": "neutral",
+      "kurs_end": 57.0,
+      "kurs_start": 56.42,
+      "name": "DEUTSCHE POST AG",
+      "ticker": "DHL.DE",
+      "veraenderung": 0.01028004
+    },
+    {
+      "klasse": "neutral",
+      "kurs_end": 59.3,
+      "kurs_start": 58.48,
+      "name": "RWE AG",
+      "ticker": "RWE.DE",
+      "veraenderung": 0.01402187
+    }
+  ]
+}

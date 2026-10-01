@@ -2,73 +2,73 @@
   "maerkte": {
     "de": {
       "name": "Deutschland",
-      "stichtag": "2026-08-31",
+      "stichtag": "2026-09-30",
       "top5": [
         {
           "rang": 1,
-          "score": 86.144578,
-          "stichtag": "2026-08-31",
-          "ticker": "DWS.DE"
+          "score": 89.506173,
+          "stichtag": "2026-09-30",
+          "ticker": "RWE.DE"
         },
         {
           "rang": 2,
-          "score": 85.542169,
-          "stichtag": "2026-08-31",
-          "ticker": "TKA.DE"
-        },
-        {
-          "rang": 3,
-          "score": 83.13253,
-          "stichtag": "2026-08-31",
-          "ticker": "ALV.DE"
-        },
-        {
-          "rang": 4,
-          "score": 83.13253,
-          "stichtag": "2026-08-31",
+          "score": 88.271605,
+          "stichtag": "2026-09-30",
           "ticker": "DHL.DE"
         },
         {
+          "rang": 3,
+          "score": 86.419753,
+          "stichtag": "2026-09-30",
+          "ticker": "EVK.DE"
+        },
+        {
+          "rang": 4,
+          "score": 85.802469,
+          "stichtag": "2026-09-30",
+          "ticker": "TKA.DE"
+        },
+        {
           "rang": 5,
-          "score": 82.53012,
-          "stichtag": "2026-08-31",
-          "ticker": "RWE.DE"
+          "score": 82.716049,
+          "stichtag": "2026-09-30",
+          "ticker": "JEN.DE"
         }
       ]
     },
     "us": {
       "name": "USA",
-      "stichtag": "2026-08-28",
+      "stichtag": "2026-09-30",
       "top5": [
         {
           "rang": 1,
-          "score": 97.883065,
-          "stichtag": "2026-08-28",
-          "ticker": "VLO"
+          "score": 98.084677,
+          "stichtag": "2026-09-30",
+          "ticker": "HPE"
         },
         {
           "rang": 2,
-          "score": 96.572581,
-          "stichtag": "2026-08-28",
-          "ticker": "MPC"
+          "score": 97.782258,
+          "stichtag": "2026-09-30",
+          "ticker": "FTNT"
         },
         {
           "rang": 3,
-          "score": 94.858871,
-          "stichtag": "2026-08-28",
-          "ticker": "PSX"
+          "score": 97.379032,
+          "stichtag": "2026-09-30",
+          "ticker": "PANW"
         },
         {
           "rang": 4,
-          "score": 94.556452,
-          "stichtag": "2026-08-28",
-          "ticker": "STT"
+          "score": 97.177419,
+          "stichtag": "2026-09-30",
+          "ticker": "CRWD"
         },
         {
           "rang": 5,
-          "score": 91.028226,
-          "stichtag": "2026-08-28",
-          "ticker": "BNY"
+          "score": 96.774194,
+          "stichtag": "2026-09-30",
+          "ticker": "AMD"
         }
       ]
     }

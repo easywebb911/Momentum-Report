@@ -1,0 +1,59 @@
+{
+  "ausgewerteter_monat": "2026-08",
+  "end_stichtag": "2026-09-30",
+  "index_vergleich": {
+    "differenz": 0.009027,
+    "end": 17160.4102,
+    "index_name": "S&P 500",
+    "index_ticker": "^SP500TR",
+    "start": 17276.4902,
+    "top5_veraenderung": 0.00230804,
+    "veraenderung": -0.00671896
+  },
+  "markt": "us",
+  "neutral_schwelle": 0.02,
+  "schema": 2,
+  "start_stichtag": "2026-08-28",
+  "titel": [
+    {
+      "klasse": "positiv",
+      "kurs_end": 387.61,
+      "kurs_start": 352.36,
+      "name": "Valero Energy",
+      "ticker": "VLO",
+      "veraenderung": 0.10003969
+    },
+    {
+      "klasse": "positiv",
+      "kurs_end": 395.42,
+      "kurs_start": 368.83,
+      "name": "Marathon Petroleum",
+      "ticker": "MPC",
+      "veraenderung": 0.07209287
+    },
+    {
+      "klasse": "positiv",
+      "kurs_end": 255.31,
+      "kurs_start": 244.01,
+      "name": "Phillips 66",
+      "ticker": "PSX",
+      "veraenderung": 0.04630957
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 174.59,
+      "kurs_start": 193.33,
+      "name": "State Street Corporation",
+      "ticker": "STT",
+      "veraenderung": -0.09693272
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 144.63,
+      "kurs_start": 162.5,
+      "name": "BNY Mellon",
+      "ticker": "BNY",
+      "veraenderung": -0.1099692
+    }
+  ]
+}
