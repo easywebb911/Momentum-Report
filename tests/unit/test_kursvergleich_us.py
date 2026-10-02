@@ -90,6 +90,52 @@ def keine_splits(_ticker: str) -> dict:
     return {}
 
 
+# IUSA fuehrt ueber den neuen BlackRock-Endpunkt (seit 02.10.2026, siehe
+# ishares.py-Kopfkommentar) eine zusaetzliche Spalte "Type" zwischen Name
+# und Sektor, die SXR8 nicht hat. Beleg statt Behauptung, dass das
+# unschaedlich ist: die Spaltensuche in parse_ishares_holdings() ist
+# namens-, nicht positionsbasiert (siehe feld() in ishares.py) -- eine
+# verschobene Spalte darf keine andere falsch zuordnen.
+KOPFZEILE_IUSA = (
+    "Ticker,Name,Type,Sektor,Anlageklasse,Marktwert,Gewichtung (%),"
+    "Nominalwert,Nominale,Kurs,Standort,Börse,Marktwährung"
+)
+
+
+def bestandsdatei_iusa_mit_type_spalte(
+    kurse: dict[str, float], *, stand: str = "31.Juli2026", waehrung: str = "USD",
+) -> str:
+    """Dieselbe Bestandsliste wie `bestandsdatei()`, aber mit der echten
+    IUSA-Kopfzeile (zusaetzliche Spalte "Type") und einem dazu passenden
+    Wert je Zeile -- sonst wuerde die kuenstliche Verschiebung nur die
+    Spaltenanzahl testen, nicht die Spaltensuche."""
+    zeilen = [KOPFZEILE_IUSA]
+    for ticker, kurs in kurse.items():
+        zeilen.append(
+            f"{ticker},{ticker} Inc,Common Stock,Information Technology,Equity,"
+            f"1234567.89,1.23,10000,10000,{kurs:.2f},USA,NASDAQ,{waehrung}"
+        )
+    return f'Fondsposition per,"{stand}"\n \n' + "\n".join(zeilen) + "\n"
+
+
+def test_die_zusaetzliche_type_spalte_bei_iusa_verschiebt_nichts():
+    befund_iusa = bu.parse_ishares_holdings(
+        bestandsdatei_iusa_mit_type_spalte(KURSE_AM_STICHTAG), "IUSA",
+        heute=Date(2026, 8, 3), erwartete_anzahl=(0, 1000),
+        ticker_uebersetzer=us_symbol_zu_yahoo,
+    )
+    befund_sxr8 = befund_aus(KURSE_AM_STICHTAG)
+    # Beide Dateien tragen dieselben Kunst-Titel -- nur die IUSA-Fassung mit
+    # der eingeschobenen Spalte. Kommen Ticker, Name, Sektor und Kurs trotz
+    # der Verschiebung identisch heraus, hat die Spaltensuche nicht
+    # danebengegriffen.
+    assert [k.ticker for k in befund_iusa.kandidaten] == [k.ticker for k in befund_sxr8.kandidaten]
+    assert [k.name for k in befund_iusa.kandidaten] == [k.ticker + " Inc" for k in befund_iusa.kandidaten]
+    assert {k.sektor for k in befund_iusa.kandidaten} == {"Information Technology"}
+    assert [k.kurs for k in befund_iusa.kandidaten] == [k.kurs for k in befund_sxr8.kandidaten]
+    assert [k.waehrung for k in befund_iusa.kandidaten] == ["USD"] * len(befund_iusa.kandidaten)
+
+
 # ==========================================================================
 # Stufe (a): durchgewinkt
 # ==========================================================================

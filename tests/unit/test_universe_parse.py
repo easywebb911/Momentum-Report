@@ -786,17 +786,26 @@ def test_die_drei_bestandsquellen_sind_vollstaendig_beschrieben():
     assert [q.index_name for q in bu.ISHARES_DE] == ["DAX", "MDAX", "TecDAX"]
     assert [q.xetra for q in bu.ISHARES_DE] == ["EXS1", "EXS3", "EXS2"]
     for quelle in bu.ISHARES_DE:
-        assert quelle.url.startswith("https://www.ishares.com/")
-        assert "fileType=csv" in quelle.url
+        # Seit 02.10.2026 (die alte ishares.com-Route lieferte seit mind.
+        # 25.09.2026 nur noch HTTP 404, siehe ishares.py-Kopfkommentar):
+        # BlackRock-Endpunkt, Produkt-ID als Query-Parameter statt
+        # Pfadsegment, "component=holdings" statt "fileType=csv".
+        assert quelle.url.startswith("https://www.blackrock.com/varnish-api/")
+        assert "component=holdings" in quelle.url
+        assert "asOfDate" not in quelle.url, (
+            "asOfDate bewusst weggelassen -- siehe Begruendung im Kopfkommentar"
+        )
         assert quelle.env_override.startswith("MOMENTUM_URL_")
 
 
 def test_die_extern_verifizierten_produkt_ids_stehen_drin():
-    """Am 02.08.2026 abgerufen und ausgezaehlt — nicht wieder verlieren."""
+    """Am 02.08.2026 abgerufen und ausgezaehlt, am 02.10.2026 ueber den neuen
+    Endpunkt erneut bestaetigt (Wegwerf-Workflow, Runner) — nicht wieder
+    verlieren."""
     ids = {q.index_name: q.url for q in bu.ISHARES_DE}
-    assert "/produkte/251464/" in ids["DAX"]
-    assert "/produkte/251845/" in ids["MDAX"]
-    assert "/produkte/251975/" in ids["TecDAX"]
+    assert "portfolioId=251464" in ids["DAX"]
+    assert "portfolioId=251845" in ids["MDAX"]
+    assert "portfolioId=251975" in ids["TecDAX"]
 
 
 def test_nur_die_tecdax_isin_gilt_als_belegt():
