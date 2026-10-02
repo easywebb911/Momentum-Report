@@ -46,6 +46,12 @@ def test_es_gibt_die_erwarteten_workflows():
         # er meldet offene PRs, die laenger als die Schwelle unangetastet
         # liegen, das kein PR selbst melden kann.
         "pr_verwaisung_waechter.yml",
+        # WEGWERF, bewusst befristet: prueft die neue blackrock.com-URL
+        # fuer die iShares-Bestandslisten vom Runner aus (ishares.com ist
+        # seit mind. 25.09.2026 tot). Schreibt nichts, nur workflow_dispatch.
+        # Wird nach Auswertung durch einen eigenen Rueckbau-PR wieder
+        # entfernt -- dann auch hier wieder raus.
+        "probe_ishares_neu.yml",
     }
 
 
