@@ -1,50 +1,30 @@
 {
-  "lauf_datum": "2026-10-01",
+  "lauf_datum": "2026-10-02",
   "maerkte": [
     {
       "daten": {
-        "angefragt": 503,
+        "angefragt": 5,
         "fehlgeschlagene_bloecke": [],
-        "geliefert": 503,
+        "geliefert": 5,
         "ticker_ohne_daten": [],
-        "zeilen_gesamt": 159451,
-        "zeilen_verworfen_nicht_endlich": 1501
+        "zeilen_gesamt": 50,
+        "zeilen_verworfen_nicht_endlich": 5
       },
-      "faellige_monate_offen": [
-        "2026-09"
-      ],
-      "kurse_vom": "2026-10-01",
-      "kursvergleich": {
-        "abweichler": [],
-        "fonds": "",
-        "grund": "Bestandsliste unbrauchbar — SXR8 UND IUSA unbrauchbar — SXR8: SXR8: Bestandsliste nicht abrufbar (HTTP Error 404: Not Found).\nURL: https://www.ishares.com/de/privatanleger/de/produkte/253743/ishares-sp-500-b-ucits-etf-acc-fund/1478358465952.ajax?fileType=csv&fileName=SXR8_holdings&dataType=fund\nSo kommt man an die richtige: ishares.com -> Deutschland/Privatanleger -> Fonds SXR8 suchen -> Abschnitt 'Positionen' -> Link 'Positionen und Analysen herunterladen' (CSV). Diesen Link dem Workflow als Eingabefeld mitgeben (url_dax / url_mdax / url_tecdax) oder in tools/build_universe.py eintragen. Es wurde NICHTS geschrieben. | IUSA: IUSA: Bestandsliste nicht abrufbar (HTTP Error 404: Not Found).\nURL: https://www.ishares.com/de/privatanleger/de/produkte/251900/ishares-sp-500-ucits-etf-inc-fund/1478358465952.ajax?fileType=csv&fileName=IUSA_holdings&dataType=fund\nSo kommt man an die richtige: ishares.com -> Deutschland/Privatanleger -> Fonds IUSA suchen -> Abschnitt 'Positionen' -> Link 'Positionen und Analysen herunterladen' (CSV). Diesen Link dem Workflow als Eingabefeld mitgeben (url_dax / url_mdax / url_tecdax) oder in tools/build_universe.py eintragen. Es wurde NICHTS geschrieben.",
-        "split_erkannt": [],
-        "stichtag": null,
-        "verdikt": "entfallen",
-        "verglichen": 0
-      },
+      "faellige_monate_offen": [],
+      "kurse_vom": "2026-09-30",
       "markt": "us"
     },
     {
       "daten": {
-        "angefragt": 102,
+        "angefragt": 5,
         "fehlgeschlagene_bloecke": [],
-        "geliefert": 102,
+        "geliefert": 5,
         "ticker_ohne_daten": [],
-        "zeilen_gesamt": 32742,
-        "zeilen_verworfen_nicht_endlich": 287
+        "zeilen_gesamt": 50,
+        "zeilen_verworfen_nicht_endlich": 5
       },
-      "faellige_monate_offen": [
-        "2026-09"
-      ],
-      "kurse_vom": "2026-10-01",
-      "kursvergleich": {
-        "abweichler": [],
-        "grund": "Bestandsliste unbrauchbar — DAX: Bestandsliste nicht abrufbar (HTTP Error 404: Not Found).\nURL: https://www.ishares.com/de/privatanleger/de/produkte/251464/ishares-dax-ucits-etf-de-fund/1478358465952.ajax?fileType=csv&fileName=EXS1_holdings&dataType=fund\nSo kommt man an die richtige: ishares.com -> Deutschland/Privatanleger -> Fonds EXS1 suchen -> Abschnitt 'Positionen' -> Link 'Positionen und Analysen herunterladen' (CSV). Diesen Link dem Workflow als Eingabefeld mitgeben (url_dax / url_mdax / url_tecdax) oder in tools/build_universe.py eintragen. Es wurde NICHTS geschrieben.",
-        "stichtag": null,
-        "verdikt": "entfallen",
-        "verglichen": 0
-      },
+      "faellige_monate_offen": [],
+      "kurse_vom": "2026-09-30",
       "markt": "de"
     }
   ]
