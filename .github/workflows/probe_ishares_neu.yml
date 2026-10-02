@@ -1,0 +1,133 @@
+name: Probe neue iShares-URL (Wegwerf)
+
+# WEGWERF-WORKFLOW. Prueft nur, ob die von Easy im Browser gefundene
+# blackrock.com-URL fuer die iShares-Bestandslisten vom GitHub-Actions-
+# Runner aus ebenfalls erreichbar ist (Codes Sandbox blockt ishares.com
+# UND blackrock.com nachweislich -- der Runner hier koennte anders
+# angebunden sein). SCHREIBT NICHTS: kein Commit, kein Push, kein PR.
+# Das Protokoll dieses Laufs IST das Ergebnis. Nach Auswertung wird diese
+# Datei in einem eigenen Rueckbau-PR wieder entfernt -- sie hat keine
+# Daseinsberechtigung ueber diese eine Probe hinaus.
+#
+# BEWUSST NUR per Tap ausloesbar (workflow_dispatch, kein schedule):
+# das ist eine einmalige Erkundung, kein wiederkehrender Dienst.
+#
+# Jeder der sieben Abrufe steht in einem eigenen Schritt mit
+# `continue-on-error: true` und `set +e` im Skript selbst -- ein
+# Fehlschlag (Timeout, 403, 404, ...) bei einer URL darf die
+# Protokollierung der anderen sechs nicht verhindern. Der Lauf endet
+# deshalb immer gruen; die eigentliche Erkenntnis steht im Log je
+# Schritt, nicht im Lauf-Ergebnis.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: "1/7 DAX (portfolioId=251464, asOfDate=20260930) -- bereits im Browser verifiziert, hier zur Gegenkontrolle"
+        continue-on-error: true
+        run: |
+          set +e
+          rm -f /tmp/kopf.txt /tmp/rumpf.txt
+          url="https://www.blackrock.com/varnish-api/uk-retail01-product-data/product-data/api/v1/get-fund-document?appType=PRODUCT_PAGE&appSubType=ISHARES&targetSite=de-ishares-v2&locale=de_DE&userType=individual&component=holdings&portfolioId=251464&asOfDate=20260930"
+          echo "URL: $url"
+          curl -sS -D /tmp/kopf.txt -o /tmp/rumpf.txt -w "HTTP-Status: %{http_code}\n" --max-time 30 "$url"
+          echo "--- Content-Type ---"
+          grep -i '^content-type' /tmp/kopf.txt || echo "(kein Content-Type-Header)"
+          echo "--- erste 3 Zeilen der Antwort ---"
+          if [ -f /tmp/rumpf.txt ]; then head -n 3 /tmp/rumpf.txt; else echo "(keine Antwort empfangen -- Verbindung ist vermutlich gar nicht erst zustande gekommen)"; fi
+          echo "(Abruf abgeschlossen, Fehlschlag aendert nichts am Lauf-Ergebnis)"
+
+      - name: "2/7 MDAX (portfolioId=251845, asOfDate=20260930)"
+        continue-on-error: true
+        run: |
+          set +e
+          rm -f /tmp/kopf.txt /tmp/rumpf.txt
+          url="https://www.blackrock.com/varnish-api/uk-retail01-product-data/product-data/api/v1/get-fund-document?appType=PRODUCT_PAGE&appSubType=ISHARES&targetSite=de-ishares-v2&locale=de_DE&userType=individual&component=holdings&portfolioId=251845&asOfDate=20260930"
+          echo "URL: $url"
+          curl -sS -D /tmp/kopf.txt -o /tmp/rumpf.txt -w "HTTP-Status: %{http_code}\n" --max-time 30 "$url"
+          echo "--- Content-Type ---"
+          grep -i '^content-type' /tmp/kopf.txt || echo "(kein Content-Type-Header)"
+          echo "--- erste 3 Zeilen der Antwort ---"
+          if [ -f /tmp/rumpf.txt ]; then head -n 3 /tmp/rumpf.txt; else echo "(keine Antwort empfangen -- Verbindung ist vermutlich gar nicht erst zustande gekommen)"; fi
+          echo "(Abruf abgeschlossen, Fehlschlag aendert nichts am Lauf-Ergebnis)"
+
+      - name: "3/7 TecDAX (portfolioId=251975, asOfDate=20260930)"
+        continue-on-error: true
+        run: |
+          set +e
+          rm -f /tmp/kopf.txt /tmp/rumpf.txt
+          url="https://www.blackrock.com/varnish-api/uk-retail01-product-data/product-data/api/v1/get-fund-document?appType=PRODUCT_PAGE&appSubType=ISHARES&targetSite=de-ishares-v2&locale=de_DE&userType=individual&component=holdings&portfolioId=251975&asOfDate=20260930"
+          echo "URL: $url"
+          curl -sS -D /tmp/kopf.txt -o /tmp/rumpf.txt -w "HTTP-Status: %{http_code}\n" --max-time 30 "$url"
+          echo "--- Content-Type ---"
+          grep -i '^content-type' /tmp/kopf.txt || echo "(kein Content-Type-Header)"
+          echo "--- erste 3 Zeilen der Antwort ---"
+          if [ -f /tmp/rumpf.txt ]; then head -n 3 /tmp/rumpf.txt; else echo "(keine Antwort empfangen -- Verbindung ist vermutlich gar nicht erst zustande gekommen)"; fi
+          echo "(Abruf abgeschlossen, Fehlschlag aendert nichts am Lauf-Ergebnis)"
+
+      - name: "4/7 SXR8 (portfolioId=253743, asOfDate=20260930)"
+        continue-on-error: true
+        run: |
+          set +e
+          rm -f /tmp/kopf.txt /tmp/rumpf.txt
+          url="https://www.blackrock.com/varnish-api/uk-retail01-product-data/product-data/api/v1/get-fund-document?appType=PRODUCT_PAGE&appSubType=ISHARES&targetSite=de-ishares-v2&locale=de_DE&userType=individual&component=holdings&portfolioId=253743&asOfDate=20260930"
+          echo "URL: $url"
+          curl -sS -D /tmp/kopf.txt -o /tmp/rumpf.txt -w "HTTP-Status: %{http_code}\n" --max-time 30 "$url"
+          echo "--- Content-Type ---"
+          grep -i '^content-type' /tmp/kopf.txt || echo "(kein Content-Type-Header)"
+          echo "--- erste 3 Zeilen der Antwort ---"
+          if [ -f /tmp/rumpf.txt ]; then head -n 3 /tmp/rumpf.txt; else echo "(keine Antwort empfangen -- Verbindung ist vermutlich gar nicht erst zustande gekommen)"; fi
+          echo "(Abruf abgeschlossen, Fehlschlag aendert nichts am Lauf-Ergebnis)"
+
+      - name: "5/7 IUSA (portfolioId=251900, asOfDate=20260930)"
+        continue-on-error: true
+        run: |
+          set +e
+          rm -f /tmp/kopf.txt /tmp/rumpf.txt
+          url="https://www.blackrock.com/varnish-api/uk-retail01-product-data/product-data/api/v1/get-fund-document?appType=PRODUCT_PAGE&appSubType=ISHARES&targetSite=de-ishares-v2&locale=de_DE&userType=individual&component=holdings&portfolioId=251900&asOfDate=20260930"
+          echo "URL: $url"
+          curl -sS -D /tmp/kopf.txt -o /tmp/rumpf.txt -w "HTTP-Status: %{http_code}\n" --max-time 30 "$url"
+          echo "--- Content-Type ---"
+          grep -i '^content-type' /tmp/kopf.txt || echo "(kein Content-Type-Header)"
+          echo "--- erste 3 Zeilen der Antwort ---"
+          if [ -f /tmp/rumpf.txt ]; then head -n 3 /tmp/rumpf.txt; else echo "(keine Antwort empfangen -- Verbindung ist vermutlich gar nicht erst zustande gekommen)"; fi
+          echo "(Abruf abgeschlossen, Fehlschlag aendert nichts am Lauf-Ergebnis)"
+
+      - name: "6/7 DAX mit absichtlich falschem asOfDate=20200101 -- prueft, ob das Datum zwingend aktuell sein muss"
+        continue-on-error: true
+        run: |
+          set +e
+          rm -f /tmp/kopf.txt /tmp/rumpf.txt
+          url="https://www.blackrock.com/varnish-api/uk-retail01-product-data/product-data/api/v1/get-fund-document?appType=PRODUCT_PAGE&appSubType=ISHARES&targetSite=de-ishares-v2&locale=de_DE&userType=individual&component=holdings&portfolioId=251464&asOfDate=20200101"
+          echo "URL: $url"
+          curl -sS -D /tmp/kopf.txt -o /tmp/rumpf.txt -w "HTTP-Status: %{http_code}\n" --max-time 30 "$url"
+          echo "--- Content-Type ---"
+          grep -i '^content-type' /tmp/kopf.txt || echo "(kein Content-Type-Header)"
+          echo "--- erste 3 Zeilen der Antwort ---"
+          if [ -f /tmp/rumpf.txt ]; then head -n 3 /tmp/rumpf.txt; else echo "(keine Antwort empfangen -- Verbindung ist vermutlich gar nicht erst zustande gekommen)"; fi
+          echo "(Abruf abgeschlossen, Fehlschlag aendert nichts am Lauf-Ergebnis)"
+
+      - name: "7/7 DAX komplett OHNE asOfDate-Parameter -- prueft, ob der Parameter ueberhaupt noetig ist"
+        continue-on-error: true
+        run: |
+          set +e
+          rm -f /tmp/kopf.txt /tmp/rumpf.txt
+          url="https://www.blackrock.com/varnish-api/uk-retail01-product-data/product-data/api/v1/get-fund-document?appType=PRODUCT_PAGE&appSubType=ISHARES&targetSite=de-ishares-v2&locale=de_DE&userType=individual&component=holdings&portfolioId=251464"
+          echo "URL: $url"
+          curl -sS -D /tmp/kopf.txt -o /tmp/rumpf.txt -w "HTTP-Status: %{http_code}\n" --max-time 30 "$url"
+          echo "--- Content-Type ---"
+          grep -i '^content-type' /tmp/kopf.txt || echo "(kein Content-Type-Header)"
+          echo "--- erste 3 Zeilen der Antwort ---"
+          if [ -f /tmp/rumpf.txt ]; then head -n 3 /tmp/rumpf.txt; else echo "(keine Antwort empfangen -- Verbindung ist vermutlich gar nicht erst zustande gekommen)"; fi
+          echo "(Abruf abgeschlossen, Fehlschlag aendert nichts am Lauf-Ergebnis)"
+
+      - name: Erinnerung an den Rueckbau
+        run: |
+          echo "::notice title=Wegwerf-Workflow::Diese Datei ist nach Auswertung des Logs in einem eigenen Rueckbau-PR wieder zu entfernen."
