@@ -41,33 +41,45 @@ USER_AGENT = (
 )
 
 # --------------------------------------------------------------------------
-# DIE DREI iSHARES-BESTANDSLISTEN — die einzige Stelle mit URLs.
+# DIE FUENF iSHARES-BESTANDSLISTEN — die einzige Stelle mit URLs.
 #
-# SO FINDET MAN DIE URL WIEDER (falls eine hier nicht mehr zieht):
+# ZWEITER ENDPUNKT SEIT 02.10.2026: Der fruehere Weg (ishares.com, Pfad
+# ".../produkte/{id}/{name}/1478358465952.ajax?fileType=csv&...") lieferte
+# seit mindestens 25.09.2026 fuer alle fuenf Quellen nur noch HTTP 404 --
+# vermutlich eine abgeschaltete Legacy-Route bei iShares, nie aufgeklaert.
+# Der Ersatz ist ein BlackRock-eigener API-Endpunkt, den die Produktseite
+# hinter dem Link "Fondspositionen und Kennzahlen" selbst aufruft.
+#
+# SO FINDET MAN DIE URL WIEDER (falls auch diese hier nicht mehr zieht):
 #   1. ishares.com aufrufen, Land Deutschland / Privatanleger
 #   2. den Fonds ueber seine Xetra-Kennung suchen (EXS1 / EXS3 / EXS2)
-#   3. auf der Produktseite ganz nach unten zum Abschnitt "Positionen"
-#      bzw. "Holdings"; dort steht der Link "Positionen und Analysen
-#      herunterladen" / "Detailed Holdings and Analytics" -> CSV
+#      bzw. ueber SXR8 / IUSA
+#   3. auf der Produktseite zum Abschnitt "Positionen"/"Holdings"; dort
+#      steht der Link "Fondspositionen und Kennzahlen" -- lange druecken
+#      (Safari: Kontextmenue "Link kopieren") oder die Downloads-Liste
+#      des Browsers nach dem Antippen pruefen, NICHT nur den Dateinamen
+#      lesen. Der Link zeigt auf www.blackrock.com, nicht auf ishares.com.
 #   4. diesen Link kopieren und hier eintragen ODER dem Workflow
 #      "Universum aktualisieren" als Eingabefeld mitgeben (url_dax,
 #      url_mdax, url_tecdax) -- dann ist keine Code-Aenderung noetig
 #
-# STAND DER PRUEFUNG (02.08.2026): Die drei PRODUKT-IDs unten sind extern
-# verifiziert -- die Dateien wurden abgerufen und ausgezaehlt: 251464 = DAX
-# (40 Aktien-Zeilen), 251845 = MDAX (50), 251975 = TecDAX (30), alle mit
-# Bestands-Stichtag 31. Juli 2026. Am 09.08.2026 hat der Vertragstest auf
-# dem Runner alle drei erneut gelesen (Stichtag 06.08.2026, 40/50/30
-# Aktien-Zeilen). Der Egress-Proxy der Bau-Sitzung blockt ishares.com,
-# hier konnte also nie etwas nachgeprueft werden.
+# STAND DER PRUEFUNG (02.10.2026): alle fuenf Produkt-IDs ueber den neuen
+# Endpunkt per Wegwerf-Workflow vom GitHub-Actions-Runner aus abgerufen --
+# HTTP 200, Content-Type text/csv, Spaltenstruktur passend zu SYMBOL_/
+# NAME_/SEKTOR_/KURS_/WAEHRUNG_SPALTEN unten, fuer alle fuenf gleichermassen
+# (IUSA mit einer zusaetzlichen Spalte "Type" zwischen Name und Sektor --
+# siehe test_kursvergleich_us.py, die Spaltensuche ist namens- nicht
+# positionsbasiert und bleibt davon unberuehrt).
 #
-# NICHT einzeln verifiziert ist der sprechende Namensteil im Pfad
-# ({schnipsel}); er dient der Lesbarkeit, geschluesselt wird ueber die
-# Produkt-ID. Zieht eine URL trotzdem nicht, bricht der Lauf LAUT ab und
-# nennt die Anleitung oben; der Ersatz-Link laesst sich dem Workflow als
-# Eingabefeld mitgeben, ohne den Code zu aendern.
+# `asOfDate` BEWUSST WEGGELASSEN: mit dem Parameter weggelassen liefert der
+# Endpunkt denselben aktuellen Stand wie mit dem korrekten heutigen Datum
+# (gegengeprueft); mit einem falschen/alten Datum bleibt die Antwort HTTP
+# 200, aber das Stichtagsfeld der Datei wird leer -- ein Risiko ohne
+# Gegenwert, waere der Parameter dynamisch statt weggelassen worden. Jeder
+# kuenftige Abruf bekommt so automatisch den jeweils aktuellen Stand, ohne
+# dass der Code wissen muss, welcher Tag das ist.
 #
-# Ebenfalls unverifiziert bleibt die Zuordnung Xetra-Kennung -> Fonds fuer
+# NICHT einzeln verifiziert bleibt die Zuordnung Xetra-Kennung -> Fonds fuer
 # EXS1 und EXS3 (aus Recherche). Belegt ist nur EXS2 = iShares TecDAX,
 # ISIN DE0005933972. Gegen eine vertauschte URL schuetzt deshalb das
 # ANZAHL-GATTER: die drei Indizes haben verschieden viele Mitglieder, und
@@ -75,8 +87,10 @@ USER_AGENT = (
 # --------------------------------------------------------------------------
 
 _ISHARES_DOWNLOAD = (
-    "https://www.ishares.com/de/privatanleger/de/produkte/{produkt}/{schnipsel}/"
-    "1478358465952.ajax?fileType=csv&fileName={datei}&dataType=fund"
+    "https://www.blackrock.com/varnish-api/uk-retail01-product-data/product-data/"
+    "api/v1/get-fund-document?appType=PRODUCT_PAGE&appSubType=ISHARES&"
+    "targetSite=de-ishares-v2&locale=de_DE&userType=individual&component=holdings&"
+    "portfolioId={produkt}"
 )
 
 
@@ -91,22 +105,20 @@ class Bestandsquelle:
 
 
 ISHARES_US: tuple[Bestandsquelle, ...] = (
-    # Beide ueber den DEUTSCHEN Endpunkt-Typ (1478358465952.ajax) -- der
-    # amerikanische Endpunkt liefert nur die Zustimmungs-Seite (siehe
-    # kursvergleich.py). SXR8 ist primaer, IUSA der dokumentierte Ausweich:
-    # beide bilden denselben Index ab und waren in der Wegwerf-Messung vom
-    # 09.-12.08.2026 auf 0,000 % untereinander einig. Verifiziert auf dem
-    # Runner der Wegwerf-Probe (#28): 504 Aktien-Zeilen, 494 Ticker, 494
-    # Kurse je Datei, Waehrung USD.
+    # Beide ueber denselben BlackRock-Endpunkt wie die DE-Quellen (siehe
+    # _ISHARES_DOWNLOAD oben) -- der eigentliche US-Endpunkt liefert nur
+    # die Zustimmungs-Seite (siehe kursvergleich.py). SXR8 ist primaer,
+    # IUSA der dokumentierte Ausweich: beide bilden denselben Index ab und
+    # waren in der Wegwerf-Messung vom 09.-12.08.2026 auf 0,000 %
+    # untereinander einig. Verifiziert auf dem Runner der Wegwerf-Probe
+    # (#28): 504 Aktien-Zeilen, 494 Ticker, 494 Kurse je Datei, Waehrung
+    # USD.
     Bestandsquelle(
         index_name="SXR8",
         xetra="SXR8",
         isin=None,
         isin_belegt=False,
-        url=_ISHARES_DOWNLOAD.format(
-            produkt="253743", schnipsel="ishares-sp-500-b-ucits-etf-acc-fund",
-            datei="SXR8_holdings",
-        ),
+        url=_ISHARES_DOWNLOAD.format(produkt="253743"),
         env_override="MOMENTUM_URL_SXR8",
     ),
     Bestandsquelle(
@@ -114,10 +126,7 @@ ISHARES_US: tuple[Bestandsquelle, ...] = (
         xetra="IUSA",
         isin=None,
         isin_belegt=False,
-        url=_ISHARES_DOWNLOAD.format(
-            produkt="251900", schnipsel="ishares-sp-500-ucits-etf-inc-fund",
-            datei="IUSA_holdings",
-        ),
+        url=_ISHARES_DOWNLOAD.format(produkt="251900"),
         env_override="MOMENTUM_URL_IUSA",
     ),
 )
@@ -136,9 +145,7 @@ ISHARES_DE: tuple[Bestandsquelle, ...] = (
         xetra="EXS1",
         isin="DE0005933931",
         isin_belegt=False,
-        url=_ISHARES_DOWNLOAD.format(
-            produkt="251464", schnipsel="ishares-dax-ucits-etf-de-fund", datei="EXS1_holdings"
-        ),
+        url=_ISHARES_DOWNLOAD.format(produkt="251464"),
         env_override="MOMENTUM_URL_DAX",
     ),
     Bestandsquelle(
@@ -146,9 +153,7 @@ ISHARES_DE: tuple[Bestandsquelle, ...] = (
         xetra="EXS3",
         isin="DE0005933923",
         isin_belegt=False,
-        url=_ISHARES_DOWNLOAD.format(
-            produkt="251845", schnipsel="ishares-mdax-ucits-etf-de-fund", datei="EXS3_holdings"
-        ),
+        url=_ISHARES_DOWNLOAD.format(produkt="251845"),
         env_override="MOMENTUM_URL_MDAX",
     ),
     Bestandsquelle(
@@ -156,9 +161,7 @@ ISHARES_DE: tuple[Bestandsquelle, ...] = (
         xetra="EXS2",
         isin="DE0005933972",   # belegt
         isin_belegt=True,
-        url=_ISHARES_DOWNLOAD.format(
-            produkt="251975", schnipsel="ishares-tecdax-ucits-etf-de-fund", datei="EXS2_holdings"
-        ),
+        url=_ISHARES_DOWNLOAD.format(produkt="251975"),
         env_override="MOMENTUM_URL_TECDAX",
     ),
 )
@@ -685,10 +688,12 @@ def lade_bestandsliste(quelle: Bestandsquelle) -> str:  # pragma: no cover - Net
             f"URL: {url}\n"
             f"So kommt man an die richtige: ishares.com -> Deutschland/"
             f"Privatanleger -> Fonds {quelle.xetra} suchen -> Abschnitt "
-            f"'Positionen' -> Link 'Positionen und Analysen herunterladen' "
-            f"(CSV). Diesen Link dem Workflow als Eingabefeld mitgeben "
-            f"(url_dax / url_mdax / url_tecdax) oder in tools/build_universe.py "
-            f"eintragen. Es wurde NICHTS geschrieben."
+            f"'Positionen' -> Link 'Fondspositionen und Kennzahlen' lange "
+            f"druecken/Link kopieren (der Link zeigt auf blackrock.com, "
+            f"nicht auf ishares.com). Diesen Link dem Workflow als "
+            f"Eingabefeld mitgeben (url_dax / url_mdax / url_tecdax) oder "
+            f"in tools/build_universe.py eintragen. Es wurde NICHTS "
+            f"geschrieben."
         ) from exc
     if "<html" in inhalt[:2000].lower():
         raise QuelleUnbrauchbar(
