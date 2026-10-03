@@ -54,6 +54,20 @@ TOPIC_MAX = 64
 # Wie viel vom Antwortkoerper des Servers ins Protokoll darf.
 FEHLERTEXT_MAX = 500
 
+# Ab wann der variable Block-Teil einer Nachricht gekuerzt wird (siehe
+# begrenze_bloecke() unten). Beleg statt Vermutung: am 25./28./29./30.09.2026
+# ist push_vertrag_gebrochen() viermal identisch mit "HTTP 500 -- internal
+# server error (code 50001)" gescheitert, und zwar GENAU dann, wenn alle
+# fuenf iShares-Quellen gleichzeitig gebrochen waren (~4.840 Zeichen
+# Nachrichtenlaenge). Im selben Zeitraum kamen kurze Pushes (Waechter,
+# neues Ranking) ueber dasselbe Topic zuverlässig durch -- das Problem lag
+# an der Laenge, nicht am Topic oder an ntfy.sh selbst. Der genaue
+# ntfy-seitige Schwellenwert ist nicht dokumentiert nachschlagbar
+# (docs.ntfy.sh in der Diagnose-Sitzung nicht erreichbar); 2000 ist
+# bewusst konservativ deutlich unter den beobachteten ~4.840, von Easy
+# nach Vorlage bestaetigt, kein geratener Wert.
+NACHRICHT_BLOCK_GRENZE = 2000
+
 # ntfy-Prioritaeten: 1 = min, 3 = normal, 4 = hoch (loest auf dem iPhone
 # die auffaellige Zustellung aus). Mehr braucht dieses Werkzeug nicht.
 #
@@ -251,6 +265,45 @@ def push(
             flush=True,
         )
     return ok
+
+
+def begrenze_bloecke(
+    eintraege: list[tuple[str, str]], *, grenze: int = NACHRICHT_BLOCK_GRENZE,
+) -> str:
+    """Bloecke zu einem Text zusammenfuegen, dabei bei `grenze` Zeichen
+    kappen -- NIE mitten in einem Block, sondern erst zwischen zwei
+    Bloecken. Passt alles, ist das Ergebnis unveraendert (keine Kuerzung
+    bei kurzen Nachrichten).
+
+    `eintraege`: (Name, vollstaendiger Block-Text) je Element, Bloecke
+    OHNE abschliessenden Zeilenumbruch. Was nicht mehr hineinpasst,
+    verschwindet nicht spurlos: sein NAME steht -- nie nur die Anzahl --
+    im abschliessenden Hinweis, auch wenn seine Details wegfallen. Passt
+    nicht einmal der erste Block, bleibt die Liste der vollen Bloecke
+    leer; alle Namen stehen dann vollstaendig im Hinweis.
+
+    Deterministisch: dieselbe Liste in derselben Reihenfolge liefert
+    immer denselben Schnitt -- keine Zufaelligkeit, kein Zeitstempel.
+    Gemeinsame Stelle fuer alle drei Aufrufer (push_vertrag_gebrochen
+    ueber tools/vertragstest.py:bericht(), push_konfluenz_treffer,
+    push_agent_datumsformat_unklar) statt einer Kuerzung je Stelle --
+    sonst haette jede ihre eigene, womoeglich abweichende Grenze.
+    """
+    bloecke: list[str] = []
+    laenge = 0
+    ausgelassen: list[str] = []
+    for name, block in eintraege:
+        if not ausgelassen and laenge + len(block) <= grenze:
+            bloecke.append(block)
+            laenge += len(block) + 2  # Leerzeile zwischen Bloecken mitgerechnet
+        else:
+            ausgelassen.append(name)
+    if ausgelassen:
+        bloecke.append(
+            f"… und {len(ausgelassen)} weitere betroffen: "
+            f"{', '.join(ausgelassen)}. Details im Actions-Log."
+        )
+    return "\n\n".join(bloecke)
 
 
 def push_new_ranking(entries: list[dict], *, hinweise: list[str] | None = None, **kwargs) -> bool:
@@ -495,14 +548,14 @@ def push_konfluenz_treffer(treffer: list[dict], **kwargs) -> bool:
 
     Prioritaet "default": eine Beobachtung, kein Fehlschlag -- keine
     Sirene.
+
+    Die Zeilen je Treffer laufen durch begrenze_bloecke() -- bei vielen
+    gleichzeitigen Treffern sonst dasselbe Laengenrisiko wie bei
+    push_vertrag_gebrochen (siehe NACHRICHT_BLOCK_GRENZE).
     """
     if not treffer:
         return False
-    lines = [
-        f"{len(treffer)} neue{'r' if len(treffer) == 1 else ''} "
-        f"Konfluenz-Treffer{'' if len(treffer) == 1 else ''}:",
-        "",
-    ]
+    eintraege = []
     for t in treffer:
         momentum = (
             f"{t['momentum_score']:.1f}" if t.get("momentum_score") is not None else "—"
@@ -510,10 +563,17 @@ def push_konfluenz_treffer(treffer: list[dict], **kwargs) -> bool:
         elliott = (
             f"{t['elliott_score']:.1f}" if t.get("elliott_score") is not None else "—"
         )
-        lines.append(
+        eintraege.append((
+            f"{t['markt_name']}: {t['ticker']}",
             f"{t['markt_name']}: {t['ticker']} — Momentum Rang "
-            f"{t['momentum_rang']} (Score {momentum}), Elliott-Score {elliott}"
-        )
+            f"{t['momentum_rang']} (Score {momentum}), Elliott-Score {elliott}",
+        ))
+    lines = [
+        f"{len(treffer)} neue{'r' if len(treffer) == 1 else ''} "
+        f"Konfluenz-Treffer{'' if len(treffer) == 1 else ''}:",
+        "",
+        begrenze_bloecke(eintraege),
+    ]
     lines += [
         "",
         "Momentum und Elliott messen Verschiedenes — eine Ueberschneidung "
@@ -542,18 +602,25 @@ def push_agent_datumsformat_unklar(befunde: list[dict], **kwargs) -> bool:
     bereits per push_vertrag_gebrochen gemeldet, das hier ist eine
     Ergaenzung ("und der Agent konnte auch nicht helfen"), keine zweite
     Sirene fuer dasselbe Ereignis.
+
+    Die Bloecke je Quelle laufen durch begrenze_bloecke() -- bei vielen
+    gleichzeitig unklaren Quellen sonst dasselbe Laengenrisiko wie bei
+    push_vertrag_gebrochen (siehe NACHRICHT_BLOCK_GRENZE).
     """
     if not befunde:
         return False
+    eintraege = []
+    for b in befunde:
+        block_zeilen = [f"* {b['quelle']}"]
+        for zeile in b["rohzeilen"]:
+            block_zeilen.append(f"    {zeile!r}")
+        eintraege.append((b["quelle"], "\n".join(block_zeilen)))
     lines = [
         f"Reparatur-Agent (Datumsformat): {len(befunde)} Quelle(n) "
         f"unklar, kein PR-Vorschlag.",
         "",
+        begrenze_bloecke(eintraege),
     ]
-    for b in befunde:
-        lines.append(f"* {b['quelle']}")
-        for zeile in b["rohzeilen"]:
-            lines.append(f"    {zeile!r}")
     lines += [
         "",
         "Keine Zeile liess sich zweifelsfrei einem Tag/Monat/Jahr "

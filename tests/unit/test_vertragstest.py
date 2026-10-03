@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path("tools").resolve()))
 
 import build_universe as bu  # noqa: E402
 import vertragstest as vt  # noqa: E402
+from momentum import notify  # noqa: E402
 
 Date = _dt.date
 HEUTE = Date(2026, 8, 27)  # Donnerstag, im Pruef-Fenster
@@ -437,6 +438,68 @@ def test_der_bericht_ist_deterministisch():
     b = vt.bericht(verdikte, HEUTE)
     assert a == b
     assert hashlib.sha256(a.encode()).hexdigest() == hashlib.sha256(b.encode()).hexdigest()
+
+
+def _ishares_404_verdikt(name: str, produkt: str, slug: str, datei: str) -> vt.Verdikt:
+    """Ein Verdikt, wortgleich zum realen Log vom 25./28./29./30.09.2026 --
+    nicht ein Spielzeug-Beispiel mit kurzem Platzhaltertext."""
+    url = (
+        f"https://www.ishares.com/de/privatanleger/de/produkte/{produkt}/{slug}/"
+        f"1478358465952.ajax?fileType=csv&fileName={datei}_holdings&dataType=fund"
+    )
+    befund = (
+        f"erwartet: CSV-Download — vorgefunden: QuelleUnbrauchbar: {datei}: "
+        f"Bestandsliste nicht abrufbar (HTTP Error 404: Not Found).\nURL: {url}\n"
+        f"So kommt man an die richtige: ishares.com -> Deutschland/Privatanleger "
+        f"-> Fonds {datei} suchen -> Abschnitt 'Positionen' -> Link "
+        f"'Positionen und Analysen herunterladen' (CSV). Diesen Link dem "
+        f"Workflow als Eingabefeld mitgeben (url_dax / url_mdax / url_tecdax) "
+        f"oder in tools/build_universe.py eintragen. Es wurde NICHTS geschrieben."
+    )
+    return vt.Verdikt(name, "Datei abrufbar", False, befund)
+
+
+def test_der_reale_25_09_fall_bleibt_nach_der_haertung_unter_der_grenze():
+    """Regressionsbeleg (nicht nur auf begrenze_bloecke() selbst, sondern
+    auf den tatsaechlichen Vertragstest-Bericht): fuenf gleichzeitig
+    gebrochene iShares-Quellen wie am 25./28./29./30.09.2026 durften ntfy
+    mit ~4.840 Zeichen nicht mehr erreichen (HTTP 500, code 50001) -- nach
+    der Haertung muss derselbe Fall deutlich darunter bleiben, mit allen
+    fuenf Namen weiterhin lesbar."""
+    verdikte = [
+        _ishares_404_verdikt("iShares EXS1 (DAX)", "251464", "ishares-dax-ucits-etf-de-fund", "DAX"),
+        _ishares_404_verdikt("iShares EXS3 (MDAX)", "251845", "ishares-mdax-ucits-etf-de-fund", "MDAX"),
+        _ishares_404_verdikt("iShares EXS2 (TecDAX)", "251975", "ishares-tecdax-ucits-etf-de-fund", "TecDAX"),
+        _ishares_404_verdikt("iShares SXR8 (SXR8)", "253743", "ishares-sp-500-b-ucits-etf-acc-fund", "SXR8"),
+        _ishares_404_verdikt("iShares IUSA (IUSA)", "251900", "ishares-sp-500-ucits-etf-inc-fund", "IUSA"),
+    ]
+    # Nachweis, dass das der reale Fall ist, nicht ein Spielzeug-Beispiel:
+    # OHNE Haertung (riesige Grenze) kommt dieselbe Grossenordnung heraus
+    # wie am 25.09. tatsaechlich beobachtet (~4.840 Zeichen).
+    ungekuerzt_eintraege = [
+        (v.quelle, f"* {v.quelle}\n  Vertrag: {v.vertrag}\n  {v.befund}\n  "
+                   f"Was tun: {vt.handreichung(v.quelle)}")
+        for v in verdikte
+    ]
+    roh_gesamt = len(notify.begrenze_bloecke(ungekuerzt_eintraege, grenze=10**6))
+    assert 4500 <= roh_gesamt <= 5100, f"unerwartete Laenge: {roh_gesamt}"
+
+    # MIT der Haertung (der tatsaechliche Code-Pfad, Standard-Grenze):
+    # deutlich kuerzer, aber kein Name geht verloren.
+    text = vt.bericht(verdikte, Date(2026, 9, 28))
+    assert len(text) < roh_gesamt
+    assert len(text) < 2500, "muss deutlich unter der am 25.-30.09. gescheiterten Laenge liegen"
+    for name in ("EXS1 (DAX)", "EXS3 (MDAX)", "EXS2 (TecDAX)", "SXR8 (SXR8)", "IUSA (IUSA)"):
+        assert name in text
+    assert "5 von 5 Vertraegen gebrochen" in text
+
+
+def test_ein_einzelner_bruch_bleibt_unveraendert_von_der_haertung():
+    """Der Normalfall (ein Bruch) darf keinen Kuerzungs-Hinweis bekommen --
+    die Haertung greift nur, wenn es tatsaechlich eng wird."""
+    verdikte = [vt.pruefe_estr("", HEUTE), vt.pruefe_us_tabelle(us_html(503))]
+    text = vt.bericht(verdikte, HEUTE)
+    assert "weitere betroffen" not in text
 
 
 def gesunde_naehte():
