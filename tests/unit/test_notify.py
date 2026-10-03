@@ -566,3 +566,61 @@ def test_die_probe_ohne_secret_ist_ebenso_laut(monkeypatch, capsys):
     monkeypatch.delenv("NTFY_TOPIC", raising=False)
     assert notify.push_test() is False
     assert "PUSH NICHT VERSCHICKT" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------------
+# begrenze_bloecke() -- die Haertung gegen die vier Fehlschlaege vom
+# 25./28./29./30.09.2026 ("HTTP 500 -- internal server error (code 50001)",
+# jeweils bei ~4.840 Zeichen Nachrichtenlaenge, waehrend kurze Pushes im
+# selben Zeitraum ueber dasselbe Topic zuverlaessig durchkamen).
+# --------------------------------------------------------------------------
+
+
+def test_kurze_liste_bleibt_unveraendert():
+    """Passt alles unter die Grenze, wird NICHT gekuerzt -- der Normalfall
+    (ein einzelner Bruch) darf sich nicht aendern."""
+    eintraege = [("Quelle A", "* Quelle A\n  Vertrag: Datei abrufbar\n  ok")]
+    text = notify.begrenze_bloecke(eintraege, grenze=2000)
+    assert text == eintraege[0][1]
+    assert "weitere betroffen" not in text
+
+
+def test_viele_elemente_werden_gekuerzt_namen_bleiben_alle_sichtbar():
+    """Zehn kuenstliche Elemente, jedes 300 Zeichen -- bei grenze=1000
+    passen nur die ersten drei vollstaendig hinein."""
+    eintraege = [(f"Quelle {i}", f"* Quelle {i}\n  " + "x" * 280) for i in range(10)]
+    text = notify.begrenze_bloecke(eintraege, grenze=1000)
+    for i in range(3):
+        assert f"Quelle {i}" in text and "x" * 280 in text.split("\n\n")[i]
+    # Alle zehn Namen muessen auftauchen -- die ersten drei als volle
+    # Bloecke, der Rest NUR im Namen, nie nur als Anzahl.
+    for i in range(10):
+        assert f"Quelle {i}" in text
+    assert "weitere betroffen" in text
+    assert "Quelle 9" in text.rsplit("weitere betroffen", 1)[1]
+
+
+def test_kuerzung_ist_deterministisch():
+    eintraege = [(f"Q{i}", f"* Q{i}\n  " + "y" * 280) for i in range(10)]
+    a = notify.begrenze_bloecke(eintraege, grenze=1000)
+    b = notify.begrenze_bloecke(eintraege, grenze=1000)
+    assert a == b
+
+
+def test_passt_nicht_einmal_der_erste_block_bleiben_nur_namen():
+    """Ein einzelner, bereits zu grosser Block wird nie angeschnitten --
+    lieber ganz aussen vor als mitten im Satz gekappt."""
+    riesig = "* Quelle A\n  " + "z" * 5000
+    eintraege = [("Quelle A", riesig), ("Quelle B", "* Quelle B\n  kurz")]
+    text = notify.begrenze_bloecke(eintraege, grenze=1000)
+    assert "z" * 5000 not in text
+    assert "Quelle A" in text and "Quelle B" in text
+    assert "weitere betroffen" in text
+
+
+# Der byte-genaue Regressionsbeleg fuer den realen 25.09.-Fall (fuenf
+# gleichzeitig gebrochene iShares-Quellen, ~4.840 Zeichen) steht in
+# tests/unit/test_vertragstest.py, dort ueber den echten `bericht()`- und
+# `handreichung()`-Code -- nicht hier noch einmal von Hand nachgebaut
+# (das wuerde nur zwei Abschriften desselben Textes auseinanderlaufen
+# lassen, sobald sich WAS_TUN in vertragstest.py aendert).

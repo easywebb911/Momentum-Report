@@ -67,7 +67,7 @@ from momentum.kursvergleich import (  # noqa: E402
     ZULASS_ABWEICHLER,
     vergleiche,
 )
-from momentum.notify import push_vertrag_gebrochen  # noqa: E402
+from momentum.notify import begrenze_bloecke, push_vertrag_gebrochen  # noqa: E402
 from momentum.riskfree import EZB_URL, IRX_TICKER, parse_ezb_csv  # noqa: E402
 
 Date = _dt.date
@@ -400,25 +400,33 @@ def handreichung(quelle: str) -> str:
 
 def bericht(verdikte: list[Verdikt], heute: Date) -> str:
     """Der Push-Text bei mindestens einem Bruch. Deterministisch: gleiche
-    Verdikte, gleicher Text -- keine Uhrzeit, keine Zufallsreihenfolge."""
+    Verdikte, gleicher Text -- keine Uhrzeit, keine Zufallsreihenfolge.
+
+    Die Bloecke je gebrochenem Vertrag laufen durch begrenze_bloecke()
+    (siehe notify.py): am 25./28./29./30.09.2026 ist der Push viermal mit
+    "HTTP 500 -- internal server error (code 50001)" gescheitert, genau
+    dann, wenn alle fuenf iShares-Quellen gleichzeitig gebrochen waren
+    (~4.840 Zeichen Nachrichtenlaenge) -- kurze Pushes kamen im selben
+    Zeitraum ueber dasselbe Topic zuverlaessig durch. Die NAMEN aller
+    Brueche bleiben dabei immer vollstaendig sichtbar, auch wenn ihre
+    Details (URL, Handreichung) wegfallen."""
     kaputt = [v for v in verdikte if not v.ok]
+    eintraege = []
+    for v in kaputt:
+        block_zeilen = [f"* {v.quelle}", f"  Vertrag: {v.vertrag}", f"  {v.befund}"]
+        rat = handreichung(v.quelle)
+        if rat:
+            block_zeilen.append(f"  Was tun: {rat}")
+        eintraege.append((v.quelle, "\n".join(block_zeilen)))
     zeilen = [
         f"Stand {heute.isoformat()}: {len(kaputt)} von {len(verdikte)} "
         f"Vertraegen gebrochen.",
         "",
-    ]
-    for v in kaputt:
-        zeilen.append(f"* {v.quelle}")
-        zeilen.append(f"  Vertrag: {v.vertrag}")
-        zeilen.append(f"  {v.befund}")
-        rat = handreichung(v.quelle)
-        if rat:
-            zeilen.append(f"  Was tun: {rat}")
-        zeilen.append("")
-    zeilen.append(
+        begrenze_bloecke(eintraege),
+        "",
         "Der Monats-Stichtag steht bevor. Bis dahin repariert, laeuft er "
-        "normal; sonst bricht er laut ab und es entsteht kein Ranking."
-    )
+        "normal; sonst bricht er laut ab und es entsteht kein Ranking.",
+    ]
     return "\n".join(zeilen)
 
 
