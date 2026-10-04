@@ -1,0 +1,55 @@
+# SCHEDULER-DRIFT-BEOBACHTUNG. GitHub Actions garantiert nie einen
+# exakten Cron-Zeitpunkt, nur einen fruehesten. Dieser Workflow prueft
+# woechentlich die letzten 10 `lauf.yml`-Laeufe gegen den nominellen
+# Zeitpunkt (21:45 UTC) und meldet lautlos (ntfy-Prioritaet "min"), wenn
+# mindestens einer mehr als 4 Stunden verspaetet war -- reine
+# Beobachtung, keine Handlungsaufforderung (siehe PR #53).
+#
+# Bewusst ein EIGENER Workflow, getrennt von den anderen vier Waechtern:
+# sechstes Symptom, sechste Datenquelle (die Actions-API selbst statt
+# einer lokalen Datei).
+#
+# HARTE GRENZE: dieser Workflow MELDET nur, er LOEST NIE einen Lauf aus
+# und AENDERT NIE einen Zeitplan -- serverseitig erzwungen durch die
+# Rechte unten (nur `contents: read`, `actions: read`) UND durch einen
+# statischen Test (tests/unit/test_lauf_zeitversatz_waechter.py), der den
+# Quelltext von lauf_zeitversatz_waechter.py auf jeden schreibenden
+# `gh`-Aufruf durchsucht.
+name: Lauf-Zeitversatz-Wächter
+
+on:
+  schedule:
+    # Derselbe Zeitpunkt wie die anderen vier Waechter.
+    - cron: "30 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: scheduler-drift-waechter
+  cancel-in-progress: false
+
+jobs:
+  wache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: lauf_zeitversatz_waechter.py und notify.py sind
+      # reine Standardbibliothek. `gh` steht auf den GitHub-Runnern
+      # bereits vorinstalliert bereit.
+      - name: Letzte Laeufe auf Verzoegerung pruefen
+        run: python -m momentum.lauf_zeitversatz_waechter

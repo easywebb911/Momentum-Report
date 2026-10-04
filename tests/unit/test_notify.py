@@ -243,6 +243,13 @@ def test_kein_herzschlag_push_vorhanden():
         "push_konfluenz_treffer",
         "push_lauf_ueberfaellig",
         "push_new_ranking",
+        # Auch kein Herzschlag: push_zustellung_waechter.py laeuft zwar
+        # woechentlich mit, meldet sich aber ausschliesslich, wenn die
+        # Actions-Logs der ueberwachten Workflows mindestens einen
+        # Fehlschlag im Fenster zeigen -- unter der Schwelle (null
+        # Fehlschlaege) bleibt der Lauf stumm, dieselbe Form wie
+        # push_pr_verwaist/push_handover_pflege_faellig.
+        "push_ntfy_fehlschlaege_woche",
         # Kein Herzschlag, aus demselben Grund wie push_handover_pflege_
         # faellig direkt oben: Prioritaet min, UND kommt nur ab der
         # Schwelle verwaister PRs oder bei technischem Fehlschlag, nie
@@ -266,6 +273,12 @@ def test_kein_herzschlag_push_vorhanden():
         # ohne Banner zu. Der Test unten nagelt genau das fest; ohne die
         # Prioritaet waere diese Zeile hier nicht zu rechtfertigen.
         "push_waechter_ok",
+        # Ebenfalls kein Herzschlag, aus BEIDEN Gruenden zugleich:
+        # Prioritaet min (wie push_waechter_ok direkt oben) UND kommt aus
+        # lauf_zeitversatz_waechter.py nur, wenn mindestens einer der
+        # juengsten Laeufe SCHWELLE_STUNDEN tatsaechlich gerissen hat --
+        # unterhalb der Schwelle bleibt der woechentliche Lauf stumm.
+        "push_zeitversatz_beobachtet",
     ]
     quelle = Path("src/momentum/notify.py").read_text(encoding="utf-8")
     assert "schedule" not in quelle and "cron" not in quelle
@@ -624,3 +637,52 @@ def test_passt_nicht_einmal_der_erste_block_bleiben_nur_namen():
 # `handreichung()`-Code -- nicht hier noch einmal von Hand nachgebaut
 # (das wuerde nur zwei Abschriften desselben Textes auseinanderlaufen
 # lassen, sobald sich WAS_TUN in vertragstest.py aendert).
+
+
+# --------------------------------------------------------------------------
+# FEHLSCHLAG_ANKERTEXT -- der woertliche Text, nach dem
+# push_zustellung_waechter.py in den Actions-Logs sucht. Dieser Test nagelt
+# ihn fest: aendert jemand den Wortlaut in push() ohne die Konstante (und
+# damit ohne den Waechter) anzupassen, faellt dieser Test, nicht erst der
+# Waechter still ins Leere.
+# --------------------------------------------------------------------------
+
+
+def test_der_fehlschlag_ankertext_ist_festgenagelt():
+    """Wortlaut UND tatsaechliche Verwendung, nicht nur eine Behauptung.
+
+    `>= 3`: einmal die Definition der Konstante selbst, mindestens zweimal
+    ihre Verwendung in den beiden Fehlschlag-Zweigen von push() (HTTPError
+    und nicht-2xx-Status). Das zweite assert stellt sicher, dass der
+    woertliche Text NUR an der Konstanten-Definition selbst als
+    String-Literal steht -- also push() wirklich ueber die Konstante
+    druckt und nicht ueber eine eigene, unabhaengig formulierte Kopie, die
+    unbemerkt vom Wortlaut der Konstante abweichen koennte.
+    """
+    assert notify.FEHLSCHLAG_ANKERTEXT == "ntfy hat den Push abgelehnt:"
+    quelle = Path("src/momentum/notify.py").read_text(encoding="utf-8")
+    assert quelle.count("FEHLSCHLAG_ANKERTEXT") >= 3
+    assert quelle.count('"ntfy hat den Push abgelehnt:') == 1
+
+
+def test_der_fehlschlag_ankertext_erscheint_im_log_bei_http_error(capsys):
+    import io
+    import urllib.error
+
+    def opener(request, timeout=None):
+        raise urllib.error.HTTPError(
+            "https://ntfy.sh", 500, "Internal Server Error", {}, io.BytesIO(b"{}"),
+        )
+
+    assert notify.push("T", "B", topic="gueltig", opener=opener) is False
+    ausgabe = capsys.readouterr()
+    assert notify.FEHLSCHLAG_ANKERTEXT in ausgabe.err
+
+
+def test_der_fehlschlag_ankertext_erscheint_im_log_bei_nicht_2xx_status(monkeypatch, capsys):
+    def opener(request, timeout=None):
+        return _Fehlerantwort(500, b'{"code":50001,"http":500,"error":"internal server error"}')
+
+    assert notify.push("T", "B", topic="gueltig", opener=opener) is False
+    ausgabe = capsys.readouterr()
+    assert notify.FEHLSCHLAG_ANKERTEXT in ausgabe.err

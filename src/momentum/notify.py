@@ -68,6 +68,16 @@ FEHLERTEXT_MAX = 500
 # nach Vorlage bestaetigt, kein geratener Wert.
 NACHRICHT_BLOCK_GRENZE = 2000
 
+# DER verankerte Fehlertext, wortgleich in beiden Druckstellen in push()
+# unten verwendet (nicht nur behauptet -- siehe
+# test_der_fehlschlag_ankertext_ist_festgenagelt) UND von
+# push_zustellung_waechter.py importiert, um genau danach in den
+# Actions-Logs der letzten Laeufe zu suchen. EIN Vorkommen dieser
+# Zeichenkette, nicht zwei unabhaengig formulierte -- sonst koennte der
+# Wortlaut hier und der Suchbegriff dort auseinanderlaufen, ohne dass es
+# auffaellt, bis der Waechter schon ins Leere sucht.
+FEHLSCHLAG_ANKERTEXT = "ntfy hat den Push abgelehnt:"
+
 # ntfy-Prioritaeten: 1 = min, 3 = normal, 4 = hoch (loest auf dem iPhone
 # die auffaellige Zustellung aus). Mehr braucht dieses Werkzeug nicht.
 #
@@ -204,7 +214,17 @@ def push(
     topic: str | None = None,
     opener=urllib.request.urlopen,
 ) -> bool:
-    """Eine Nachricht schicken. True nur bei tatsaechlich verschicktem Push."""
+    """Eine Nachricht schicken. True nur bei tatsaechlich verschicktem Push.
+
+    Jeder abgelehnte Versandversuch (HTTPError ODER nicht-2xx-Status) wird
+    mit FEHLSCHLAG_ANKERTEXT woertlich ins Log geschrieben (stderr) -- das
+    ist die einzige Spur, die ein Fehlschlag hinterlaesst. Es gibt keine
+    eigene Protokoll-Datei mehr: push_zustellung_waechter.py liest diese
+    Zeile direkt aus den Actions-Logs der betroffenen Workflows, statt
+    sich auf einen zusaetzlichen Schreibvorgang zu verlassen, der (siehe
+    PR-Beschreibung) fuer die meisten Aufrufer ohnehin nie persistiert
+    haette.
+    """
     # .strip() auf BEIDEN Wegen: ein Secret-Feld nimmt beim Einfuegen gern
     # einen Zeilenumbruch mit, und der ist im Formular nicht zu sehen.
     roh = topic if topic is not None else os.environ.get("NTFY_TOPIC", "")
@@ -248,7 +268,7 @@ def push(
         # im Koerper der Antwort -- ohne ihn stand frueher nur "HTTP 400"
         # im Protokoll, und das half niemandem weiter.
         print(
-            f"ntfy hat den Push abgelehnt: HTTP {exc.code} — "
+            f"{FEHLSCHLAG_ANKERTEXT} HTTP {exc.code} — "
             f"{_antworttext(_lies(exc), topic)}",
             file=sys.stderr,
             flush=True,
@@ -259,7 +279,7 @@ def push(
         return False
     if not ok:
         print(
-            f"ntfy hat den Push abgelehnt: HTTP {status} — "
+            f"{FEHLSCHLAG_ANKERTEXT} HTTP {status} — "
             f"{_antworttext(koerper, topic)}",
             file=sys.stderr,
             flush=True,
@@ -633,3 +653,57 @@ def push_agent_datumsformat_unklar(befunde: list[dict], **kwargs) -> bool:
         tags="question",
         **kwargs,
     )
+
+
+def push_ntfy_fehlschlaege_woche(text: str, **kwargs) -> bool:
+    """Push (11): push_zustellung_waechter.py hat FEHLSCHLAG_ANKERTEXT in
+    den Actions-Logs der letzten Laeufe mindestens eines ueberwachten
+    Workflows gefunden (letzte FENSTER_TAGE_PRUEFUNG Tage, siehe dort).
+
+    Nimmt wie push_pr_verwaist/push_handover_pflege_faellig einen bereits
+    fertig formatierten Text entgegen -- das Zaehlen und Formatieren
+    (je PUSH-TYP, nicht je Fehlschlag) ist Sache des Aufrufers
+    (push_zustellung_waechter.stand_text()), nicht dieser Huelle.
+
+    BEWUSST KURZ (Auftrag: "damit er nicht selbst am gerade erst
+    behobenen Laengenproblem scheitern kann"): der Aufrufer zaehlt je
+    PUSH-TYP ("Typ A (×2)"), nicht je Einzel-Fehlschlag -- bei N
+    Fehlschlaegen desselben Typs waechst die Nachricht NICHT mit N,
+    sondern bleibt bei einer Zeile pro Typ. Damit braucht es keine
+    begrenze_bloecke()-Haertung: die Nachricht kann durch die Bauart gar
+    nicht in die Groessenordnung wachsen, die am 25.-30.09.2026 schon
+    bei FUENF Elementen scheiterte.
+
+    Prioritaet "default" (ein tatsaechlich schon eingetretener
+    Fehlschlag, keine blosse Beobachtung wie push_zeitversatz_beobachtet)
+    -- aber keine Sirene, dieselbe Abstufung wie push_vertrag_gebrochen.
+
+    SELBSTBEZUEGLICHE GRENZE, ehrlich benannt (wie bei allen Waechtern
+    dieses Projekts): meldet ausgerechnet DIESER Push ntfy-Zustellungs-
+    probleme per ntfy, kann er am selben Problem scheitern wie die
+    Pushes, die er meldet. Dagegen gibt es hier keine Abhilfe -- derselbe
+    blinde Fleck wie beim Totmannschalter gegenueber einem Ausfall von
+    GitHub Actions selbst (siehe waechter.py).
+    """
+    return push(
+        "Momentum-Report: ntfy-Zustellung fehlgeschlagen",
+        text,
+        priority="default",
+        tags="warning",
+        **kwargs,
+    )
+
+
+def push_zeitversatz_beobachtet(text: str, **kwargs) -> bool:
+    """Push (12): lauf_zeitversatz_waechter.py hat unter den letzten
+    ANZAHL_LETZTE_LAEUFE Stichtag-Laeufen mindestens einen gefunden, der
+    mehr als SCHWELLE_STUNDEN Stunden nach dem nominellen Cron-Zeitpunkt
+    (21:45 UTC) gestartet ist.
+
+    Nimmt wie push_waechter_ok einen bereits fertig formatierten Text
+    entgegen. LAUTLOS (Prioritaet "min", wie push_waechter_ok): reine
+    Beobachtung ohne Handlungsaufforderung (siehe
+    lauf_zeitversatz_waechter.py) -- noch ist nichts kaputt, nur spaeter
+    als nominell.
+    """
+    return push("Momentum-Report: Scheduler-Verzoegerung beobachtet", text, priority="min", **kwargs)
