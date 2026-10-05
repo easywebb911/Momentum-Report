@@ -1,0 +1,65 @@
+# PUSH-ZUSTELLUNGS-WAECHTER. Ein fehlgeschlagener ntfy-Push meldet sich
+# nie selbst -- dieser Workflow durchsucht woechentlich die Actions-Logs
+# der letzten Laeufe von lauf.yml, vertrag.yml, waechter.yml,
+# handover_waechter.yml und pr_verwaisung_waechter.yml nach
+# notify.FEHLSCHLAG_ANKERTEXT ("ntfy hat den Push abgelehnt:") und meldet
+# (ntfy-Prioritaet "default", aber ohne Sirene), wenn in den letzten 7
+# Tagen mindestens ein Treffer gefunden wurde (siehe
+# momentum.push_zustellung_waechter fuer die vollstaendige Begruendung,
+# inklusive der zuvor verworfenen data/push_health.json-Variante).
+#
+# `actions: read` ist hier das Entscheidende, NICHT die Rechte der vier
+# gelesenen Workflows selbst (siehe Scope-Pruefung im Modul-Docstring):
+# ob dieser Workflow ihre Laeufe/Logs lesen darf, haengt ausschliesslich
+# vom EIGENEN Token-Scope ab. Keiner der vier wird dafuer angefasst.
+#
+# Bewusst ein EIGENER Workflow, getrennt von den anderen vier Waechtern:
+# fuenftes Symptom, fuenfte Datenquelle (Actions-Job-Logs mehrerer
+# Workflows statt data/status.json, SESSION_HANDOVER.md-Historie oder
+# offenen PRs).
+#
+# HARTE GRENZE: dieser Workflow MELDET nur, er WIEDERHOLT NIE einen
+# fehlgeschlagenen Push und SCHREIBT NIRGENDS --
+# serverseitig erzwungen durch die Rechte unten (nur `contents: read`
+# und `actions: read`) UND durch einen statischen Test
+# (tests/unit/test_push_zustellung_waechter.py), der den Quelltext von
+# push_zustellung_waechter.py auf jeden schreibenden Aufruf durchsucht.
+name: Push-Zustellungs-Wächter
+
+on:
+  schedule:
+    # Derselbe Zeitpunkt wie die anderen vier Waechter (waechter.yml,
+    # handover_waechter.yml, pr_verwaisung_waechter.yml) -- gemeinsamer
+    # Rhythmus, keine neue Zeit eingefuehrt.
+    - cron: "30 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: push-zustellung-waechter
+  cancel-in-progress: false
+
+jobs:
+  wache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: push_zustellung_waechter.py und notify.py sind
+      # reine Standardbibliothek.
+      - name: Actions-Logs auf Zustellungs-Fehlschlaege pruefen
+        run: python -m momentum.push_zustellung_waechter

@@ -46,6 +46,15 @@ def test_es_gibt_die_erwarteten_workflows():
         # er meldet offene PRs, die laenger als die Schwelle unangetastet
         # liegen, das kein PR selbst melden kann.
         "pr_verwaisung_waechter.yml",
+        # Der Push-Zustellungs-Waechter (siehe push_zustellung_waechter.py)
+        # -- er durchsucht die Actions-Logs mehrerer Workflows nach
+        # fehlgeschlagenen ntfy-Versandversuchen, die sich sonst nie von
+        # selbst zeigen.
+        "push_zustellung_waechter.yml",
+        # Der Lauf-Zeitversatz-Waechter (siehe lauf_zeitversatz_waechter.py)
+        # -- er meldet, wenn juengste lauf.yml-Laeufe deutlich spaeter als
+        # der nominelle Cron-Zeitpunkt (21:45 UTC) gestartet sind (PR #53).
+        "lauf_zeitversatz_waechter.yml",
         # WEGWERF, bewusst befristet: prueft die neue blackrock.com-URL
         # fuer die iShares-Bestandslisten vom Runner aus (ishares.com ist
         # seit mind. 25.09.2026 tot). Schreibt nichts, nur workflow_dispatch.
