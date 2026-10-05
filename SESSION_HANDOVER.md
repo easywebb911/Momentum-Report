@@ -1,10 +1,11 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 27.09.2026**, nach PR #57 (drei weitere Formulierungsschärfungen
-auf der Methodik-Seite). Nachgezogen: PRs #51–#57, die seit der letzten
-Pflege (PR #50, 11.09.) ungepflegt blieben. Repo
-`easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand nennt
-`git log -1`, er steht hier bewusst nicht als Zahl.
+**Stand: 05.10.2026**, nach PR #65 (zwei neue Wächter: Push-Zustellung,
+Lauf-Zeitversatz). Nachgezogen: PRs #59–#65, die seit der letzten Pflege
+(PR #58, 27.09., brachte den Stand nach PR #57) ungepflegt blieben — PR
+#58 selbst bestätigt als Referenzpunkt (Inhalts-Commit `f6e0a72`, siehe
+§2). Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen
+Stand nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
 Dieses Dokument ist der Übergabepunkt zwischen zwei Arbeits-Sitzungen. Es
 beantwortet drei Fragen: *Was läuft gerade?*, *Was ist offen?*, *Was darf
@@ -21,30 +22,32 @@ stehen hier NICHT wörtlich, sondern als Verweis auf ihre Quelle. Ein
 abgeschriebener Zähler ist am Tag nach dem Schreiben falsch, und ein
 Dokument mit falschen Zahlen wird nicht mehr gelesen.
 
-**Und eine dritte, neu aus dieser Nachziehung gelernt (siehe §8, Lesson
-11):** Dieses Dokument selbst braucht einen Anlass zum Nachziehen, nicht
-nur den nächsten Auftrag, der zufällig danach fragt — es stand vom
-16.08. bis zum 11.09.2026 (drei Wochen, zehn PRs, ein echter
-Betriebsvorfall) unverändert und kannte nichts davon. **Dasselbe Muster
-wiederholte sich sofort danach:** vom 11.09. bis zum 27.09.2026 (16 Tage,
-sieben weitere PRs, #51–#57) stand es erneut unverändert — Lesson 11
-beschreibt die Ursache, verhindert die Wiederholung aber nicht von
-selbst, weil kein Automatismus dagegen eingerichtet ist (dort so
-benannt). Diese Nachziehung ist damit selbst ein zweiter Beleg für
-Lesson 11, keine Widerlegung.
+**Und eine dritte, inzwischen mit einem echten Gegenmittel (siehe §8,
+Lesson 11):** Dieses Dokument brauchte bisher immer einen Anlass zum
+Nachziehen, nie einen eigenen Automatismus — und stand deshalb zweimal
+unbemerkt zu lange still: 16.08.–11.09.2026 (drei Wochen, zehn PRs, ein
+echter Betriebsvorfall) und erneut 11.09.–27.09.2026 (16 Tage, sieben
+PRs, #51–#57). **Diese dritte Lücke (27.09.–05.10.2026, 8 Tage, sieben
+PRs, #59–#65) ist die erste, die NICHT erst durch einen zufälligen
+Auftrag auffiel:** der in genau dieser Lücke selbst gebaute Doku-Wächter
+(PR #59, `SCHWELLE_PRS = 4`) hat sie am 05.10.2026 real erkannt und
+lautlos gemeldet (Actions-Run `37339845773`, Job-Log „Waechter: Push
+(lautlos) verschickt.") — und genau dieser Push ist der Anlass für diese
+Nachziehung. Lesson 11 ist damit nicht mehr nur beschrieben, sondern
+einmal real bestätigt wirksam.
 
 ---
 
-## 1. Betriebszustand (11.09.2026)
+## 1. Betriebszustand (11.09.2026, fünf Zeilen unten auf 05.10. nachgezogen)
 
 | Sache | Zustand | Beleg |
 |---|---|---|
 | GitHub Pages | **aktiv** seit 02.08., deployt bei jedem Push auf `main` | Workflow `pages-build-deployment`, angelegt 02.08.2026 16:11 — Zähler und letzter Lauf in Actions |
-| Momentum-Lauf | läuft werktäglich, **ein Fehlschlag insgesamt** — der allererste | Actions-Liste `lauf.yml`: Run 1 (02.08.2026, `conclusion: failure`) war ein Datumsformat-Bruch bei iShares, siehe §8 Lesson 3 und `ishares.py`-Kommentar. **Kein** „Lauf 1"-Commit existiert deshalb — die Zählung im `git log` beginnt bei „Lauf 2" (`07cbedd`). Seither durchgehend grün. |
-| Ranking | eingefroren zum **31.08.2026** (zweiter scharfer Stichtag), beide Märkte — Juli-Stand bleibt parallel als eigene, nie überschriebene Datei stehen | `data/rankings/us_2026-08.json`, `de_2026-08.json` (und weiterhin `*_2026-07.json`) |
-| US-Top-5 (Aug.) | VLO, MPC, PSX, STT, BNY — 497 von 503 im Universum bewertet | `us_2026-08.json` → `top`, `abdeckung` — **4 von 5 Titeln gegenüber Juli gewechselt** (nur VLO blieb), siehe §3/§10 |
-| DE-Top-5 (Aug.) | DWS.DE, TKA.DE, ALV.DE, DHL.DE, RWE.DE — 84 von 102 im Universum bewertet | `de_2026-08.json` → `top`, `abdeckung` — SIE.DE fiel raus, RWE.DE kam neu rein |
-| Überschuss-Ampel | **live mit echten Zahlen**, Umstellungs-Hinweis ist weg | US: Rendite +20,78 %, Geldmarkt (`^IRX`) **+3,67 %**, Überschuss **+17,10 %**, keine Warnung. DE: Rendite +10,46 %, Geldmarkt (€STR/EZB) **+1,98 %**, Überschuss **+8,48 %**, keine Warnung. Beide `trend_ampel` in den August-Rankings — siehe §4 Punkt 1 (jetzt in §10, erledigt) |
+| Momentum-Lauf | läuft werktäglich, **zwei Fehlschläge insgesamt** | Run 1 (02.08.2026, Datumsformat-Bruch iShares, §8 Lesson 3) — **kein** „Lauf 1"-Commit, Zählung beginnt bei „Lauf 2" (`07cbedd`). Zweiter Fehlschlag Lauf 71 (01.10.2026, 00:49 UTC, Yahoo-Rate-Limit auf `^SP500TR`, Actions-Run `36798080643`) — fail-soft griff korrekt, kein Code-Fix nötig, siehe §4 Punkt 5. Noch am selben Tag per manuellem Dispatch nachgeholt (Lauf 72, 21:13 UTC, Actions-Run `36927209332`). Sonst durchgehend grün. |
+| Ranking | eingefroren zum **30.09.2026** (dritter scharfer Stichtag), beide Märkte — Juli-/August-Stand bleiben parallel als eigene, nie überschriebene Dateien stehen; geschrieben von Lauf 72 (manueller Nachlauf, siehe Zeile oben), nicht vom nächsten planmäßigen Lauf | `data/rankings/us_2026-09.json`, `de_2026-09.json` (und weiterhin `*_2026-08.json`, `*_2026-07.json`) |
+| US-Top-5 (Sep.) | HPE, FTNT, PANW, CRWD, AMD — 497 von 503 im Universum bewertet | `us_2026-09.json` → `top`, `abdeckung` — Kursvergleich **entfallen** (iShares-Totalausfall, siehe §4 Punkt 6), die yfinance-Momentum-Rangfolge selbst unberührt |
+| DE-Top-5 (Sep.) | RWE.DE, DHL.DE, EVK.DE, TKA.DE, JEN.DE — 82 von 102 im Universum bewertet | `de_2026-09.json` → `top`, `abdeckung` — Kursvergleich **entfallen** (iShares-Totalausfall, siehe §4 Punkt 6), die yfinance-Momentum-Rangfolge selbst unberührt |
+| Überschuss-Ampel | weiterhin live, keine Warnung in beiden Märkten | US: Rendite +15,74 %, Geldmarkt (`^IRX`) **+3,68 %**, Überschuss **+12,06 %**. DE: Rendite +5,52 %, Geldmarkt (€STR/EZB) **+2,02 %**, Überschuss **+3,50 %**. Beide `trend_ampel` in den September-Rankings |
 | Universen | **beide VERIFIED**, Stand 03.08.2026 (seither nicht neu gezogen) | `universe/universe_us.txt`, `universe_de.txt` (Kopfzeile `# STATUS: VERIFIED`) |
 | Beschreibende Angaben | vorhanden (Name + Sektor je Ticker) | `universe/ticker_meta_us.json`, `ticker_meta_de.json` |
 | Konfluenz — Export | `docs/data/top5.json`, schreibt sich bei jedem neuen Ranking neu | `run.py::_schreibe_top5`, seit `e695b54` (Lauf 9) |
@@ -55,6 +58,13 @@ Lesson 11, keine Widerlegung.
 | Kurse | Stand je Markt in `kurse_vom` | `data/status.json` |
 | Tests | vollständig grün (unit + design/Playwright) | `pytest` (Zähler bewusst nicht abgeschrieben — er wächst mit jedem PR) |
 | Offene PRs | **keine** | GitHub-PR-Liste, Status `open` = leer |
+
+*Hinweis zu dieser Tabelle:* Nur fünf Zeilen (Momentum-Lauf, Ranking,
+US-/DE-Top-5, Überschuss-Ampel) wurden für diese Nachziehung
+aktualisiert — direkt ausgelöst durch die in §4 Punkt 5/6 dokumentierten
+Vorfälle. Alle übrigen Zeilen (Universen, Konfluenz, Reparatur-Agent,
+ntfy, Kurse, Tests, Offene PRs) bleiben auf ihrem Stand vom 11.09.2026 —
+kein durch #59–#65 ausgelöster Anlass gefunden, sie erneut zu prüfen.
 
 **Cron-Fahrplan** (`.github/workflows/`):
 
@@ -72,7 +82,7 @@ kein Ausfall, sondern der Fahrplan.
 
 ---
 
-## 2. Gemergte Arbeit (#1–#21, #40–#57 vollständig)
+## 2. Gemergte Arbeit (#1–#21, #40–#65 vollständig)
 
 **Kontext #51–#57 (nicht wiederholt, nur einmal hier vermerkt):** Easy
 ließ Mitte September einen externen Qualitäts-Check auf Repo und
@@ -83,6 +93,19 @@ Vergleich, Top-5-Prozentzahl ohne Maßstab). #53 hat einen eigenen,
 unabhängigen Auslöser (Lauf 48, siehe §4 Punkt 2). Der volle Bericht
 lebt außerhalb dieses Repos und wird hier nicht reproduziert — jeder
 einzelne Befund steht stattdessen konkret im jeweiligen PR-Text.
+
+**Kontext #58–#65 (nicht wiederholt, nur einmal hier vermerkt):** #58
+selbst ist die vorletzte Handover-Pflege (Stand nach #57). #59–#61 sind
+drei neue bzw. reparierte Wächter nach demselben Prinzip wie der
+Totmannschalter (`waechter.py`), angewandt auf zwei neue Symptome:
+Doku-Rückstand (#59) und PR-Verwaisung (#60, mit einem realen
+GraphQL-Fix in #61). #62–#64 sind die vollständige Diagnose- und
+Reparaturkette eines einzigen realen Vorfalls — iShares-Totalausfall
+seit 25.09., siehe §4 Punkt 6: Wegwerf-Verifikation der Ersatz-URLs
+(#62), der eigentliche URL-Fix (#63), und die Härtung gegen ein dabei
+aufgetretenes ntfy-Längenproblem (#64). #65 sind zwei weitere,
+unabhängige Wächter (Push-Zustellung per Log-Scan, Lauf-Zeitversatz-
+Beobachtung).
 
 Alle Merge-Commits liegen auf `main`. Die Merge-Klasse steht ab #14 im
 PR-Titel; davor wurde sie je Auftrag im Chat vereinbart und ist im Repo
@@ -134,12 +157,30 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #55 | `4f7c96d`→`4c822dd` | 17.09. | Index-Benchmark-Vergleich auf der Evaluation-Seite (additives Schema 1→2, Juli-Eintrag bewusst nicht rückwirkend ergänzt) | MANUAL |
 | #56 | `cddef36`→`9538477` | 17.09. | Handelbarkeits-Filter-Text auf der Methodik-Seite präzisiert (Rangwirkung statt pauschalem „kein Signal") | SELF |
 | #57 | `fda07b0`→`4782de8` | 17.09. | Drei weitere Formulierungsschärfungen auf der Methodik-Seite (Tie-Breaking, Methoden-Anspruch, bereinigte Kurse beim 52W-Hoch) | SELF |
+| #58 | `f6e0a72`→`60a58b9` | 27.09. | SESSION_HANDOVER.md auf Stand nach PR #57 gebracht (#51–#57 nachgezogen) | SELF |
+| #59 | `d9853d4`→`068b8e8` | 27.09. | Doku-Wächter für SESSION_HANDOVER.md gegen den PR-Rückstand (`SCHWELLE_PRS = 4`) | MANUAL |
+| #60 | `78bbb03`→`f9570df` | 27.09. | Drei read-only Sicherheits-Checks: PR-Verwaisungs-Wächter (neu gebaut), Workflow-Timeout-Abdeckung (keine Lücke gefunden), Requirements-Vollständigkeit (keine Lücke gefunden) | MANUAL |
+| #61 | `92433bf`→`689d7a7` | 29.09. | PR-Verwaisungs-Wächter: realer GraphQL-Node-Limit-Fehlschlag behoben (zweistufiger Abruf statt einer Sammel-Abfrage) | MANUAL |
+| #62 | `c0d84ac`/`66d3c1c`→`a5c363c` | 02.10. | Wegwerf-Workflow `probe_ishares_neu.yml` zur Verifikation der neuen BlackRock-URLs — **noch nicht zurückgebaut, siehe §5** | MANUAL¹ |
+| #63 | `155b47a`→`ea27893` | 02.10. | iShares-Download auf neuen BlackRock-Endpunkt umgestellt (ishares.com seit 25.09. tot), `asOfDate` bewusst weggelassen | MANUAL¹ |
+| #64 | `f53594c`→`170f03e` | 03.10. | ntfy-Nachrichtenkürzung (`begrenze_bloecke()`, 2.000-Zeichen-Grenze) gegen HTTP 500/50001 bei vielen gleichzeitig gebrochenen Verträgen | ¹ |
+| #65 | `70f45d2`→`2c6c0e0` | 04./05.10. | Zwei neue Wächter: ntfy-Zustellung per Log-Scan (`gh api`/`gh run view --log`, bewusst keine Datei-Persistenz) + Lauf-Zeitversatz-Beobachtung (> 4 Std. gegenüber nominellem Cron) | MANUAL¹ |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
 #40/#41/#42/#43/#44/#45/#50/#51/#52/#54/#56 tragen keinen eigenen „Merge
 pull request"-Commit im linearen Verlauf (Squash bzw. Fast-Forward) — die
 Inhalts-Hashes sind über `gh`/die PR-Ansicht verifiziert, nicht geraten.
+
+¹ #62–#65 deklarieren — anders als #1–#61 — keine Merge-Klasse wörtlich
+im PR-Text (geprüft per `gh api`); alle vier wurden von Easy persönlich
+gemergt (`merged_by`), nicht nach dem Self-Merge-Kriterium. Klasse hier
+aus der Art der Änderung abgeleitet (#62/#63/#65: neue/geänderte
+Workflow-Datei bzw. neue externe Datenquelle, beides laut §7.4 zwingend
+MANUAL; #64: reine Bug-Fix-Härtung ohne Logikänderung, laut §7.4
+SELF-fähig, aber tatsächlich manuell gemergt) — nachträglich zugeordnet,
+nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
+(PRs bereits gemergt), hier nur transparent gemacht.
 
 ---
 
@@ -148,7 +189,7 @@ Inhalts-Hashes sind über `gh`/die PR-Ansicht verifiziert, nicht geraten.
 | Wann | Was | Warum |
 |---|---|---|
 | **laufend, montags** | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
-| **25.–30.09.2026** | **Zweites Vertragstest-Fenster.** Erst jetzt gibt es eine ZWEITE Woche echter DE-Abweichungszahlen zum Vergleich mit dem ersten Fenster (25.–31.08.). | Siehe §4 Punkt 1 (DE-Toleranz) — eine einzelne Woche reicht nicht zur Kalibrierung, siehe dortige Begründung. |
+| **25.–31.10.2026** | **Drittes Vertragstest-Fenster — jetzt mit doppeltem Zweck.** (a) Erster echter Wirksamkeitstest von PR #63 (BlackRock-URL) und PR #64 (Nachrichtenkürzung) unter echten Bedingungen — `vertrag.yml` lief seit deren Merge (02./03.10.) noch kein einziges Mal. (b) Zugleich die nächste Chance auf eine zweite Woche echter DE-Abweichungszahlen (siehe §4 Punkt 1) — das 25.–30.09.-Fenster lieferte keine: alle fünf iShares-Quellen waren die ganze Woche tot (siehe §4 Punkt 6). | Siehe §4 Punkt 1 (DE-Toleranz) und §4 Punkt 6 (iShares-Totalausfall, PR #63/#64-Wirksamkeit) — explizit terminierte Wiedervorlage, nicht nur „irgendwann". |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **offen, keine Frist** | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 
@@ -159,6 +200,16 @@ Hygiene-Backlog Punkt 1 (default-deny, #40). Ebenfalls erledigt: die
 `series_roh`/`Adj Close`-Kopplung in `src/momentum/data.py` (#51, siehe
 §4 Punkt 2) — die Kausalität zum 31.08.-Vorfall selbst bleibt dabei
 unbewiesen, das war nie Teil dieser Wiedervorlage.
+
+**Das 25.–30.09.2026-Vertragstest-Fenster selbst ist durchlaufen, aber
+OHNE den erhofften Kalibrierungs-Nutzen:** alle fünf `vertrag.yml`-Läufe
+in diesem Fenster (25./28./29./30.09., Actions-Runs `36138643530`,
+`36448977860`, `36582489971`, `36728428301`) trafen auf einen bereits
+toten iShares-Endpunkt (HTTP 404, siehe §4 Punkt 6) — der DE-
+Kursvergleich blieb die ganze Woche „entfallen", keine einzige neue
+Abweichungszahl. Die Wiedervorlage aus der letzten Pflege ist damit
+NICHT erledigt, sondern auf das nächste Fenster verschoben (25.–31.10.,
+Zeile oben).
 
 ---
 
@@ -174,8 +225,13 @@ uneinheitlich: am 28.08. lief der volle Vergleich sauber durch (102 von
 `33205016377`); am 31.08. selbst waren **0 von 102 Titeln** vergleichbar
 („entfallen", kein Bruch — siehe Punkt 2 unten). Eine einzelne Woche mit
 nur einem auffälligen Tag reicht nicht, um `TOLERANZ` gegen echte
-Streuung statt gegen das gesetzte Bauchgefühl zu prüfen. Nächstes Fenster:
-25.–30.09.2026 (§3). **Bis dahin nichts ändern.**
+Streuung statt gegen das gesetzte Bauchgefühl zu prüfen. Das vorgesehene
+nächste Fenster (25.–30.09.2026) lieferte **keine** neue Zahl: alle fünf
+iShares-Quellen waren die ganze Woche durch HTTP 404 tot (Actions-Runs
+`36138643530`, `36448977860`, `36582489971`, `36728428301` — siehe §4
+Punkt 6), der DE-Kursvergleich blieb durchgehend „entfallen". Nächste
+reale Chance: 25.–31.10.2026, jetzt mit bereits gemergtem URL-Fix (§2
+#63) — siehe §3. **Bis dahin weiterhin nichts ändern.**
 
 **2. Der Vertragstest-Vorfall vom 31.08.2026 — untersucht, kein Bug,
 zwei belegte Befunde.** *(dokumentiert, nichts zu tun)*
@@ -230,6 +286,67 @@ Reihe an einem künftigen Stichtag nicht, greift der laute Abbruch
 Rückfall. Träte das ein, wäre die Frage: Kursindex als Notnagel (nein) oder
 Stichtag verschieben (ja).
 
+**5. Yahoo-Rate-Limit-Vorfall vom 01.10.2026 (Lauf 71) — untersucht,
+kein Bug, fail-soft bestätigt.** *(dokumentiert, nichts zu tun)*
+
+Der planmäßige Nacht-Lauf vom 01.10.2026, 00:49 UTC (Actions-Run
+`36798080643`, gedacht für den September-Monats-Stichtag) brach ab mit,
+wörtlich aus dem Job-Log: `['^SP500TR']: YFRateLimitError('Too Many
+Requests. Rate limited. Try after a while.')`, gefolgt von `LAUF
+ABGEBROCHEN: [us] Keine Indexdaten fuer ^SP500TR — ohne Handelskalender
+kein Stichtag.` Exit-Code 2, **kein** „Lauf 71"-Commit entstand (derselbe
+Mechanismus wie bei Lauf 1, siehe §8 Lesson 3). Fail-soft griff exakt wie
+vorgesehen: „Es wurde bewusst nichts veroeffentlicht und nichts
+eingefroren."
+
+Easy hat denselben Tag, 21:13 UTC, den Lauf von Hand erneut ausgelöst
+(`workflow_dispatch`, Actions-Run `36927209332`, Lauf-Nummer 72) — **das
+war ein manueller Nachlauf, keine automatische Wiederholung** durch den
+nächsten planmäßigen Zyklus (der wäre erst am 02.10., 01:04 UTC,
+gekommen, und hätte den dann bereits eingefrorenen September-Stichtag
+nicht erneut geschrieben). Lauf 72 lief vollständig durch und schrieb den
+September-Stichtag (`data/rankings/{de,us}_2026-09.json`, Commit
+`6de1fae`). Kein Code-Fix nötig oder vorgenommen — eine Yahoo-
+Ratenbegrenzung ist ein bekanntes, bereits per Fail-soft abgedecktes
+Risiko, kein neuer Fund.
+
+**6. iShares-Totalausfall, zweite Welle (25.–30.09.2026) — untersucht,
+behoben, Wirksamkeit noch nicht real geprüft.** *(siehe §3, Termin
+25.–31.10.2026)*
+
+Alle fünf iShares-Zweitquellen (DAX/EXS1, MDAX/EXS3, TecDAX/EXS2, SXR8,
+IUSA) lieferten ab mindestens 25.09.2026 nur noch HTTP 404 von der alten
+`ishares.com`-URL — bestätigt über vier unabhängige `vertrag.yml`-Läufe
+(25./28./29./30.09., Actions-Runs `36138643530`, `36448977860`,
+`36582489971`, `36728428301`, je „5 von 11 Vertraegen gebrochen") sowie
+denselben Befund im Lauf-72-Job-Log (01.10., siehe Punkt 5 oben). Betraf
+**ausschließlich den unabhängigen Kursvergleichs-Gatter** (Stufe 2a/2b,
+§7.2) — das Ranking selbst (yfinance-basiert) lief beide Male unberührt
+durch, siehe September-Top-5 in §1.
+
+Zwei Reparaturen, beide bereits gemergt:
+- **PR #63:** neuer BlackRock-Endpunkt (`component=holdings`) für alle
+  fünf Quellen, einzeln vom Actions-Runner aus gegengeprüft (nicht nur
+  von einer Quelle auf die anderen vier abgeleitet). `asOfDate` bewusst
+  weggelassen (liefert ohne Parameter zuverlässig den aktuellen Stand,
+  mit falschem Datum bleibt die Antwort HTTP 200, aber das Datumsfeld
+  wird leer).
+- **PR #64:** `notify.begrenze_bloecke()` (2.000-Zeichen-Grenze) gegen
+  ein bei dieser Häufung aufgetretenes Nebenproblem — zwei der vier
+  obigen Läufe (29./30.09., Job-IDs `109454006199`/`109931272494`)
+  scheiterten zusätzlich daran, dass `push_vertrag_gebrochen()` mit
+  allen fünf Bruch-Details auf ~4.856 Zeichen wuchs und von ntfy mit
+  `HTTP 500 — internal server error (code 50001)` abgelehnt wurde —
+  zeichengenau aus dem Job-Log rekonstruiert, rein zeitlich bedingt:
+  beide Läufe fanden VOR dem Merge von PR #64 (03.10., `f53594c`) statt,
+  sind also kein Rückfall nach der Härtung, sondern deren ursprünglicher
+  Anlass.
+
+**Offen, explizit terminiert:** `vertrag.yml` lief seit dem Merge beider
+Fixes (02./03.10.) noch **kein einziges Mal** — der Workflow feuert nur
+im Fenster 25.–31. eines Monats. Ob beide Fixes unter echten Bedingungen
+halten, zeigt sich frühestens 25.–31.10.2026 (siehe §3).
+
 ---
 
 ## 5. Hygiene-Backlog
@@ -244,6 +361,17 @@ Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
    `datenquelle.yml`, `tests.yml`, `universum.yml`, `vertrag.yml` — dort
    seit PR #49 in **beiden** Jobs, `waechter.yml`) — Beleg:
    `grep -rn "actions/checkout@\|actions/setup-python@" .github/workflows/`.
+2. **Wegwerf-Workflow `probe_ishares_neu.yml` (PR #62) noch nicht
+   zurückgebaut** — neu entdeckt bei dieser Nachziehung (nicht Teil des
+   ursprünglichen Auftrags zu #62, sondern beim Abgleich mit dem
+   aktuellen Repo-Stand aufgefallen, siehe §2 Fußnote ¹): Datei und
+   Eintrag im geschlossenen Workflow-Set
+   (`tests/unit/test_workflow_hygiene.py`) sind unverändert seit
+   `c0d84ac`/`66d3c1c` (02.10.) vorhanden, obwohl der Zweck (Prüfung der
+   neuen BlackRock-URLs) mit dem Merge von PR #63 (02.10.) erfüllt ist.
+   Risiko weiterhin gering (`permissions: contents: read`, nur
+   `workflow_dispatch`, siehe Kopfkommentar der Datei) — aber ein
+   eigener, kleiner Rückbau-PR steht noch aus.
 
 Erledigt und deshalb nicht mehr aufgeführt: Punkt „Testkontext auf
 default-deny umstellen" (#40, siehe §10), die Kosmetik-Punkte (tote
@@ -279,6 +407,24 @@ sich selbst wartet"; die Maschine arbeitet, Easy behält den Ein-Tipp-Veto):
 | 2a | Zweite Kursquelle **DE** mit Vergleichsgatter | **gebaut, scharf seit 31.08.** — realer Vorfall und Diagnose siehe §4 Punkt 2 |
 | 2b | Zweite Kursquelle **US** (S&P-500-UCITS-Bestandslisten) | **gebaut, scharf seit 31.08.** (#35, MANUAL-MERGE, 14.08.). Anker = Bestands-Stichtag selbst, Toleranz 0,25 %, Zulass 3 Abweichler, Quelle SXR8 primär mit IUSA als dokumentiertem Ausweich, Split-Ausnahme mit Anti-Schlupfloch-Test, Ticker-Mapping Klassen-Titel „.“→„-“ |
 | 3 | Reparatur-Agent: liest rote Läufe, öffnet einen PR, CI beweist, Easy merged | **erste Ausbaustufe gebaut** (#49, 08.09.) — schmal auf Datumsformat-Drift bei iShares begrenzt, siehe §4 Punkt 3. Weitere Fehlerklassen: offen, Easys Entscheid. |
+
+**Weitere Wächter, außerhalb dieses Stufenplans** (der Stufenplan oben
+ist Daten-/Vertragsintegrität; diese hier beobachten den Betrieb/Prozess
+selbst — dasselbe „melden, nie handeln"-Muster wie Stufe 0):
+
+| Wächter | Beobachtet | Schwelle | PR |
+|---|---|---|---|
+| Doku-Wächter (`handover_waechter.py`) | SESSION_HANDOVER.md-Rückstand gegenüber gemergten PRs | 4 ungepflegte PRs | #59 |
+| PR-Verwaisungs-Wächter (`pr_verwaisung_waechter.py`) | offene PRs ohne Lebenszeichen | 5 Werktage seit letztem Kontakt | #60 (GraphQL-Fix: #61) |
+| Push-Zustellungs-Wächter (`push_zustellung_waechter.py`) | fehlgeschlagene ntfy-Versandversuche (Log-Scan über `gh api`/`gh run view --log`, bewusst ohne Datei-Persistenz) | ≥ 1 Fehlschlag in 7 Tagen | #65 |
+| Lauf-Zeitversatz-Beobachtung (`lauf_zeitversatz_waechter.py`) | Startverzug von `lauf.yml` gegenüber 21:45 UTC | > 4 Std. bei mind. einem der letzten 10 Läufe | #65 |
+
+Alle vier: lautlos (ntfy-Priorität „min"/„default", nie „high"),
+wöchentlicher Cron (montags, teils 07:30 UTC gemeinsam mit dem
+Totmannschalter), nur Lese-Rechte (`contents: read`, teils
+`actions: read`/`pull-requests: read`), je ein statischer Quelltext-Test
+gegen jeden schreibenden Aufruf. Der Doku-Wächter hat sich bereits real
+bewährt — siehe Dokument-Kopf.
 
 *Herleitung der Stufe-2b-Werte* (unverändert seit der letzten Pflege):
 Die Wegwerf-Messung aus #31 (drei Läufe, 10.–12.08.) verglich dieselbe
@@ -583,9 +729,17 @@ Rangfolge nie an — festgehalten in
     nichts davon — obwohl es sich selbst als „die kanonische, allein
     tragfähige Quelle für den Betriebszustand" versteht. Die Lücke ist
     kein Einzelfall auf Vorrat: sie entsteht immer dann, wenn ein Auftrag
-    Code ändert, aber keiner explizit die Doku nachzieht. Kein Automatismus
-    dagegen eingerichtet (wäre selbst ein eigener, zu klärender Auftrag) —
-    hier nur benannt, damit die nächste Lücke wenigstens auffällt.
+    Code ändert, aber keiner explizit die Doku nachzieht. Zum Zeitpunkt
+    dieser Formulierung war **kein Automatismus dagegen eingerichtet**
+    (wäre selbst ein eigener, zu klärender Auftrag) — hier nur benannt,
+    damit die nächste Lücke wenigstens auffällt. Das wiederholte sich
+    exakt so ein zweites Mal (11.09.–27.09., #51–#57). **Nachtrag
+    05.10.2026:** der Automatismus existiert inzwischen (Doku-Wächter,
+    PR #59, `SCHWELLE_PRS = 4`) und hat die dritte Lücke
+    (27.09.–05.10., #59–#65) real selbst erkannt und gemeldet (Actions-
+    Run `37339845773`) — siehe Dokument-Kopf. Lesson 11 ist damit die
+    erste Lesson dieses Dokuments, die sich nicht nur beschreibt, sondern
+    einmal tatsächlich als behoben beobachten ließ.
 
 ---
 
@@ -640,3 +794,12 @@ hier, damit niemand sie erneut aufmacht.
 | Index-Benchmark-Vergleich auf der Evaluation-Seite | #55 | siehe §2, §7.7 |
 | Handelbarkeits-Filter-Text auf der Methodik-Seite präzisiert (und §7.2-Zeile in diesem Dokument entsprechend korrigiert) | #56 | siehe §2, §7.2 |
 | Drei weitere Formulierungsschärfungen auf der Methodik-Seite (Tie-Breaking, Methoden-Anspruch, bereinigte Kurse beim 52W-Hoch) | #57 | siehe §2, §7.6 |
+| SESSION_HANDOVER.md auf Stand nach PR #57 gebracht | #58 | siehe §2 |
+| Doku-Wächter für SESSION_HANDOVER.md (`SCHWELLE_PRS = 4`) — inzwischen real bewährt (05.10.2026) | #59 | siehe Dokument-Kopf, §2, §6 |
+| PR-Verwaisungs-Wächter gebaut; Workflow-Timeout-Abdeckung und Requirements-Vollständigkeit geprüft, keine Lücke gefunden | #60 | siehe §2, §6 |
+| PR-Verwaisungs-Wächter: realer GraphQL-Node-Limit-Fehlschlag behoben | #61 | siehe §2 |
+| Neue BlackRock-URLs einzeln vom Runner aus verifiziert (Wegwerf-Workflow — Rückbau noch offen, siehe §5) | #62 | siehe §2, §4 Punkt 6, §5 |
+| iShares-Download auf den verifizierten BlackRock-Endpunkt umgestellt | #63 | siehe §2, §4 Punkt 6 |
+| ntfy-Nachrichtenkürzung gegen HTTP 500/50001 bei vielen gleichzeitigen Vertragsbrüchen | #64 | siehe §2, §4 Punkt 6 |
+| Zwei neue Wächter: ntfy-Zustellung (Log-Scan) und Lauf-Zeitversatz-Beobachtung | #65 | siehe §2, §6 |
+| Yahoo-Rate-Limit-Vorfall (Lauf 71, 01.10.) untersucht — fail-soft bestätigt, September-Stichtag per manuellem Nachlauf (Lauf 72) geschrieben | — | siehe §1, §4 Punkt 5 |
