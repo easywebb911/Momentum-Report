@@ -55,12 +55,6 @@ def test_es_gibt_die_erwarteten_workflows():
         # -- er meldet, wenn juengste lauf.yml-Laeufe deutlich spaeter als
         # der nominelle Cron-Zeitpunkt (21:45 UTC) gestartet sind (PR #53).
         "lauf_zeitversatz_waechter.yml",
-        # WEGWERF, bewusst befristet: prueft die neue blackrock.com-URL
-        # fuer die iShares-Bestandslisten vom Runner aus (ishares.com ist
-        # seit mind. 25.09.2026 tot). Schreibt nichts, nur workflow_dispatch.
-        # Wird nach Auswertung durch einen eigenen Rueckbau-PR wieder
-        # entfernt -- dann auch hier wieder raus.
-        "probe_ishares_neu.yml",
     }
 
 
