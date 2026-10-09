@@ -1,11 +1,11 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 05.10.2026**, nach PR #65 (zwei neue Wächter: Push-Zustellung,
-Lauf-Zeitversatz). Nachgezogen: PRs #59–#65, die seit der letzten Pflege
-(PR #58, 27.09., brachte den Stand nach PR #57) ungepflegt blieben — PR
-#58 selbst bestätigt als Referenzpunkt (Inhalts-Commit `f6e0a72`, siehe
-§2). Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen
-Stand nennt `git log -1`, er steht hier bewusst nicht als Zahl.
+**Stand: 09.10.2026**, nach PR #70 (Split-Wächter). Nachgezogen: PR #66
+(Doku-Pflege nach #65), PR #67 (Rückbau `probe_ishares_neu.yml`), PR #68
+(Wegwerf-Probe Information Discreteness), PR #69 (Rückbau der ID-Probe),
+PR #70 (Split-Wächter — siehe §4 Punkt 9). Repo
+`easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand nennt
+`git log -1`, er steht hier bewusst nicht als Zahl.
 
 Dieses Dokument ist der Übergabepunkt zwischen zwei Arbeits-Sitzungen. Es
 beantwortet drei Fragen: *Was läuft gerade?*, *Was ist offen?*, *Was darf
@@ -107,6 +107,18 @@ aufgetretenes ntfy-Längenproblem (#64). #65 sind zwei weitere,
 unabhängige Wächter (Push-Zustellung per Log-Scan, Lauf-Zeitversatz-
 Beobachtung).
 
+**Kontext #66–#70 (nicht wiederholt, nur einmal hier vermerkt):** #66
+ist die vorletzte Handover-Pflege (Stand nach #65). #67 ist der längst
+überfällige Rückbau von `probe_ishares_neu.yml` (#62) — schließt den in
+§5/§10 selbst gemeldeten Hygiene-Rückstand. #68–#69 sind eine
+abgeschlossene Erkundung nach demselben Wegwerf-Muster wie #62/#67:
+#68 berechnet die Information Discreteness (Da/Gurun/Warachka 2014)
+für beide Universen rein zur Diagnose (nur Job-Log, kein Einfluss auf
+Score/Ranking), #69 baut sie nach Auswertung der Befunde wieder zurück
+(siehe §4 Punkt 7). #70 ist der eigentliche Produktionscode aus dieser
+Serie — der Split-Wächter, ausgelöst durch den real aufgetretenen
+MNST-Vorfall (siehe §4 Punkt 9).
+
 Alle Merge-Commits liegen auf `main`. Die Merge-Klasse steht ab #14 im
 PR-Titel; davor wurde sie je Auftrag im Chat vereinbart und ist im Repo
 nicht dokumentiert (bei #1–#3 deshalb „—"). **#22–#39 sind nicht erneut
@@ -161,10 +173,15 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #59 | `d9853d4`→`068b8e8` | 27.09. | Doku-Wächter für SESSION_HANDOVER.md gegen den PR-Rückstand (`SCHWELLE_PRS = 4`) | MANUAL |
 | #60 | `78bbb03`→`f9570df` | 27.09. | Drei read-only Sicherheits-Checks: PR-Verwaisungs-Wächter (neu gebaut), Workflow-Timeout-Abdeckung (keine Lücke gefunden), Requirements-Vollständigkeit (keine Lücke gefunden) | MANUAL |
 | #61 | `92433bf`→`689d7a7` | 29.09. | PR-Verwaisungs-Wächter: realer GraphQL-Node-Limit-Fehlschlag behoben (zweistufiger Abruf statt einer Sammel-Abfrage) | MANUAL |
-| #62 | `c0d84ac`/`66d3c1c`→`a5c363c` | 02.10. | Wegwerf-Workflow `probe_ishares_neu.yml` zur Verifikation der neuen BlackRock-URLs — **noch nicht zurückgebaut, siehe §5** | MANUAL¹ |
+| #62 | `c0d84ac`/`66d3c1c`→`a5c363c` | 02.10. | Wegwerf-Workflow `probe_ishares_neu.yml` zur Verifikation der neuen BlackRock-URLs — zurückgebaut durch #67 (06.10., siehe §5) | MANUAL¹ |
 | #63 | `155b47a`→`ea27893` | 02.10. | iShares-Download auf neuen BlackRock-Endpunkt umgestellt (ishares.com seit 25.09. tot), `asOfDate` bewusst weggelassen | MANUAL¹ |
 | #64 | `f53594c`→`170f03e` | 03.10. | ntfy-Nachrichtenkürzung (`begrenze_bloecke()`, 2.000-Zeichen-Grenze) gegen HTTP 500/50001 bei vielen gleichzeitig gebrochenen Verträgen | ¹ |
 | #65 | `70f45d2`→`2c6c0e0` | 04./05.10. | Zwei neue Wächter: ntfy-Zustellung per Log-Scan (`gh api`/`gh run view --log`, bewusst keine Datei-Persistenz) + Lauf-Zeitversatz-Beobachtung (> 4 Std. gegenüber nominellem Cron) | MANUAL¹ |
+| #66 | `e7c7b70`→`34017e8` | 05.10. | SESSION_HANDOVER.md auf Stand nach PR #65 gebracht (#59–#65 nachgezogen) | SELF |
+| #67 | `764b8b6`→`6ad14b5` | 06.10. | Rückbau des Wegwerf-Workflows `probe_ishares_neu.yml` (PR #62) — schließt Hygiene-Backlog Punkt 2 (siehe §5, §10) | SELF |
+| #68 | `fbb6786`→`77d6f45` | 09.10. | Wegwerf-Probe `probe_id_diagnose.yml`/`tools/probe_id_diagnose.py`: Information Discreteness (Da/Gurun/Warachka 2014) für beide Universen vom Runner berechnet, nur Job-Log | MANUAL |
+| #69 | `72f3636`→`e4cfdee` | 09.10. | Rückbau der ID-Probe aus #68, wie dort selbst angekündigt — nach Auswertung (siehe §4 Punkt 7) | SELF |
+| #70 | `9419671`→`c56dc64` | 09.10. | Split-Wächter (`split_waechter.py`, nur Erkennen und Melden) — Auslöser: MNST-Vorfall US 2026-08, siehe §4 Punkt 9 | SELF |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -189,7 +206,8 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | Wann | Was | Warum |
 |---|---|---|
 | **laufend, montags** | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
-| **25.–31.10.2026** | **Drittes Vertragstest-Fenster — jetzt mit doppeltem Zweck.** (a) Erster echter Wirksamkeitstest von PR #63 (BlackRock-URL) und PR #64 (Nachrichtenkürzung) unter echten Bedingungen — `vertrag.yml` lief seit deren Merge (02./03.10.) noch kein einziges Mal. (b) Zugleich die nächste Chance auf eine zweite Woche echter DE-Abweichungszahlen (siehe §4 Punkt 1) — das 25.–30.09.-Fenster lieferte keine: alle fünf iShares-Quellen waren die ganze Woche tot (siehe §4 Punkt 6). | Siehe §4 Punkt 1 (DE-Toleranz) und §4 Punkt 6 (iShares-Totalausfall, PR #63/#64-Wirksamkeit) — explizit terminierte Wiedervorlage, nicht nur „irgendwann". |
+| **25.–31.10.2026** | **Drittes Vertragstest-Fenster — jetzt mit dreifachem Zweck.** (a) Erster echter Wirksamkeitstest von PR #63 (BlackRock-URL) und PR #64 (Nachrichtenkürzung) unter echten Bedingungen — `vertrag.yml` lief seit deren Merge (02./03.10.) noch kein einziges Mal. (b) Zugleich die nächste Chance auf eine zweite Woche echter DE-Abweichungszahlen (siehe §4 Punkt 1) — das 25.–30.09.-Fenster lieferte keine: alle fünf iShares-Quellen waren die ganze Woche tot (siehe §4 Punkt 6). (c) **Der 30.10.2026-Monats-Stichtag in diesem Fenster ist zugleich der erste echte Wirksamkeitstest des neuen Split-Wächters** (PR #70, siehe §4 Punkt 9) — Zeile direkt darunter. | Siehe §4 Punkt 1 (DE-Toleranz), §4 Punkt 6 (iShares-Totalausfall, PR #63/#64-Wirksamkeit) und §4 Punkt 9 (Split-Wächter) — explizit terminierte Wiedervorlage, nicht nur „irgendwann". |
+| **30.10.2026** | **Erster echter Test des Split-Wächters** (`split_waechter.py`, PR #70) — der nächste Monats-Stichtag-Lauf nach dem Merge. Bisher nur an einer synthetischen, aus dem MNST-Vorfall rekonstruierten Reihe geprüft (siehe Testdatei), noch nie an echten Live-Daten. Prüfen: löst er bei einem echten, inzwischen bereits nachbereinigten Split fälschlich an (Fehlalarm) oder bleibt er bei einer normalen Reihe erwartungsgemäß stumm? | Siehe §4 Punkt 9 — Teil desselben Fensters wie die Zeile oben, hier als eigene Zeile, weil der Anlass (Split-Erkennung) ein anderer ist als der Vertragstest. |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **offen, keine Frist** | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 
@@ -347,6 +365,91 @@ Fixes (02./03.10.) noch **kein einziges Mal** — der Workflow feuert nur
 im Fenster 25.–31. eines Monats. Ob beide Fixes unter echten Bedingungen
 halten, zeigt sich frühestens 25.–31.10.2026 (siehe §3).
 
+**7. Lit-Check Frog-in-the-Pan / Information Discreteness — geprüft,
+nicht eingebaut.** *(dokumentiert, nichts zu tun)*
+
+Wegwerf-Diagnose (PR #68, Rückbau PR #69) hat die Information
+Discreteness (ID, Da/Gurun/Warachka 2014 — misst, ob eine Kursbewegung
+in vielen kleinen, gleichgerichteten Schritten entstand ("kontinuierlich"/
+"frog in the pan", hohe ID) oder in wenigen großen Sprüngen
+("sprunghaft", niedrige ID)) für beide Universen über Juli/August/
+September 2026 nachgerechnet. Befund: Top-5 im Mittel ID-Perzentil ca.
+0,25 (0,5 = neutral, tendenziell Richtung "sprunghaft"), aber nur 1 von
+30 Top-5-Plätzen über die drei Monate tatsächlich im "sprunghaften
+Drittel" (DVA, Juli, 0,678). Eine Umsortierung der Top-15 nach ID ändert
+2–3 von 5 Plätzen — das ist aber überwiegend Rauschen: ein einzelner
+Handelstag verschiebt die ID bereits um ca. 0,009 ID-Einheiten, in der
+Größenordnung der beobachteten Unterschiede. **Entscheid: ID wird NICHT
+in den Score aufgenommen, kein Bau geplant** — die Literatur selbst
+(Frog-in-the-Pan) betrifft ohnehin eine andere Fragestellung
+(Kontinuität der Kursbildung) als die hier verwendeten Faktoren
+(Höhe der Rendite, Nähe zum Hoch), nicht nur die schwache Trennschärfe
+in den drei beobachteten Monaten.
+
+**8. Lit-Check 52-Wochen-Hoch bei Large Caps — Konvention gestützt,
+unverändert.** *(dokumentiert, nichts zu tun)*
+
+Barroso/Wang (2021) — **nur aus zweiter Hand gesehen, im Original noch
+nicht nachgelesen, hier ausdrücklich als solcher markiert** — deutet
+laut dieser Zweitquelle darauf hin, dass der George/Hwang-(2004)-Befund
+zum 52-Wochen-Hoch möglicherweise auf kleinere Aktien beschränkt ist und
+bei Large Caps schwächer ausfallen könnte. Das Universum dieses Projekts
+(S&P 500, DAX/MDAX/TecDAX) besteht überwiegend aus Large/Mid Caps. Diese
+Zweitquelle **widerspricht der bestehenden 50/50-Gewichtung nicht**,
+sondern ist allenfalls ein Grund, sie nicht noch höher zu gewichten —
+die Konvention bleibt unverändert (siehe §7.6). Wiedervorlage nur, falls
+das Original gelesen und ein abweichender Befund bestätigt wird.
+
+**9. MNST-Split-Vorfall (US 2026-08) — Ursache geklärt, Ranking bleibt
+eingefroren, Split-Wächter gebaut (PR #70).** *(dokumentiert + behoben
+für künftige Fälle, nichts am August-Stand zu tun)*
+
+Split 2:1 am 11.08.2026, Stichtag 28.08.2026. Der Lauf vom 31.08.
+rechnete Momentum **-0,2278** statt der im Nachhinein rekonstruierten
+korrekten **+0,5443** (Rang 471 statt eines deutlich besseren Rangs).
+Rekonstruiert per Handrechnung in der Sitzung vom 09.10.2026 (nicht per
+Live-Abruf — Yahoo im Sandbox-Kontext nicht erreichbar): der M-12-Anker
+in `momentum_12_1` war **exakt Faktor 2 zu hoch**, weil Yahoo die
+Vorgeschichte zu diesem Zeitpunkt noch nicht auf den Split
+nachbereinigt hatte. Im September war die Reihe wieder normal. **Top-5
+vermutlich unberührt** (Schätzung ca. 80 Punkte gegen 91 bei Rang 5 —
+MNST selbst lag mit dem falschen Wert weit außerhalb der Top-15, ein
+korrigierter Wert hätte es nicht automatisch hineingehoben). Der
+eingefrorene August-Stand (`data/rankings/us_2026-08.json`) bleibt
+**unverändert eingefroren** — keine rückwirkende Korrektur, siehe das
+Einfrierungsprinzip in §7.2.
+
+Als Gegenmaßnahme für künftige Fälle: der **Split-Wächter**
+(`split_waechter.py`, PR #70) erkennt innerhalb der für
+`momentum_12_1`/`high_52w_ratio` genutzten Tagesreihe (`Adj Close`) eine
+Naht mit einem Kursverhältnis nahe einem gängigen Split-Verhältnis (2,
+3, 4, 5, 10 — bewusst ohne 3:2 wegen Fehlalarm-Risiko durch echte
+Kurseinbrüche, ±3 % Toleranz) und meldet den Fund (eine Zeile je Titel,
+ein gebündelter Push) — **nur Erkennen und Melden**, kein Eingriff in
+Score/Ranking. Erster echter Wirksamkeitstest: Stichtag 30.10.2026
+(siehe §3).
+
+**10. AMCR, BNY, WBD — aus der ID-Diagnose offen geblieben, Ursache
+ungeklärt.** *(beobachten, ungeklärt)*
+
+Bei derselben Diagnose (Punkt 7 oben) fielen drei Titel auf, deren
+Ursache nicht abschließend geklärt werden konnte:
+- **AMCR:** ein Faktor von ca. 1,031 zwischen zwei unabhängig
+  berechneten Größen, sowohl im Juli- als auch im August-Stand
+  identisch — Ursache unbekannt, keine erkennbare Split-/Dividenden-
+  Erklärung gefunden.
+- **BNY:** 0,13 Prozentpunkte Differenz in der Momentum-Berechnung
+  gegenüber einer unabhängigen Gegenrechnung — zu klein, um die Ursache
+  aus der verfügbaren Diagnose sicher zu benennen.
+- **WBD:** dünne Tageshistorie; `high_52w_ratio` steht im September-
+  Stand exakt auf 1,0 (Titel genau am 52-Wochen-Hoch am Stichtag selbst)
+  — rechnerisch plausibel bei wenigen verfügbaren Handelstagen, aber
+  nicht weiter verifiziert.
+
+Keine dieser drei Beobachtungen hat bisher ein Ranking sichtbar
+verzerrt; alle drei bleiben als offene, unverifizierte Randnotizen
+stehen, keine davon rechtfertigt für sich allein einen eigenen Auftrag.
+
 ---
 
 ## 5. Hygiene-Backlog
@@ -361,17 +464,10 @@ Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
    `datenquelle.yml`, `tests.yml`, `universum.yml`, `vertrag.yml` — dort
    seit PR #49 in **beiden** Jobs, `waechter.yml`) — Beleg:
    `grep -rn "actions/checkout@\|actions/setup-python@" .github/workflows/`.
-2. **Wegwerf-Workflow `probe_ishares_neu.yml` (PR #62) noch nicht
-   zurückgebaut** — neu entdeckt bei dieser Nachziehung (nicht Teil des
-   ursprünglichen Auftrags zu #62, sondern beim Abgleich mit dem
-   aktuellen Repo-Stand aufgefallen, siehe §2 Fußnote ¹): Datei und
-   Eintrag im geschlossenen Workflow-Set
-   (`tests/unit/test_workflow_hygiene.py`) sind unverändert seit
-   `c0d84ac`/`66d3c1c` (02.10.) vorhanden, obwohl der Zweck (Prüfung der
-   neuen BlackRock-URLs) mit dem Merge von PR #63 (02.10.) erfüllt ist.
-   Risiko weiterhin gering (`permissions: contents: read`, nur
-   `workflow_dispatch`, siehe Kopfkommentar der Datei) — aber ein
-   eigener, kleiner Rückbau-PR steht noch aus.
+2. ~~**Wegwerf-Workflow `probe_ishares_neu.yml` (PR #62) noch nicht
+   zurückgebaut**~~ — **erledigt durch PR #67 (06.10.2026, siehe §2,
+   §10).** Datei und Eintrag im geschlossenen Workflow-Set
+   (`tests/unit/test_workflow_hygiene.py`) sind entfernt.
 
 Erledigt und deshalb nicht mehr aufgeführt: Punkt „Testkontext auf
 default-deny umstellen" (#40, siehe §10), die Kosmetik-Punkte (tote
@@ -418,13 +514,18 @@ selbst — dasselbe „melden, nie handeln"-Muster wie Stufe 0):
 | PR-Verwaisungs-Wächter (`pr_verwaisung_waechter.py`) | offene PRs ohne Lebenszeichen | 5 Werktage seit letztem Kontakt | #60 (GraphQL-Fix: #61) |
 | Push-Zustellungs-Wächter (`push_zustellung_waechter.py`) | fehlgeschlagene ntfy-Versandversuche (Log-Scan über `gh api`/`gh run view --log`, bewusst ohne Datei-Persistenz) | ≥ 1 Fehlschlag in 7 Tagen | #65 |
 | Lauf-Zeitversatz-Beobachtung (`lauf_zeitversatz_waechter.py`) | Startverzug von `lauf.yml` gegenüber 21:45 UTC | > 4 Std. bei mind. einem der letzten 10 Läufe | #65 |
+| Split-Wächter (`split_waechter.py`) | Tagesreihe (`bundle.adjusted`) eines Titels mit Naht nahe einem Split-Verhältnis — vermutlich noch nicht nachbereinigte Split-Vorgeschichte (siehe §4 Punkt 9) | Verhältnis innerhalb ±3 % von 2, 3, 4, 5 oder 10 (bewusst ohne 3:2) | #70 |
 
-Alle vier: lautlos (ntfy-Priorität „min"/„default", nie „high"),
-wöchentlicher Cron (montags, teils 07:30 UTC gemeinsam mit dem
-Totmannschalter), nur Lese-Rechte (`contents: read`, teils
-`actions: read`/`pull-requests: read`), je ein statischer Quelltext-Test
-gegen jeden schreibenden Aufruf. Der Doku-Wächter hat sich bereits real
-bewährt — siehe Dokument-Kopf.
+Alle fünf: lautlos bzw. ohne Sirene (ntfy-Priorität „min"/„default", nie
+„high"), nur Lese-Rechte, je ein statischer Quelltext-Test gegen jeden
+schreibenden Aufruf. Vier laufen als eigener wöchentlicher Cron
+(montags, teils 07:30 UTC gemeinsam mit dem Totmannschalter); der
+Split-Wächter ist der **einzige, der nicht als eigener Workflow läuft**
+— er braucht die vollständige Tagesreihe (`bundle.adjusted`), die nur
+während des eigentlichen Stichtags-Laufs existiert und nirgends
+persistiert wird, und ist deshalb direkt in `run.py` eingehängt
+(fail-soft, doppelt abgesichert, siehe §4 Punkt 9). Der Doku-Wächter hat
+sich bereits real bewährt — siehe Dokument-Kopf.
 
 *Herleitung der Stufe-2b-Werte* (unverändert seit der letzten Pflege):
 Die Wegwerf-Messung aus #31 (drei Läufe, 10.–12.08.) verglich dieselbe
@@ -798,8 +899,12 @@ hier, damit niemand sie erneut aufmacht.
 | Doku-Wächter für SESSION_HANDOVER.md (`SCHWELLE_PRS = 4`) — inzwischen real bewährt (05.10.2026) | #59 | siehe Dokument-Kopf, §2, §6 |
 | PR-Verwaisungs-Wächter gebaut; Workflow-Timeout-Abdeckung und Requirements-Vollständigkeit geprüft, keine Lücke gefunden | #60 | siehe §2, §6 |
 | PR-Verwaisungs-Wächter: realer GraphQL-Node-Limit-Fehlschlag behoben | #61 | siehe §2 |
-| Neue BlackRock-URLs einzeln vom Runner aus verifiziert (Wegwerf-Workflow — Rückbau noch offen, siehe §5) | #62 | siehe §2, §4 Punkt 6, §5 |
+| Neue BlackRock-URLs einzeln vom Runner aus verifiziert (Wegwerf-Workflow, inzwischen zurückgebaut, siehe darunter) | #62 | siehe §2, §4 Punkt 6 |
 | iShares-Download auf den verifizierten BlackRock-Endpunkt umgestellt | #63 | siehe §2, §4 Punkt 6 |
 | ntfy-Nachrichtenkürzung gegen HTTP 500/50001 bei vielen gleichzeitigen Vertragsbrüchen | #64 | siehe §2, §4 Punkt 6 |
 | Zwei neue Wächter: ntfy-Zustellung (Log-Scan) und Lauf-Zeitversatz-Beobachtung | #65 | siehe §2, §6 |
 | Yahoo-Rate-Limit-Vorfall (Lauf 71, 01.10.) untersucht — fail-soft bestätigt, September-Stichtag per manuellem Nachlauf (Lauf 72) geschrieben | — | siehe §1, §4 Punkt 5 |
+| SESSION_HANDOVER.md auf Stand nach PR #65 gebracht | #66 | siehe §2 |
+| Wegwerf-Workflow `probe_ishares_neu.yml` (#62) zurückgebaut | #67 | siehe §2, §5 |
+| Information Discreteness (Da/Gurun/Warachka 2014) für beide Universen diagnostiziert, keine Aufnahme in den Score | #68/#69 | siehe §2, §4 Punkt 7 |
+| Split-Wächter gebaut (MNST-Vorfall US 2026-08 als Auslöser) | #70 | siehe §2, §4 Punkt 9 |
