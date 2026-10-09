@@ -55,6 +55,13 @@ def test_es_gibt_die_erwarteten_workflows():
         # -- er meldet, wenn juengste lauf.yml-Laeufe deutlich spaeter als
         # der nominelle Cron-Zeitpunkt (21:45 UTC) gestartet sind (PR #53).
         "lauf_zeitversatz_waechter.yml",
+        # WEGWERF, bewusst befristet: rechnet die Information Discreteness
+        # (ID, Da/Gurun/Warachka 2014) fuer beide Universen vom Runner aus
+        # und gibt sie nur ins Job-Log aus (siehe
+        # tools/probe_id_diagnose.py). Schreibt nichts, nur
+        # workflow_dispatch. Wird nach Auswertung durch einen eigenen
+        # Rueckbau-PR wieder entfernt -- dann auch hier wieder raus.
+        "probe_id_diagnose.yml",
     }
 
 

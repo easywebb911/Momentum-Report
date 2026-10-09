@@ -1,0 +1,46 @@
+name: Probe Information Discreteness (Wegwerf)
+
+# WEGWERF-WORKFLOW. Rechnet die Information Discreteness (ID,
+# Da/Gurun/Warachka 2014) fuer beide Universen an den bisherigen
+# Monats-Stichtagen (Juli/August/September 2026, aus data/rankings/) und
+# am aktuellen Stand -- siehe tools/probe_id_diagnose.py fuer die volle
+# Begruendung, alle Annahmen und die ausdruecklich gemeldeten
+# Fenster-Zweifel. Das Ergebnis steht AUSSCHLIESSLICH in diesem Job-Log.
+#
+# SCHREIBT NICHTS: kein Commit, kein Push, kein PR, kein ntfy, keine
+# Aenderung an Score/Ranking/bestehendem Code -- `permissions: contents:
+# read` erzwingt das serverseitig, zusaetzlich zum reinen Lese-Code in
+# tools/probe_id_diagnose.py.
+#
+# BEWUSST NUR per Tap ausloesbar (workflow_dispatch, kein schedule): eine
+# einmalige Erkundung, kein wiederkehrender Dienst. Nach Auswertung wird
+# diese Datei (und tools/probe_id_diagnose.py) in einem eigenen
+# Rueckbau-PR wieder entfernt -- zweiter, separater Schritt, erst nach
+# Easys Rueckmeldung.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Abhaengigkeiten
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Information Discreteness berechnen (nur Log, schreibt nichts)
+        run: python tools/probe_id_diagnose.py
