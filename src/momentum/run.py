@@ -57,6 +57,7 @@ from .kursvergleich import (
 from . import konfluenz
 from . import kursvergleich_us
 from .notify import push_konfluenz_treffer, push_new_ranking, push_run_failed, push_test
+from .split_waechter import pruefe_und_melde as _split_waechter_pruefen
 from .ranking import (
     RANKING_DIR,
     RankingNotPossible,
@@ -288,6 +289,18 @@ def process_market(
             )
         bundle = download_prices(list(universe.tickers), start, end, downloader=downloader)
         status["daten"] = bundle.stats.as_dict()
+
+        # --- Split-Wächter: NUR Erkennen und Melden, kein Eingriff --------
+        # Liest exakt dieselbe Reihe (bundle.adjusted), mit der weiter unten
+        # momentum_12_1/high_52w_ratio rechnen -- schreibt nichts zurueck,
+        # veraendert status/Ranking nicht (siehe split_waechter.py). Eigenes
+        # try/except als zweite Sicherung zusaetzlich zum fail-soft-Verhalten
+        # von pruefe_und_melde() selbst: dieser Wächter darf den Lauf unter
+        # keinen Umstaenden gefaehrden.
+        try:
+            _split_waechter_pruefen(market.key, bundle.adjusted, log=log)
+        except Exception as exc:  # noqa: BLE001 - der Lauf ist wichtiger als der Wächter
+            log(f"[{market.key}] Split-Wächter uebersprungen: {type(exc).__name__}: {exc}")
 
         # --- Das Vergleichsgatter, VOR jeder Ranking-Bildung --------------
         # Die Reihenfolge ist nicht Geschmack: verweigert der Vergleich,
