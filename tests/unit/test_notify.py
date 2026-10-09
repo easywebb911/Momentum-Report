@@ -256,6 +256,12 @@ def test_kein_herzschlag_push_vorhanden():
         # unbedingt bei jedem woechentlichen Lauf.
         "push_pr_verwaist",
         "push_run_failed",
+        # Auch kein Herzschlag: split_waechter.py laeuft zwar bei jedem
+        # Stichtags-Lauf mit, meldet sich aber ausschliesslich, wenn die
+        # Erkennung mindestens einen split-verdaechtigen Kurssprung in
+        # einer Tagesreihe findet -- ohne Fund bleibt der Lauf stumm
+        # (siehe tests/unit/test_split_waechter.py).
+        "push_split_verdacht",
         "push_test",
         # Auch kein Herzschlag: der Vertragstest laeuft zwar nach
         # Zeitplan, meldet sich aber ausschliesslich, wenn ein Vertrag

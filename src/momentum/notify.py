@@ -707,3 +707,38 @@ def push_zeitversatz_beobachtet(text: str, **kwargs) -> bool:
     als nominell.
     """
     return push("Momentum-Report: Scheduler-Verzoegerung beobachtet", text, priority="min", **kwargs)
+
+
+def push_split_verdacht(eintraege: list[tuple[str, str]], **kwargs) -> bool:
+    """Push (13): split_waechter.py hat mindestens einen Titel gefunden, dessen
+    Tages-Kursreihe (dieselbe, mit der momentum_12_1/high_52w_ratio rechnen)
+    eine Naht mit einem split-verdaechtigen Kurssprung traegt -- vermutlich
+    eine noch nicht nachbereinigte Vorgeschichte nach einem Aktiensplit
+    (siehe split_waechter.py, Vorfall MNST US 2026-08).
+
+    EIN Push mit allen Funden als Liste, nicht einer je Fund -- derselbe
+    Grund wie bei push_vertrag_gebrochen/push_konfluenz_treffer: treten
+    mehrere Titel gleichzeitig auf, ist das EIN Ereignis.
+
+    Prioritaet bewusst "default", nicht "high": nichts ist kaputt, es ist
+    ein Verdacht zum Nachsehen, keine Sirene.
+
+    `eintraege` sind bereits fertige (Ticker, Block-Text)-Paare von
+    split_waechter._ntfy_block() -- diese Huelle formatiert nur noch den
+    Rahmen und ruft begrenze_bloecke() (siehe NACHRICHT_BLOCK_GRENZE).
+    """
+    if not eintraege:
+        return False
+    lines = [
+        f"{len(eintraege)} Titel mit split-verdaechtigem Kurssprung in der "
+        f"Tagesreihe:",
+        "",
+        begrenze_bloecke(eintraege),
+    ]
+    return push(
+        "Momentum-Report: Split-Verdacht in Kursreihe",
+        "\n".join(lines),
+        priority="default",
+        tags="warning",
+        **kwargs,
+    )
