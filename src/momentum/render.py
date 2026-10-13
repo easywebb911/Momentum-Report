@@ -699,6 +699,72 @@ def _card(row: dict, view: MarketView) -> str:
       </article>"""
 
 
+# Ab wie vielen der TOP_N Top-Werte im selben Sektor ein Hinweis erscheint.
+# Hergeleitet aus einer Diagnose der bisherigen drei Stichtage (Juli bis
+# September 2026): US lag bei 3/5 (Juli, Health Care), 3/5 (August,
+# Energy) und 5/5 (September, Information Technology) -- bei 5 Titeln
+# kann rechnerisch hoechstens EIN Sektor diese Schwelle erreichen
+# (3 + 3 > 5). DE lag in keinem der drei Monate über 2/5. Je Markt
+# GETRENNT geprueft (siehe SEKTOR_HINWEIS_TEXT) -- NIE über US und DE
+# aggregiert: nicht belegt, dass Wikipedias GICS-Sektoren (US) und die
+# iShares-eigene Sektor-Spalte (DE) dieselbe Taxonomie verwenden.
+SEKTOR_KONZENTRATION_SCHWELLE = 3
+
+# Der feste Satz (Easys Vorgabe, woertlich uebernommen) -- Pflicht-
+# Ehrlichkeitssatz, wie KONFLUENZ_SATZ/EVALUATION_HINWEIS: eine Beobachtung
+# über das Ranking, kein Risikomaß, keine Handlungsempfehlung.
+SEKTOR_HINWEIS_VORLAGE = (
+    "Sektor-Häufung: {anzahl} von {gesamt} Top-{gesamt}-Werten liegen im "
+    "Sektor {sektor}. Titel im selben Sektor können sich ähnlich bewegen. "
+    "Das ist eine Beobachtung über das Ranking, kein Risikomaß und keine "
+    "Handlungsempfehlung."
+)
+
+
+def _sektor_konzentration(rows: list[dict], meta: dict) -> tuple[int, str] | None:
+    """(Anzahl, Sektor) des haeufigsten Sektors unter den Top-Werten, oder
+    None, wenn kein Hinweis angezeigt werden soll.
+
+    Reine Render-Zeit-Berechnung aus bereits geladenen Daten -- kein neuer
+    Abruf, kein neues Feld, keine Persistenz. Fail-soft wie meta.py selbst:
+    fehlt der Sektor (oder der Meta-Eintrag ueberhaupt) fuer AUCH NUR EINEN
+    der Top-Werte, gilt die Menge als nicht vollstaendig beurteilbar und es
+    gibt KEINEN Hinweis -- lieber schweigen als eine Quote aus einer
+    unvollstaendigen Teilmenge zu behaupten.
+    """
+    if len(rows) < TOP_N:
+        return None
+    sektoren: list[str] = []
+    for row in rows:
+        sektor = (meta.get(row["ticker"], {}) or {}).get("sektor") or ""
+        if not sektor:
+            return None
+        sektoren.append(sektor)
+
+    zaehlung: dict[str, int] = {}
+    for s in sektoren:
+        zaehlung[s] = zaehlung.get(s, 0) + 1
+    # Deterministisch: hoechste Anzahl zuerst, bei Gleichstand alphabetisch
+    # nach Sektorname -- bei TOP_N == 5 und Schwelle 3 kann das Gleichstand-
+    # Kriterium die Schwelle selbst nie betreffen (siehe Modul-Kommentar
+    # oben), haelt die Funktion aber auch bei einem kuenftig anderen TOP_N
+    # korrekt.
+    bester_sektor, beste_anzahl = min(zaehlung.items(), key=lambda kv: (-kv[1], kv[0]))
+    if beste_anzahl < SEKTOR_KONZENTRATION_SCHWELLE:
+        return None
+    return beste_anzahl, bester_sektor
+
+
+def _sektor_hinweis(view: MarketView) -> str:
+    rows = view.ranking["rangliste"][:TOP_N]
+    fund = _sektor_konzentration(rows, view.meta)
+    if fund is None:
+        return ""
+    anzahl, sektor = fund
+    text = SEKTOR_HINWEIS_VORLAGE.format(anzahl=anzahl, gesamt=TOP_N, sektor=e(sektor))
+    return f'\n  <p class="sektor-hinweis">{text}</p>'
+
+
 def _market_section(view: MarketView) -> str:
     market = view.market
     ranking = view.ranking
@@ -714,7 +780,7 @@ def _market_section(view: MarketView) -> str:
   <h2><span class="flag" aria-hidden="true">{market.flag}</span>{e(market.name)}</h2>
   <p class="market-meta">Ranking vom {de_date(stichtag)} · {price_line} ·
      {cov["bewertet"]} von {cov["universum"]} Titeln bewertet</p>
-{_trend_banner(view)}
+{_trend_banner(view)}{_sektor_hinweis(view)}
   <div class="cards">
 {chr(10).join(_card(row, view) for row in rows)}
   </div>

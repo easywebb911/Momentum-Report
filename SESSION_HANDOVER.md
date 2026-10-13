@@ -1,11 +1,10 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 09.10.2026**, nach PR #70 (Split-Wächter). Nachgezogen: PR #66
-(Doku-Pflege nach #65), PR #67 (Rückbau `probe_ishares_neu.yml`), PR #68
-(Wegwerf-Probe Information Discreteness), PR #69 (Rückbau der ID-Probe),
-PR #70 (Split-Wächter — siehe §4 Punkt 9). Repo
-`easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand nennt
-`git log -1`, er steht hier bewusst nicht als Zahl.
+**Stand: 13.10.2026**, nach PR #72 (Sektor-Konzentrations-Hinweis).
+Nachgezogen: PR #71 (Doku-Pflege nach #70), PR #72 (Sektor-Konzentrations-
+Hinweis — siehe §4 Punkt 11). Repo `easywebb911/Momentum-Report`, Branch
+`main` — den aktuellen Stand nennt `git log -1`, er steht hier bewusst
+nicht als Zahl.
 
 Dieses Dokument ist der Übergabepunkt zwischen zwei Arbeits-Sitzungen. Es
 beantwortet drei Fragen: *Was läuft gerade?*, *Was ist offen?*, *Was darf
@@ -182,6 +181,8 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #68 | `fbb6786`→`77d6f45` | 09.10. | Wegwerf-Probe `probe_id_diagnose.yml`/`tools/probe_id_diagnose.py`: Information Discreteness (Da/Gurun/Warachka 2014) für beide Universen vom Runner berechnet, nur Job-Log | MANUAL |
 | #69 | `72f3636`→`e4cfdee` | 09.10. | Rückbau der ID-Probe aus #68, wie dort selbst angekündigt — nach Auswertung (siehe §4 Punkt 7) | SELF |
 | #70 | `9419671`→`c56dc64` | 09.10. | Split-Wächter (`split_waechter.py`, nur Erkennen und Melden) — Auslöser: MNST-Vorfall US 2026-08, siehe §4 Punkt 9 | SELF |
+| #71 | `a5a0fe8`→`5c646ef` | 09.10. | SESSION_HANDOVER.md auf Stand nach PR #70 gebracht (#66–#70 nachgezogen) | SELF |
+| #72 | `1b2e95d` (Merge-Commit folgt — PR zum Zeitpunkt dieses Eintrags noch offen) | 13.10. | Sektor-Konzentrations-Hinweis (reine Anzeige, je Markt getrennt, Schwelle 3 von 5) — siehe §4 Punkt 11 | SELF |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -208,6 +209,7 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **laufend, montags** | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
 | **25.–31.10.2026** | **Drittes Vertragstest-Fenster — jetzt mit dreifachem Zweck.** (a) Erster echter Wirksamkeitstest von PR #63 (BlackRock-URL) und PR #64 (Nachrichtenkürzung) unter echten Bedingungen — `vertrag.yml` lief seit deren Merge (02./03.10.) noch kein einziges Mal. (b) Zugleich die nächste Chance auf eine zweite Woche echter DE-Abweichungszahlen (siehe §4 Punkt 1) — das 25.–30.09.-Fenster lieferte keine: alle fünf iShares-Quellen waren die ganze Woche tot (siehe §4 Punkt 6). (c) **Der 30.10.2026-Monats-Stichtag in diesem Fenster ist zugleich der erste echte Wirksamkeitstest des neuen Split-Wächters** (PR #70, siehe §4 Punkt 9) — Zeile direkt darunter. | Siehe §4 Punkt 1 (DE-Toleranz), §4 Punkt 6 (iShares-Totalausfall, PR #63/#64-Wirksamkeit) und §4 Punkt 9 (Split-Wächter) — explizit terminierte Wiedervorlage, nicht nur „irgendwann". |
 | **30.10.2026** | **Erster echter Test des Split-Wächters** (`split_waechter.py`, PR #70) — der nächste Monats-Stichtag-Lauf nach dem Merge. Bisher nur an einer synthetischen, aus dem MNST-Vorfall rekonstruierten Reihe geprüft (siehe Testdatei), noch nie an echten Live-Daten. Prüfen: löst er bei einem echten, inzwischen bereits nachbereinigten Split fälschlich an (Fehlalarm) oder bleibt er bei einer normalen Reihe erwartungsgemäß stumm? | Siehe §4 Punkt 9 — Teil desselben Fensters wie die Zeile oben, hier als eigene Zeile, weil der Anlass (Split-Erkennung) ein anderer ist als der Vertragstest. |
+| **30.10.2026** | **Erster echter Lauf nach dem Merge des Sektor-Konzentrations-Hinweises** (PR #72, siehe §4 Punkt 11). Bisher nur an den eingefrorenen September-Rankings geprüft (US zeigte 5/5 Information Technology). Prüfen: zeigt der Hinweis beim Oktober-Stichtag weiterhin eine Konzentration, oder ist die Top-5 inzwischen breiter gestreut (≤ 2/5)? Beides ist ein normales Ergebnis, keine Fehlfunktion — nur die erste reale Beobachtung außerhalb der Diagnose-Daten. | Siehe §4 Punkt 11 — derselbe Stichtag wie die Split-Wächter-Zeile oben, aber ein anderer Anlass (Sektor-Hinweis statt Split-Erkennung). |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **offen, keine Frist** | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 
@@ -450,6 +452,55 @@ Keine dieser drei Beobachtungen hat bisher ein Ranking sichtbar
 verzerrt; alle drei bleiben als offene, unverifizierte Randnotizen
 stehen, keine davon rechtfertigt für sich allein einen eigenen Auftrag.
 
+**11. Sektor-Konzentration der Top-5 — Befund, Entscheid, gebaut (PR
+#72).** *(dokumentiert + gebaut, nichts weiter zu tun)*
+
+Diagnose (vor PR #72, read-only): US-Top-5 lag in allen drei bisherigen
+Stichtagen auffällig konzentriert — Juli 3/5 Health Care, August 3/5
+Energy, September **5/5 Information Technology**. DE lag in allen drei
+Monaten bei höchstens 2/5. Eingeordnet als **erwartbar, kein
+Konstruktionsfehler**: Momentum ist literaturbekannt sektor-korreliert
+(ein branchenweiter Trend bewegt mehrere Titel gleichzeitig), die
+September-IT-Konzentration passt sachlich zu einer Technologie-Rally.
+Wichtige Einschränkung: die Sektor-Zuordnung für Juli/August stammt aus
+der **heutigen** `ticker_meta_*.json` (Stand 03.08.2026), nicht aus
+einer historisch eingefrorenen Quelle — siehe `meta.py`-Docstring,
+Sektor ist bewusst nicht im Ranking-Schema, weil er sich ändern darf.
+Die Vergleichbarkeit von Wikipedias GICS-Sektoren (US) gegen die
+iShares-eigene Sektor-Spalte (DE) ist **nicht verifiziert** (gleiche
+Taxonomie nicht belegt, nur zufällig dieselbe Anzahl von elf Kategorien
+je Markt) — deshalb **keine Aggregation über beide Märkte**.
+
+**Entscheid:** Variante (b) gebaut — ein Hinweis bei ≥ 3 von 5 Top-5-
+Werten im selben Sektor, je Markt getrennt geprüft, reine Render-Zeit-
+Berechnung ohne neues Schema (siehe `render.py::_sektor_konzentration`/
+`_sektor_hinweis`, Platzierung direkt über dem Kartenraster). Variante
+(c) — eine dauerhafte Sektor-Historie in `data/evaluation/*.json` mit
+eigenem Schema-Feld — **zurückgestellt**: kein akuter Bedarf, würde ein
+additives Schema und damit Manual-Merge brauchen (siehe §6, Roadmap).
+
+**12. Automatisierte SESSION_HANDOVER.md-Pflege per Workflow — geprüft,
+nicht gebaut.** *(dokumentiert, kein Bau geplant)*
+
+Read-only-Diagnose (vor PR #72): geprüft, ob ein Workflow dieses
+Dokument automatisch nachführen könnte (mechanisch ableitbare Blöcke:
+PR-Nummer/Titel/Datum via `gh pr list`, Cron-Fahrplan via YAML-Parsing;
+NICHT mechanisch: Merge-Klasse — nur Freitext im PR-Titel, siehe
+`pr_verwaisung_waechter.py`-Docstring —, sowie sämtliche Urteils-Teile
+in §3/§4/§5/§6). **Kernbefund:** Jede Variante, die direkt in
+`SESSION_HANDOVER.md` schreibt (markierter AUTO-Bereich oder ein
+gemergter Auto-PR), würde den bestehenden Doku-Wächter
+(`handover_waechter.py`) **entwerten** — er misst ausschließlich das
+Committer-Datum des jüngsten Commits auf dieser Datei, ohne zwischen
+mechanischen und Urteils-Abschnitten zu unterscheiden, und ein
+automatischer Teil-Schreibvorgang würde seine Uhr auf null setzen, ohne
+dass die Urteils-Teile tatsächlich gepflegt wurden. **Entscheid: kein
+Bau.** Bei künftigem Bedarf wäre eine **getrennte, vollautomatische
+Protokolldatei** (Variante a, z. B. `data/pr_protokoll.json`, auf die
+`SESSION_HANDOVER.md` nur verlinkt) der einzige Weg, der den Doku-
+Wächter nicht berührt — das bliebe aber ein eigener, separat zu
+entscheidender Auftrag.
+
 ---
 
 ## 5. Hygiene-Backlog
@@ -492,6 +543,11 @@ sinnvoll wären — in dieser Reihenfolge:
 3. **Reparatur-Agent, weitere Fehlerklassen** — offen, Easys Entscheid
    (siehe §3/§4 Punkt 3). Die vorherige Diagnose hat sechs Kandidaten
    benannt; keiner davon ist ohne Weiteres so eng wie Datumsformat-Drift.
+4. **Sektor-Verteilung auf der Evaluation-Seite** (Variante c aus §4
+   Punkt 11) — zurückgestellt, kein akuter Bedarf. Der reine Anzeige-
+   Hinweis (Variante b) ist seit PR #72 gebaut; eine dauerhafte Sektor-
+   Historie bräuchte dagegen ein additives Schema in
+   `data/evaluation/*.json` und wäre damit Manual-Merge.
 
 **Selbstwartungs-Stufenplan** (Easys Richtung vom 09.08. — „ein Tool, das
 sich selbst wartet"; die Maschine arbeitet, Easy behält den Ein-Tipp-Veto):

@@ -447,6 +447,21 @@ main > h2::after {
   font-variant-numeric: tabular-nums;
 }
 
+/* Sektor-Haeufungs-Hinweis: dieselbe Ehrlichkeits-Optik wie .konf-regel
+   (--disc-Rahmen, selber Text-Ton) -- eine Beobachtung, keine Warnung,
+   deshalb bewusst NICHT in der .ampel-Familie (die ist fuer die
+   Trend-Ampel reserviert, siehe Kopf-Kommentar "Farben sind Semantik"). */
+.sektor-hinweis {
+  margin: 0 0 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--brd);
+  border-left: 3px solid var(--disc);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--txt-sub);
+  font-size: 0.8125rem;
+}
+
 .ampel {
   display: flex;
   flex-wrap: wrap;

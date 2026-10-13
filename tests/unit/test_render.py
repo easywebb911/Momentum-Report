@@ -472,7 +472,7 @@ def test_disc_farbe_nur_fuer_ehrlichkeits_labels():
     ]
     assert treffer
     # Erlaubt ist --disc ausschliesslich an Ehrlichkeits-Aussagen. Das sind
-    # fuenf: die Labels der vier Karten (.disc-title), der Fusssatz auf
+    # sechs: die Labels der vier Karten (.disc-title), der Fusssatz auf
     # jeder Titel-Karte (.card-ft), der feste Satz auf der Konfluenz-Seite
     # (.konf-regel: "Hier wird nichts verrechnet") sowie -- seit dem
     # manuellen Historie-Nachtrag (TKA.DE/SIE.DE, vor Einfuehrung der
@@ -480,12 +480,16 @@ def test_disc_farbe_nur_fuer_ehrlichkeits_labels():
     # Historie-Karte (.konf-hist-karte--rekonstruiert, .konf-hist-badge):
     # beide sprechen exakt dieselbe Einschraenkung aus wie die anderen vier
     # ("dieser Wert ist nicht belegt/eingeschraenkt gueltig"), nur bezogen
-    # auf die Elliott-Seite eines einzelnen Treffers. Die Liste waechst NUR
-    # um Stellen, die wirklich eine Einschraenkung aussprechen -- an
-    # Dekoration hat diese Farbe nichts verloren.
+    # auf die Elliott-Seite eines einzelnen Treffers. Seit dem Sektor-
+    # Haeufungs-Hinweis (.sektor-hinweis) zaehlt eine sechste Stelle dazu --
+    # derselbe Pflicht-Ehrlichkeitssatz ("kein Risikomass und keine
+    # Handlungsempfehlung") wie bei EVALUATION_HINWEIS/KONFLUENZ_SATZ. Die
+    # Liste waechst NUR um Stellen, die wirklich eine Einschraenkung
+    # aussprechen -- an Dekoration hat diese Farbe nichts verloren.
     erlaubt = (
         ".disc-title", ".card-ft", ".konf-regel",
         ".konf-hist-karte--rekonstruiert", ".konf-hist-badge",
+        ".sektor-hinweis",
     )
     abschnitte = [
         block for block in css.split("}") if "var(--disc)" in block
