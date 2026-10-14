@@ -69,6 +69,18 @@
       "markt": "de",
       "markt_name": "Deutschland",
       "quelle": "automatisch"
+    },
+    {
+      "ticker": "AMD",
+      "name": "Advanced Micro Devices Inc.",
+      "momentum_rang": 5,
+      "momentum_score": 96.774194,
+      "momentum_stichtag": "2026-09-30",
+      "elliott_score": 77.86,
+      "elliott_close": 596.09,
+      "markt": "us",
+      "markt_name": "USA",
+      "quelle": "automatisch"
     }
   ]
 }
