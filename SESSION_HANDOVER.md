@@ -1,10 +1,11 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 13.10.2026**, nach PR #72 (Sektor-Konzentrations-Hinweis).
-Nachgezogen: PR #71 (Doku-Pflege nach #70), PR #72 (Sektor-Konzentrations-
-Hinweis — siehe §4 Punkt 11). Repo `easywebb911/Momentum-Report`, Branch
-`main` — den aktuellen Stand nennt `git log -1`, er steht hier bewusst
-nicht als Zahl.
+**Stand: 19.10.2026**, nach PR #73 (Stichtag-Schutz-Fix).
+Nachgezogen: PR #72 (Sektor-Konzentrations-Hinweis), PR #73
+(Stichtag-Schutz vergleicht vollen Zeitpunkt statt nur Uhrzeit — siehe
+§4 Punkt 13). Repo `easywebb911/Momentum-Report`, Branch `main` — den
+aktuellen Stand nennt `git log -1`, er steht hier bewusst nicht als
+Zahl.
 
 Dieses Dokument ist der Übergabepunkt zwischen zwei Arbeits-Sitzungen. Es
 beantwortet drei Fragen: *Was läuft gerade?*, *Was ist offen?*, *Was darf
@@ -182,7 +183,8 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #69 | `72f3636`→`e4cfdee` | 09.10. | Rückbau der ID-Probe aus #68, wie dort selbst angekündigt — nach Auswertung (siehe §4 Punkt 7) | SELF |
 | #70 | `9419671`→`c56dc64` | 09.10. | Split-Wächter (`split_waechter.py`, nur Erkennen und Melden) — Auslöser: MNST-Vorfall US 2026-08, siehe §4 Punkt 9 | SELF |
 | #71 | `a5a0fe8`→`5c646ef` | 09.10. | SESSION_HANDOVER.md auf Stand nach PR #70 gebracht (#66–#70 nachgezogen) | SELF |
-| #72 | `1b2e95d` (Merge-Commit folgt — PR zum Zeitpunkt dieses Eintrags noch offen) | 13.10. | Sektor-Konzentrations-Hinweis (reine Anzeige, je Markt getrennt, Schwelle 3 von 5) — siehe §4 Punkt 11 | SELF |
+| #72 | `6fc76f7`→`0f94675` | 13.10. | Sektor-Konzentrations-Hinweis (reine Anzeige, je Markt getrennt, Schwelle 3 von 5) — siehe §4 Punkt 11 | SELF |
+| #73 | `5e932e3` (Merge-Commit folgt — PR zum Zeitpunkt dieses Eintrags noch offen) | 19.10. | Stichtag-Schutz vergleicht vollen Zeitpunkt statt nur Uhrzeit (Fund: Mitternachts-Rutsch am Monatsende hielt den Stichtag fälschlich für "zu früh") — siehe §4 Punkt 13 | MANUAL |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -210,6 +212,7 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **25.–31.10.2026** | **Drittes Vertragstest-Fenster — jetzt mit dreifachem Zweck.** (a) Erster echter Wirksamkeitstest von PR #63 (BlackRock-URL) und PR #64 (Nachrichtenkürzung) unter echten Bedingungen — `vertrag.yml` lief seit deren Merge (02./03.10.) noch kein einziges Mal. (b) Zugleich die nächste Chance auf eine zweite Woche echter DE-Abweichungszahlen (siehe §4 Punkt 1) — das 25.–30.09.-Fenster lieferte keine: alle fünf iShares-Quellen waren die ganze Woche tot (siehe §4 Punkt 6). (c) **Der 30.10.2026-Monats-Stichtag in diesem Fenster ist zugleich der erste echte Wirksamkeitstest des neuen Split-Wächters** (PR #70, siehe §4 Punkt 9) — Zeile direkt darunter. | Siehe §4 Punkt 1 (DE-Toleranz), §4 Punkt 6 (iShares-Totalausfall, PR #63/#64-Wirksamkeit) und §4 Punkt 9 (Split-Wächter) — explizit terminierte Wiedervorlage, nicht nur „irgendwann". |
 | **30.10.2026** | **Erster echter Test des Split-Wächters** (`split_waechter.py`, PR #70) — der nächste Monats-Stichtag-Lauf nach dem Merge. Bisher nur an einer synthetischen, aus dem MNST-Vorfall rekonstruierten Reihe geprüft (siehe Testdatei), noch nie an echten Live-Daten. Prüfen: löst er bei einem echten, inzwischen bereits nachbereinigten Split fälschlich an (Fehlalarm) oder bleibt er bei einer normalen Reihe erwartungsgemäß stumm? | Siehe §4 Punkt 9 — Teil desselben Fensters wie die Zeile oben, hier als eigene Zeile, weil der Anlass (Split-Erkennung) ein anderer ist als der Vertragstest. |
 | **30.10.2026** | **Erster echter Lauf nach dem Merge des Sektor-Konzentrations-Hinweises** (PR #72, siehe §4 Punkt 11). Bisher nur an den eingefrorenen September-Rankings geprüft (US zeigte 5/5 Information Technology). Prüfen: zeigt der Hinweis beim Oktober-Stichtag weiterhin eine Konzentration, oder ist die Top-5 inzwischen breiter gestreut (≤ 2/5)? Beides ist ein normales Ergebnis, keine Fehlfunktion — nur die erste reale Beobachtung außerhalb der Diagnose-Daten. | Siehe §4 Punkt 11 — derselbe Stichtag wie die Split-Wächter-Zeile oben, aber ein anderer Anlass (Sektor-Hinweis statt Split-Erkennung). |
+| **30.10.2026** | **Erster echter Test des Stichtag-Schutz-Fixes** (PR #73, siehe §4 Punkt 13) — Oktober endet Fr 30.10./Sa 31.10.2026, exakt die Konstellation aus dem Fund. Prüfen: erscheint das Oktober-Ranking (US + DE) noch am 30./31.10., nicht erst am folgenden Werktag (02.11.)? Ein verspäteter Lauf, der dennoch sofort einfriert, ist der positive Beleg; bleibt es bei einer Verzögerung, ist der Fix unwirksam geblieben und muss erneut untersucht werden. | Siehe §4 Punkt 13 — derselbe Stichtag wie die beiden Zeilen oben (Split-Wächter, Sektor-Hinweis), diesmal zur Stichtag-Mechanik selbst. |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **offen, keine Frist** | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 
@@ -500,6 +503,46 @@ Protokolldatei** (Variante a, z. B. `data/pr_protokoll.json`, auf die
 `SESSION_HANDOVER.md` nur verlinkt) der einzige Weg, der den Doku-
 Wächter nicht berührt — das bliebe aber ein eigener, separat zu
 entscheidender Auftrag.
+
+**13. Scheduler-Drift bei `lauf.yml` — wachsend, Ursache für den
+Stichtag-Schutz behoben (PR #73).** *(beobachten läuft weiter, Fix
+gebaut)*
+
+Read-only-Diagnose (19.10.2026, ausgelöst durch zwei Pushes des
+Lauf-Zeitversatz-Wächters, 4,1 Std. am 12.10. und 5,0 Std. am 19.10.):
+die Verspätung gegenüber dem nominellen Cron-Zeitpunkt (21:45 UTC)
+**wächst** — Anfang September durchgehend 1,6–2,2 Std., seit Ende
+September meist 3–5 Std. Von den letzten 37 ausgewerteten Läufen sind
+**18 über Mitternacht UTC gerutscht** (vorher die Ausnahme, inzwischen
+der Normalfall). Freitags im Schnitt 2,7 Std., Max 5,6 Std. — Ursache
+vermutlich allgemeine Last bei geplanten GitHub-Actions-Läufen,
+**nicht belegt**, nur vermutet.
+
+Dabei gefunden: `zu_frueh_fuer_stichtag()` verglich nur die Uhrzeit,
+nie das Datum — ein über Mitternacht gerutschter Lauf am tatsächlichen
+Monatsende (z. B. nominell Fr 30.10.2026 21:45 UTC, Start Sa 31.10.
+02:45 UTC) hielt den Monats-Stichtag deshalb fälschlich für "zu früh"
+und verzögerte ihn still (nur Log/`status.json`) um bis zu ~3 Tage —
+kein falsches Ranking, aber eine unbemerkte Verzögerung. **Behoben in
+PR #73:** der Vergleich läuft jetzt gegen den vollen Zeitpunkt (Datum +
+Uhrzeit) des tatsächlichen Handelstags statt nur gegen die Uhrzeit; der
+PR-#53-Normalfall (Lauf 48, untertägiger Kurs am Handelstag selbst)
+bleibt dabei unverändert geschützt.
+
+**Cron-Zeit bleibt unverändert, bewusst:** 21:45 UTC ist nicht die
+Ursache der Drift — GitHub wertet Zeitpläne ausschließlich in UTC aus,
+unabhängig von Zeitzone oder Sommer-/Winterzeit. Eine frühere Zeit
+würde die nach PR #53 bewusst konservative (Winter-)Marge nach
+Börsenschluss verkleinern; eine spätere Zeit ändert an der Drift
+nichts, nur an ihrer kosmetischen Häufigkeit. Die US-Zeitumstellung
+(01.11.2026, EDT→EST) verschiebt den realen NYSE-Schluss in UTC
+(20:00→21:00 Uhr), ändert aber nichts an dieser Einschätzung, weil die
+Drift den Lauf ausschließlich SPÄTER, nie früher startet.
+
+**Offen, ausdrücklich:** ob die wachsende Drift ein echter Trend oder
+Rauschen ist, lässt sich mit nur ca. 6 Wochen Beobachtung nicht sicher
+sagen — die Beobachtung über den Lauf-Zeitversatz-Wächter läuft
+unverändert weiter.
 
 ---
 
