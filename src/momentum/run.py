@@ -263,7 +263,7 @@ def process_market(
     # Grund -- nur eben still, ohne Alarm, weil kein echter Fehler
     # vorliegt, sondern nur eine planmaessig zu frueh gekommene Anfrage).
     aktueller_monat = (today.year, today.month)
-    if aktueller_monat in needed and zu_frueh_fuer_stichtag(market, jetzt_utc):
+    if aktueller_monat in needed and zu_frueh_fuer_stichtag(market, today, jetzt_utc):
         log(
             f"[{market.key}] Stichtag {today} zurueckgehalten: Lauf um "
             f"{jetzt_utc.strftime('%H:%M')} UTC liegt vor "

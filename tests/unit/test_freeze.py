@@ -252,3 +252,66 @@ def test_bestehendes_ranking_wird_nie_ueberschrieben(tmp_path):
     write_ranking(ranking, tmp_path)
     with pytest.raises(RankingNotPossible, match="eingefroren"):
         write_ranking(ranking, tmp_path)
+
+
+def test_testfall_a_integration_stichtag_entsteht_trotz_mitternachtsrutsch(tmp_path):
+    """Testfall a, volle Tiefe (Diagnose 19.10.2026, Fund + Fix): Oktober
+    2026 endet Fr 30.10./Sa 31.10. -- ein ueber Mitternacht UTC
+    verzoegerter Lauf (Start Sa 31.10. 02:45 UTC, real beobachtetes
+    Verzoegerungsmuster Freitags) darf den Oktober-Stichtag NICHT mehr
+    zurueckhalten. VOR dem Fix war das hier genau der Fall: die alte
+    zu_frueh_fuer_stichtag() verglich nur die Uhrzeit (02:45 < 21:00/16:30)
+    und hielt den Monat faelschlich fuer "zu frueh".
+
+    Juli/August/September liegen bereits als eingefrorene (Platzhalter-)
+    Rankings vor -- ihr INHALT ist fuer due_months()/existing_months()
+    irrelevant (die lesen nur den Dateinamen), nur ihre Existenz zaehlt;
+    das isoliert den Test auf genau den Oktober-Schritt.
+    """
+    markt = _markt(tmp_path)
+    wurzel = tmp_path / "rankings"
+    daten = tmp_path / "data"
+    evaluation_wurzel = tmp_path / "evaluation"
+
+    for monat in ("2026-07", "2026-08"):
+        write_ranking({"markt": "us", "ranking_monat": monat, "rangliste": [], "top": []}, wurzel)
+    # September braucht zusaetzlich einen Stichtag und eine (leere)
+    # Rangliste mit Namen: build_evaluation() liest beim Oktober-Lauf den
+    # Monats-Rueckblick fuer den VORANGEGANGENEN Monat (September) und
+    # greift dafuer auf "stichtag" sowie je Zeile auf "name" zu.
+    write_ranking(
+        {
+            "markt": "us", "ranking_monat": "2026-09", "stichtag": "2026-09-30",
+            "rangliste": [
+                {"ticker": t, "name": f"Firma {t}", "kurs_stichtag": 100.0}
+                for t in ("AAA", "BBB", "CCC", "DDD", "EEE")
+            ],
+            "top": ["AAA", "BBB", "CCC", "DDD", "EEE"],
+        },
+        wurzel,
+    )
+
+    serien = sample_series()
+    for ticker in ("AAA", "BBB", "CCC", "DDD", "EEE"):
+        serien[ticker][Date(2026, 9, 30)] = serien[ticker][Date(2026, 7, 31)] * 1.05
+        serien[ticker][Date(2026, 10, 30)] = serien[ticker][Date(2026, 7, 31)] * 1.1
+    serien["^SP500TR"] = index_series()
+    serien["^SP500TR"][Date(2026, 9, 30)] = 4300.0
+    serien["^SP500TR"][Date(2026, 10, 30)] = 4320.0
+
+    view, neu, status = process_market(
+        markt,
+        Date(2026, 10, 31),  # Samstag -- der Lauf ist ueber Mitternacht gerutscht
+        downloader=make_downloader(serien),
+        ranking_root=wurzel,
+        data_root=daten,
+        evaluation_root=evaluation_wurzel,
+        jetzt_utc=_dt.time(2, 45),  # real beobachtetes Verzoegerungsmuster
+    )
+    assert neu is not None, (
+        "Testfall a: der Oktober-Stichtag muss trotz Mitternachtsrutsch entstehen"
+    )
+    assert neu["stichtag"] == "2026-10-30"
+    assert neu["ranking_monat"] == "2026-10"
+    assert "stichtag_zurueckgehalten" not in status
+    assert (wurzel / "us_2026-10.json").exists()

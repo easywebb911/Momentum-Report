@@ -110,7 +110,20 @@ def resolve_asof(index_series: dict[Date, float], year: int, month: int, today: 
     return max(days)
 
 
-def zu_frueh_fuer_stichtag(market: Market, jetzt_utc: _dt.time) -> bool:
+def _juengster_werktag(tag: Date) -> Date:
+    """Juengster Tag <= `tag`, der selbst ein Werktag (Mo-Fr) ist.
+
+    Reine Kalenderarithmetik, hoechstens zwei Rueckschritte (Sa/So). Dient
+    ausschliesslich dazu, den tatsaechlichen HANDELSTAG zu finden, wenn
+    `tag` (das Laufdatum) bereits auf das Wochenende nach dem eigentlichen
+    Monats-Stichtag gerutscht ist -- siehe zu_frueh_fuer_stichtag().
+    """
+    while tag.weekday() >= 5:
+        tag -= _dt.timedelta(days=1)
+    return tag
+
+
+def zu_frueh_fuer_stichtag(market: Market, today: Date, jetzt_utc: _dt.time) -> bool:
     """True, wenn ein JETZT laufender Stichtags-Lauf fuer DIESEN Markt noch
     keinen echten Tages-SCHLUSSkurs geliefert bekommen haben kann.
 
@@ -129,8 +142,27 @@ def zu_frueh_fuer_stichtag(market: Market, jetzt_utc: _dt.time) -> bool:
     Realer Anlass: Lauf 48, 31.08.2026 08:46 UTC (manueller Dispatch) --
     der damals eingefrorene DE-Kurs war nachweislich untertaegig, nicht der
     Endkurs (siehe SESSION_HANDOVER.md).
+
+    SEIT DIESER FASSUNG datumsbewusst (vorheriger Fund: diese Funktion
+    verglich nur `jetzt_utc.time()` ohne jede Datumskomponente -- rutschte
+    ein Lauf ueber Mitternacht UTC auf einen Tag, der noch im selben Monat
+    liegt und fuer den is_last_weekday_of_month() True ist (realer Fall:
+    nominell Fr 30.10.2026 21:45 UTC, Start Sa 31.10. 02:45 UTC), hielt die
+    Funktion eine blosse Uhrzeit wie "02:45" IMMER fuer "vor 21:00/16:30",
+    unabhaengig vom Kalendertag -- der Monats-Stichtag wurde dadurch bis
+    zum naechsten Lauf (oft erst der folgende Werktag) still zurueckgehalten,
+    obwohl der Handelstag laengst abgeschlossen war. Der Vergleich laeuft
+    deshalb jetzt gegen den vollen Zeitpunkt (Datum + Uhrzeit) des
+    TATSAECHLICHEN Handelstags -- bei `today` selbst ein Werktag (der
+    PR-#53-Normalfall) ist das exakt derselbe Tag wie zuvor, die Haertung
+    bleibt dort unveraendert scharf; liegt `today` bereits NACH dem
+    Handelstag (Wochenend-Rutsch), ist jede Uhrzeit an diesem spaeteren
+    Tag zwangslaeufig nach Schluss -- nie mehr "zu frueh".
     """
-    return jetzt_utc < market.stichtag_lauf_nicht_vor_utc
+    handelstag = _juengster_werktag(today)
+    grenze = _dt.datetime.combine(handelstag, market.stichtag_lauf_nicht_vor_utc)
+    jetzt = _dt.datetime.combine(today, jetzt_utc)
+    return jetzt < grenze
 
 
 # --------------------------------------------------------------------------
