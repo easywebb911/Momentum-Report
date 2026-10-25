@@ -1,12 +1,13 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 25.10.2026**, nach PR #75 (ntfy-Relay).
-Nachgezogen: PR #73 (Stichtag-Schutz vergleicht vollen Zeitpunkt statt
-nur Uhrzeit — siehe §4 Punkt 13), PR #74 (Daten-Abdeckungs-Wächter —
-Kursabruf, iShares-Kursvergleich, Universum-Alter/Sektoren, Schritt 1
-der am 24.10.2026 festgelegten Automatisierung), PR #75 (ntfy-Relay —
-Weiterleitung an `notify.push()` für spätere geplante Agenten, Schritt 4
-desselben Plans, siehe §4 Punkt 14 und §6).
+**Stand: 25.10.2026**, nach PR #76 (Wiedervorlagen-Wächter).
+Nachgezogen: PR #74 (Daten-Abdeckungs-Wächter — Kursabruf, iShares-
+Kursvergleich, Universum-Alter/Sektoren, Schritt 1 der am 24.10.2026
+festgelegten Automatisierung), PR #75 (ntfy-Relay — Weiterleitung an
+`notify.push()` für spätere geplante Agenten, Schritt 4 desselben
+Plans, gemergt UND per echtem Testlauf bestätigt), PR #76
+(Wiedervorlagen-Wächter — `faellig`-Kommentare in §3 plus eigener
+Wächter, Schritt 2 desselben Plans, siehe §4 Punkt 14 und §6).
 Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
 nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
@@ -548,19 +549,39 @@ Rauschen ist, lässt sich mit nur ca. 6 Wochen Beobachtung nicht sicher
 sagen — die Beobachtung über den Lauf-Zeitversatz-Wächter läuft
 unverändert weiter.
 
-**14. Automatisierungsplan vom 24.10.2026 — Schritte 1 und 4 gebaut
-(PR #74, #75), vier offene Punkte dabei aufgeworfen.** *(Easys
-Entscheid/Klärung nötig, siehe die Punkte a–d unten)*
+**14. Automatisierungsplan vom 24.10.2026 — Schritte 1, 2 und 4 gebaut
+(PR #74, #76, #75), drei offene Punkte verbleiben.** *(Easys
+Entscheid/Klärung nötig, siehe die Punkte b–d unten; Punkt (a) ist mit
+PR #76 geschlossen, siehe dort)*
 
 **Ziel des Plans** (Easys Formulierung): Datenfehler ohne mein Zutun
 finden, melden, ungefährliche reparieren; ich entscheide nur Score-/
 Signal-/Methodik-Fragen. **Reihenfolge:** 1. Daten-Abdeckungs-Wächter
-(**gemergt, PR #74**) — 2. Wiedervorlagen mit Fälligkeitsdatum — 3.
-Schutz-Sperre — 4. ntfy-Relay (**dieser PR, #75**) — 5. geplante
-Agenten. **„Schritt 6" (eingefrorene Tests) entfällt** — geprüft, es
-existieren keine Freeze-Dokumente in diesem Projekt (einziger Treffer
-auf „freeze": `tests/unit/test_freeze.py`, ein gewöhnlicher Unit-Test,
-kein Dokument).
+(**gemergt, PR #74**) — 2. Wiedervorlagen mit Fälligkeitsdatum
+(**dieser PR, #76**) — 3. Schutz-Sperre — 4. ntfy-Relay (**gemergt und
+per Testlauf bewiesen, PR #75**) — 5. geplante Agenten. **„Schritt 6"
+(eingefrorene Tests) entfällt** — geprüft, es existieren keine
+Freeze-Dokumente in diesem Projekt (einziger Treffer auf „freeze":
+`tests/unit/test_freeze.py`, ein gewöhnlicher Unit-Test, kein Dokument).
+
+**Entscheidung (1) — Wiedervorlagen-Format (PR #76):** der
+`faellig`-Kommentar lebt direkt in §3 von SESSION_HANDOVER.md, KEINE
+zweite Datei — eine Quelle für Mensch UND Wächter. Ab jetzt gilt
+verbindlich: **jede neue Zeile in §3 braucht ab sofort einen
+`faellig`-Kommentar** (Datum oder `offen`), sonst schlägt der
+Format-Test (`tests/unit/test_wiedervorlagen_waechter.py::
+test_jede_zeile_in_paragraph_3_hat_einen_gueltigen_faellig_kommentar`)
+beim nächsten Lauf der Testsuite rot an.
+
+**Entscheidung (2) — Ruleset „Main-Schutz" bleibt bewusst disabled,
+Punkt (a) aus PR #74 damit geschlossen:** seit 02.08.2026
+`enforcement: disabled`, weil es Bot-Direktpushes (GH013) blockierte
+und ein Bypass-Eintrag „GitHub Actions" sich am iPhone nicht einrichten
+lässt. **Bleibt aus.** Folge für Auftrag 3 (Schutz-Sperre) und 5
+(geplante Agenten): die harte Grenze liegt NICHT im Ruleset, sondern im
+**Merge-Schritt selbst** — ein Agent ohne Merge-Recht, bzw. ein eigener
+Merge-Workflow, der PRs mit geschützten Pfaden verweigert. Punkt (b)
+unten (Pfad-basierte Merge-Verbote) baut direkt darauf auf.
 
 **Festgehaltene Entscheidungen:** Nachrichten ausschließlich bei
 Warnung, kein „alles ok"-Digest (bestehende Regel seit 10.08.2026, siehe
@@ -582,9 +603,8 @@ nach dem 30.10.2026-Stichtag, weil beide `run.py` berühren würden.
 
 **Offene Punkte, hier gemeldet statt selbst entschieden:**
 
-- **(a) Ruleset „Main-Schutz" seit 02.08.2026 `enforcement: disabled`,
-  Grund unbekannt.** Easy klärt, ob das beabsichtigt ist. Aufträge 3
-  (Schutz-Sperre) und 5 (geplante Agenten) hängen an dieser Klärung.
+*(a) ist geschlossen — siehe „Entscheidung (2)" oben.*
+
 - **(b) GitHub kann Pfad-basierte Merge-Verbote nicht je Akteur
   erzwingen.** Für Auftrag 5 vorher prüfen, ob ein Merge-Workflow mit
   eigener Pfad-Prüflogik als harte Grenze dienen kann, statt einem
@@ -676,12 +696,14 @@ selbst — dasselbe „melden, nie handeln"-Muster wie Stufe 0):
 | Lauf-Zeitversatz-Beobachtung (`lauf_zeitversatz_waechter.py`) | Startverzug von `lauf.yml` gegenüber 21:45 UTC | > 4 Std. bei mind. einem der letzten 10 Läufe | #65 |
 | Split-Wächter (`split_waechter.py`) | Tagesreihe (`bundle.adjusted`) eines Titels mit Naht nahe einem Split-Verhältnis — vermutlich noch nicht nachbereinigte Split-Vorgeschichte (siehe §4 Punkt 9) | Verhältnis innerhalb ±3 % von 2, 3, 4, 5 oder 10 (bewusst ohne 3:2) | #70 |
 | Daten-Abdeckungs-Wächter (`datenabdeckung_waechter.py`) | Kursabruf und iShares-Kursvergleich (Git-Historie von `data/status.json`), Universum-Alter und Sektor-Abdeckung — Auftrag 1 des Automatisierungsplans vom 24.10.2026, siehe §4 Punkt 14 | 24h/7-Tage-Fenster, ≥ 2 Beobachtungen, 180 Tage Universum-Alter — alle als Startwert markiert | #74 |
+| Wiedervorlagen-Wächter (`wiedervorlagen_waechter.py`) | §3 von SESSION_HANDOVER.md (`faellig`-Kommentare) — meldet "Heute fällig"/"Überfällig", Auftrag 2 desselben Plans, siehe §4 Punkt 14 | Erinnerung höchstens 1×/Woche (Tag 1, 8, 15, …), zustandslos aus dem Datum berechnet | #76 |
 
-Alle sechs: lautlos bzw. ohne Sirene (ntfy-Priorität „min"/„default", nie
+Alle sieben: lautlos bzw. ohne Sirene (ntfy-Priorität „min"/„default", nie
 „high"), nur Lese-Rechte, je ein statischer Quelltext-Test gegen jeden
-schreibenden Aufruf. Vier laufen als eigener wöchentlicher Cron
+schreibenden Aufruf. Fünf laufen als eigener wöchentlicher Cron
 (montags, teils 07:30 UTC gemeinsam mit dem Totmannschalter); der
-Daten-Abdeckungs-Wächter läuft täglich (06:37 UTC, siehe PR #74); der
+Daten-Abdeckungs-Wächter läuft täglich (06:37 UTC, siehe PR #74), der
+Wiedervorlagen-Wächter ebenfalls täglich (06:52 UTC, siehe PR #76); der
 Split-Wächter ist der **einzige, der nicht als eigener Workflow läuft**
 — er braucht die vollständige Tagesreihe (`bundle.adjusted`), die nur
 während des eigentlichen Stichtags-Laufs existiert und nirgends
@@ -1073,3 +1095,4 @@ hier, damit niemand sie erneut aufmacht.
 | **Universum hatte keinen Alters-Wächter** — jetzt behoben (Kursabruf und iShares-Kursvergleich gleich mit abgedeckt) | #74 | siehe §4 Punkt 14, §6 |
 | ntfy-Relay gebaut (Auftrag 4 der Automatisierung) — spätere geplante Agenten können jetzt melden, ohne das ntfy-Topic zu kennen | #75 | siehe §4 Punkt 14 |
 | **Testlauf des ntfy-Relays** — über „Run workflow" ausgelöst, Nachricht real auf dem iPhone angekommen; Auftrag 4 damit vollständig abgeschlossen, nicht nur gemergt | #75 | ehemals §3-Wiedervorlage „nach Merge von PR #75", jetzt erledigt |
+| Wiedervorlagen-Wächter gebaut (Auftrag 2 der Automatisierung) — §3 trägt jetzt `faellig`-Kommentare, meldet "Heute fällig"/"Überfällig" zustandslos | #76 | siehe §4 Punkt 14, §6 |
