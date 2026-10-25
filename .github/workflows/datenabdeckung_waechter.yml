@@ -1,0 +1,80 @@
+# DATEN-ABDECKUNGS-WAECHTER. Erkennt, wenn eine Fremdquelle OHNE Fehler
+# antwortet, aber LEER bleibt -- das faellt heute niemandem auf, der
+# nicht gezielt misst (siehe datenabdeckung_waechter.py). Drei Pruefungen:
+# Kursabruf (yfinance), iShares-Kursvergleich, Universum-Alter/Sektor-
+# Abdeckung. Liest NUR die Git-Historie von data/status.json und der
+# Ticker-Meta-Dateien sowie den aktuellen Stand der Universum-Dateien --
+# NIE run.py's laufende Ausfuehrung selbst.
+#
+# Bewusst ein EIGENER Workflow, getrennt von den sechs anderen Waechtern
+# dieses Projekts: neue Symptome, neue Datenquelle (Git-Historie statt
+# der GitHub-Actions-/PR-API).
+#
+# ZEITPUNKT, hier begruendet: lauf.yml laeuft werktags 21:45 UTC, mit
+# dokumentierten Verzoegerungen bis zu rund 8 Stunden (siehe
+# lauf_zeitversatz_waechter.py) -- im schlechtesten beobachteten Fall
+# also ein Lauf-START erst gegen 05:45 UTC des naechsten Kalendertags.
+# Dieser Workflow laeuft deshalb erst um 06:37 UTC -- deutlich NACH
+# dem spaetesten bislang beobachteten Lauf-Ende (Start 05:45 + 20 Min.
+# Zeit-Deckel aus lauf.yml + Puffer fuer die Rueckschreibe-Versuche),
+# UND bewusst NICHT zur vollen oder halben Stunde (siehe Auftrag).
+# Laeuft TAEGLICH, nicht nur werktags: Pruefung C (Universum-Alter/
+# Sektor-Abdeckung) haengt nicht an einem Lauf von lauf.yml und darf
+# auch an einem Wochenende ohne Lauf auswertbar bleiben.
+#
+# FENSTER-GRENZE, hier benannt statt uebergangen (Kriterium 2): das
+# 7-Tage-Fenster von Pruefung B wird unter der heute beobachteten
+# Lauf-Kadenz (ein "kursvergleich"-Feld nur an Stichtags-Laeufen, siehe
+# Modul-Docstring) im Normalfall 0 oder 1 Treffer sehen -- MINDEST_
+# BEOBACHTUNGEN verlangt mindestens zwei. Pruefung B wird deshalb unter
+# der heutigen Kadenz nahezu nie ausloesen; das ist eine Eigenschaft der
+# realen Lauf-Kadenz, kein Fehler dieses Workflows.
+#
+# HARTE GRENZE: dieser Workflow MELDET nur, er AENDERT NIE run.py,
+# lauf.yml, data/rankings, Score oder Konfluenz, und schreibt NIRGENDS
+# zurueck -- serverseitig erzwungen durch die Rechte unten (NUR
+# `contents: read`) UND durch einen statischen AST-Test
+# (tests/unit/test_datenabdeckung_waechter.py), der den Quelltext von
+# datenabdeckung_waechter.py auf jeden schreibenden Aufruf durchsucht.
+name: Daten-Abdeckungs-Wächter
+
+on:
+  schedule:
+    - cron: "37 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: datenabdeckung-waechter
+  cancel-in-progress: false
+
+jobs:
+  wache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+    steps:
+      # fetch-depth: 0 -- bewusst die VOLLE Historie, nicht den GitHub-
+      # Standard (ein flacher Checkout mit Tiefe 1): dieser Waechter
+      # liest `git log`/`git show` ueber data/status.json und die
+      # Ticker-Meta-Dateien, ein flacher Checkout haette keine Historie
+      # dafuer.
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: datenabdeckung_waechter.py und notify.py sind
+      # reine Standardbibliothek. `git` steht auf den GitHub-Runnern
+      # bereits vorinstalliert bereit.
+      - name: Daten-Abdeckung pruefen
+        run: python -m momentum.datenabdeckung_waechter

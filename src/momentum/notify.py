@@ -709,6 +709,32 @@ def push_zeitversatz_beobachtet(text: str, **kwargs) -> bool:
     return push("Momentum-Report: Scheduler-Verzoegerung beobachtet", text, priority="min", **kwargs)
 
 
+def push_datenabdeckung_warnung(text: str, **kwargs) -> bool:
+    """Push (14): datenabdeckung_waechter.py hat mindestens eines seiner
+    vier Signale (Kursabruf/Kursvergleich je Markt, Universum-Alter,
+    Sektor-Abdeckung) im UEBERGANG gesund->Warnung gefunden ODER eine
+    woechentliche Erinnerung bei anhaltender Warnung ist faellig -- oder
+    konnte die Datenlage selbst nicht ermitteln.
+
+    Nimmt wie push_waechter_ok/push_pr_verwaist einen bereits fertig
+    formatierten, ueber begrenze_bloecke() gebuendelten Text entgegen.
+
+    Prioritaet "default", Tag "warning" (wie push_vertrag_gebrochen/
+    push_split_verdacht): eine echte Daten-Luecke, aber noch keine
+    Sirene -- anders als push_waechter_ok/push_zeitversatz_beobachtet
+    (Prioritaet min) kommt diese Nachricht NICHT bei jedem Lauf, sondern
+    ausschliesslich bei Warnung (siehe Modul-Docstring, "ZUSTANDSLOSE
+    UEBERGANGSERKENNUNG") -- sie darf deshalb auffallen.
+    """
+    return push(
+        "Momentum-Report: Daten-Abdeckung",
+        text,
+        priority="default",
+        tags="warning",
+        **kwargs,
+    )
+
+
 def push_split_verdacht(eintraege: list[tuple[str, str]], **kwargs) -> bool:
     """Push (13): split_waechter.py hat mindestens einen Titel gefunden, dessen
     Tages-Kursreihe (dieselbe, mit der momentum_12_1/high_52w_ratio rechnen)
