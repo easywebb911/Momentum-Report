@@ -1,70 +1,61 @@
 """Schutz-Sperre: ein PR-Check (`on: pull_request`), der rot wird, wenn
 ein PR eine geschuetzte Zone (Score/Ranking/Stichtag/Konfluenz-
-Entscheidung/Geschuetzte Daten/Golden-Tests/Selbstschutz) beruehrt --
-Auftrag 3 der Automatisierung vom 24.10.2026.
+Entscheidung/geschuetzte Daten/Golden-Tests/Selbstschutz) beruehrt --
+Auftrag 3 der Automatisierung vom 24.10.2026, in dieser Fassung
+umgestellt auf eine reine AMPEL (siehe "WARUM KEINE FREIGABE MEHR"
+unten).
+
+NAME BEWUSST UNVERAENDERT GELASSEN (Kriterium 6, Auftrag: "bei Zweifel
+Namen lassen und melden"): das Modul heisst weiterhin `schutz_sperre.py`
+und der Workflow weiterhin "Schutz-Sperre", obwohl es inzwischen keine
+Sperre mehr im wörtlichen Sinn ist (siehe unten) -- eine Umbenennung
+haette Tests, Doku-Verweise (SESSION_HANDOVER.md §7.8) und den
+Closed-Set-Eintrag in `test_workflow_hygiene.py` mitgezogen, ohne dass
+der Auftrag das verlangt hat. Im PR-Text ausdruecklich benannt statt
+stillschweigend entschieden.
 
 WARUM EIN CHECK, KEIN RULESET: das Ruleset "Main-Schutz" bleibt
-ausdruecklich `enforcement: disabled` (blockierte Bot-Direktpushes,
-Bypass "GitHub Actions" am iPhone nicht einrichtbar -- siehe
-SESSION_HANDOVER.md §4 Punkt 14). Dieser Check ersetzt das NICHT -- ein
-roter Check blockiert OHNE Ruleset keinen manuellen Merge. Er wird erst
-zur harten Grenze, wenn ein kuenftiger Merge-Workflow (Auftrag 5) ihn vor
-dem Mergen abfragt. Dieser Auftrag baut NUR den Check.
+ausdruecklich `enforcement: disabled` (siehe SESSION_HANDOVER.md §4
+Punkt 14). Ein roter Check blockiert OHNE Ruleset keinen manuellen
+Merge -- und WIRD es nach dieser Fassung auch nie, siehe unten.
 
-DIESER AUFTRAG BAUT NUR DEN CHECK, KEINEN MERGE-WORKFLOW -- bewusst so
-im Auftrag festgehalten, hier wiederholt, damit niemand aus der
-Existenz dieses Moduls faelschlich auf eine bereits wirksame Sperre
-schliesst.
+WARUM KEINE FREIGABE MEHR, NUR NOCH EINE AMPEL: die vorherige Fassung
+liess eine geschuetzte Zone per Label `freigabe-easy` (Akteur
+`easywebb911`, nach dem letzten Push) wieder gruen werden. Schritt 0
+einer eigenen Diagnose-Sitzung ergab: der Code dieses Repos -- und
+jeder kuenftige automatisiert arbeitende Agent (Auftrag 5) -- handelt
+in der GitHub-API SELBST als `easywebb911` (`gh api user`/`get_me()`
+lieferten `login: "easywebb911"`; PR #77 trug `user.login` UND
+`merged_by` jeweils `"easywebb911"`, obwohl ein Agent es geoeffnet
+bzw. kommentiert haette). Eine Freigabe "von easywebb911" ist unter
+dieser Identitaet fuer denselben Agenten, der sie prueft, trivial
+faelschbar -- ein Label oder ein `/freigabe`-Kommentar waere vom
+Agenten selbst setzbar, ohne dass sich das von Easys echter Entscheidung
+unterscheiden liesse. ENTSCHEID (festgehalten in SESSION_HANDOVER.md):
+Agenten MERGEN NIE. Sie oeffnen PRs und melden per ntfy; Easy entscheidet
+und merged selbst -- wie seit PR #49 fuer den Reparatur-Agenten Stufe 3.
+Eine echte technische Freigabe-Grenze braeuchte eine vom Agenten
+UNTERSCHEIDBARE Identitaet (eigene GitHub-App oder ein zweites Konto) --
+bewusst nicht gebaut, siehe PR-Text. Diese Sperre ist deshalb keine
+Sperre mehr: sie zeigt nur noch GRUEN ("keine geschuetzte Zone beruehrt")
+oder ROT ("geschuetzte Zone beruehrt, Easys Entscheidung noetig") --
+rot heisst NICHT "verboten", sondern "hier bewusst hinschauen".
 
-GESCHUETZTE ZONEN -- per grep bestaetigt UND ueber die urspruengliche
-Vorgabe hinaus VERVOLLSTAENDIGT (Auftrag: "vollstaendig machen"; Kriterium
-2, Widerspruch gemeldet statt still uebergangen). Die vollstaendige
-Liste mit Begruendung steht im PR-Text; hier nur die VIER Ergaenzungen,
-die ueber die woertliche Vorgabe hinausgehen:
-
-  1. `universe.py` (GANZE DATEI) -- `load_universe()` ist das DEFAULT-
-     DENY-Gatter ("# STATUS: VERIFIED"), in SESSION_HANDOVER.md §8
-     wiederholt als "Kronjuwel" bezeichnet. Von der urspruenglichen Zonen-
-     Liste nicht genannt, aber ersichtlich derselben Kategorie wie die
-     dort genannte Stichtag-Logik: OHNE dieses Gatter wird ueberhaupt
-     erst gerechnet.
-  2. `kursvergleich.py`/`kursvergleich_us.py` (JE GANZE DATEI) -- deren
-     `vergleiche()`/`Vergleich.verweigert` kann `run.py` per
-     `RankingNotPossible` zum Abbruch VOR dem Schreiben eines Rankings
-     zwingen (siehe `run.py::_kursvergleich`) -- dieselbe Kategorie wie
-     die explizit genannte Konfluenz-Entscheidung, nur folgenreicher
-     (Konfluenz aendert nichts am Ranking selbst, dieses Gatter kann es
-     verhindern).
-  3. `ishares.py::MAX_ALTER_HANDELSTAGE` (EINE Konstante, nicht die
-     ganze Datei -- der Rest von `ishares.py` ist HTTP-Abruf/Parsing,
-     keine Entscheidungslogik) -- die Veraltungs-Schwelle, die
-     `kursvergleich.py`/`kursvergleich_us.py` beim Pruefen der iShares-
-     Bestandsliste verwenden.
-  4. `run.py::process_market`/`_kursvergleich`/`_download_window`/`main`
-     -- NICHT die ganze Datei (grosse Teile sind Push-Verdrahtung/CLI,
-     keine Entscheidungslogik), aber GENAU diese vier: `process_market`
-     ist die Funktion, die `build_ranking`, das Vergleichsgatter und das
-     Schreiben der Ranking-Datei je Markt ueberhaupt erst zusammenruft
-     -- real belegt durch PR #70 (Split-Waechter-Einhaengung): eine
-     scheinbar harmlose, tatsaechlich schon gemergte zwei-Zeilen-
-     Ergaenzung MITTEN in `process_market` waere ohne diese Ergaenzung
-     an diesem Check spurlos vorbeigelaufen (siehe Rueckblick-Tabelle im
-     PR-Text, #70). `_download_window` bestimmt den Kurs-Abrufzeitraum
-     (dieselbe Kategorie wie `HISTORY_DAYS`), `main` ist die
-     Orchestrierung, die alle Schritte in der richtigen Reihenfolge
-     aufruft.
-
-DIE VOLLSTAENDIGE LISTE (Pfad- und Symbol-Ebene) steht als Code unten
-(`GESCHUETZTE_DATEIEN`, `GESCHUETZTE_ORDNER`, `GESCHUETZTE_SYMBOLE`) --
-das ist die einzige Quelle, nicht eine zweite, womoeglich abweichende
-Aufzaehlung irgendwo in Prosa.
+GESCHUETZTE ZONEN -- unveraendert gegenueber PR #77 (siehe dort fuer
+Begruendung und die vier Ergaenzungen ueber die urspruengliche Vorgabe
+hinaus: `universe.py`, `kursvergleich.py`/`kursvergleich_us.py`,
+`ishares.py::MAX_ALTER_HANDELSTAGE`, `run.py::process_market`/
+`_kursvergleich`/`_download_window`/`main`). Die vollstaendige Liste
+(Pfad- und Symbol-Ebene) steht als Code unten (`GESCHUETZTE_DATEIEN`,
+`GESCHUETZTE_ORDNER`, `GESCHUETZTE_SYMBOLE`) -- das ist die einzige
+Quelle, nicht eine zweite, womoeglich abweichende Aufzaehlung in Prosa.
 
 GRANULARITAET: ganze Dateien, wo eine Datei fast vollstaendig aus
 geschuetzter Logik besteht (z. B. `scoring.py`) ODER wo ein AST-
 Vergleich nicht sauber moeglich war; Funktions-/Konstanten-Ebene
 (`GESCHUETZTE_SYMBOLE`) fuer Dateien, in denen Geschuetztes und
 Ungeschuetztes gemischt vorkommt (`config.py`, `ranking.py`,
-`konfluenz.py`, `ishares.py`).
+`konfluenz.py`, `ishares.py`, `run.py`).
 
 DER AST-VERGLEICH, GENAU: fuer eine Datei in `GESCHUETZTE_SYMBOLE` wird
 ihr Inhalt bei `base.sha` UND bei `head.sha` geparst (`ast.parse`); fuer
@@ -72,62 +63,50 @@ jeden geschuetzten Namen wird der Quelltext-Ausschnitt des passenden
 Top-Level-Knotens (Funktion, Klasse, oder Zuweisung mit diesem Namen als
 Ziel) per `ast.get_source_segment()` verglichen. Unterschiedlicher Text
 (geaendert, entfernt, oder bei einer Datei, die es im PR neu gibt,
-hinzugefuegt) gilt als Verletzung. FRAGIL (Kriterium 6, hier benannt):
+hinzugefuegt) gilt als Beruehrung. FRAGIL (Kriterium 6, hier benannt):
 `ast.get_source_segment()` liefert den Quelltext INKLUSIVE Kommentaren
 ueber dem Knoten, die als Teil des vorausgehenden Tokens erfasst werden
 -- eine reine Kommentaraenderung ueber einer geschuetzten Konstante
-wuerde deshalb faelschlich als Verletzung gelten. Das ist eine BEWUSST
+wuerde deshalb faelschlich als Beruehrung gelten. Das ist eine BEWUSST
 KONSERVATIVE Abweichung (ein Fehlalarm ist hier das sicherere Verhalten
 als eine uebersehene Aenderung), kein Mini-Stopp-Anlass.
 
 KANN EINE DATEI IN `GESCHUETZTE_SYMBOLE` BEI EINER SEITE NICHT GEPARST
 WERDEN (Syntaxfehler, z. B. ein fehlschlagender Merge-Konflikt-Marker):
-FAIL-CLOSED -- die ganze Datei gilt fuer diesen Lauf als verletzt, nicht
+FAIL-CLOSED -- die ganze Datei gilt fuer diesen Lauf als beruehrt, nicht
 als "nicht pruefbar, also gruen".
 
-DIE FREIGABE, GENAU (Regel 3): `gh api repos/{repo}/issues/{nummer}/
-events` liefert je Ereignis u. a. `{"event": "labeled", "label":
-{"name": ...}, "actor": {"login": ...}, "created_at": "..."}` (von
-dieser Sitzung GEGENGEPRUEFT, nicht nur angenommen -- siehe PR-Text).
-Gueltig ist eine Freigabe nur, wenn das JUENGSTE solche Ereignis mit
-`label.name == "freigabe-easy"` einen Akteur `login == "easywebb911"`
-traegt UND sein `created_at` NACH dem Commit-Zeitpunkt (`%cI`) von
-`head.sha` liegt (siehe `main()`). FRAGIL (Kriterium 6): der Commit-
-Zeitpunkt des Head-SHA dient hier als Stellvertreter fuer "letzter
-Push" -- bei einem Force-Push auf einen AELTEREN Commit waere das kein
-verlaessliches Signal mehr; in diesem Solo-Repository ohne Force-Push-
-Gewohnheit (siehe SESSION_HANDOVER.md) eine vertretbare Annahme, hier
-ausdruecklich benannt statt stillschweigend vorausgesetzt.
-
-[WAECHTER]-PRS (Regel 4): ein PR-Titel, der mit "[Wächter]" beginnt,
-wird bei Beruehrung einer geschuetzten Zone IMMER rot -- auch mit
-gueltiger Freigabe. Das deckt den Fall ab, dass ein kuenftiger,
-automatisiert arbeitender Agent (Auftrag 5) selbst einen solchen Titel
-traegt und NIE durch eine geschuetzte Zone soll, unabhaengig davon, ob
-irgendwo ein Label sitzt.
+[WAECHTER]-PRS: ein PR-Titel, der mit "[Wächter]" beginnt, UND eine
+geschuetzte Zone beruehrt, bleibt immer rot -- UND die Check-Ausgabe
+weist zusaetzlich ausdruecklich darauf hin (eigene Log-Zeile), damit
+genau dieser Fall (ein automatisiert arbeitender Agent ruehrt eine
+geschuetzte Zone an) im Lauf-Protokoll nicht einfach als "eine von
+vielen roten Zeilen" untergeht.
 
 FORKS: dieses Repository ist ein privates Solo-Repository ohne externe
 Mitwirkende -- ein `pull_request`-Lauf von einem Fork ist praktisch
 ausgeschlossen (Kriterium 4, hier geklaert statt stillschweigend
 vorausgesetzt). Deshalb genuegt der normale `pull_request`-Trigger mit
-`GITHUB_TOKEN`; ein `pull_request_target`-Umweg (fuer Secrets gegenueber
-nicht vertrauenswuerdigem Fork-Code) ist hier nicht einschlaegig, weil
-dieser Check keine Secrets braucht und nichts ausfuehrt, was aus dem
-PR-Branch selbst stammt (nur lesen, nie `checkout` des Fork-Codes
-AUSFUEHREN).
+`GITHUB_TOKEN`; ein `pull_request_target`-Umweg ist hier nicht
+einschlaegig, weil dieser Check keine Secrets braucht und nichts
+ausfuehrt, was aus dem PR-Branch selbst stammt.
 
 HARTE GRENZE: dieser Check MELDET nur per Exit-Code -- er schreibt
-NIRGENDS (kein Label, kein Kommentar, kein Merge, keine Datei).
+NIRGENDS (kein Label, kein Kommentar, kein Merge, keine Datei). Er
+liest nicht einmal mehr Issue-/Label-Ereignisse (das war die einzige
+Stelle, die je einen `issues: read`-Zugriff brauchte -- entfallen mit
+der Freigabe, siehe `.github/workflows/schutz_sperre.yml`).
 Abgesichert auf zwei Ebenen: das Workflow-Token traegt nur
-`contents: read`, `pull-requests: read`, `issues: read` UND ein
-statischer Test (tests/unit/test_schutz_sperre.py) durchsucht diese
-Datei nach jedem schreibenden Aufruf.
+`contents: read`, `pull-requests: read` UND ein statischer Test
+(tests/unit/test_schutz_sperre.py) durchsucht diese Datei nach jedem
+schreibenden Aufruf UND bestaetigt, dass keine Label-/Akteur-Logik mehr
+existiert.
 
-DETERMINISMUS (Kriterium 7): `main()` nimmt KEINE eigene Uhrzeit --
-`jetzt_iso` kommt ausschliesslich aus dem Commit-Zeitpunkt von
-`head.sha` (siehe oben), kein `datetime.now()` irgendwo in der
-Entscheidungslogik. Derselbe Diff und dieselben Ereignisse ergeben
-immer dasselbe Ergebnis.
+DETERMINISMUS (Kriterium 7): `main()` braucht ÜBERHAUPT KEINEN
+Zeitbezug mehr (die vorherige Fassung brauchte den Commit-Zeitpunkt des
+Kopf-SHA fuer die Freigabe-Pruefung -- das entfaellt vollstaendig).
+Das Ergebnis ist eine reine Funktion von PR-Titel und Diff (Basis-/
+Kopf-SHA): derselbe Diff ergibt immer dasselbe Ergebnis.
 """
 
 from __future__ import annotations
@@ -139,21 +118,17 @@ import subprocess
 from pathlib import Path
 
 WAECHTER_TITEL_PRAEFIX = "[Wächter]"
-FREIGABE_LABEL = "freigabe-easy"
-FREIGABE_AKTEUR = "easywebb911"
 
-# Grosszuegige Obergrenzen je API-Abruf -- eine einzelne Seite reicht
+# Grosszuegige Obergrenze je API-Abruf -- eine einzelne Seite reicht
 # fuer jeden realistischen PR dieses Solo-Repositories bei weitem.
 # FRAGIL, hier benannt: ein PR mit mehr als so vielen geaenderten
-# Dateien bzw. Label-Ereignissen wuerde Treffer jenseits der Grenze
-# nicht mehr sehen.
+# Dateien wuerde Treffer jenseits der Grenze nicht mehr sehen.
 DATEI_LISTEN_LIMIT = 300
-EREIGNIS_LISTEN_LIMIT = 100
 
 # --------------------------------------------------- Geschuetzte Zonen
 
 # Ganze Datei geschuetzt -- jede Aenderung an diesem Pfad ist eine
-# Verletzung. Begruendung je Eintrag: siehe Modul-Docstring und PR-Text.
+# Beruehrung. Begruendung je Eintrag: siehe Modul-Docstring und PR #77.
 GESCHUETZTE_DATEIEN: frozenset[str] = frozenset(
     {
         "src/momentum/scoring.py",
@@ -171,7 +146,7 @@ GESCHUETZTE_DATEIEN: frozenset[str] = frozenset(
 )
 
 # Ganze Ordner geschuetzt -- jeder Pfad, der mit einem dieser Praefixe
-# beginnt, ist eine Verletzung (Daten-Verzeichnisse mit wachsendem
+# beginnt, ist eine Beruehrung (Daten-Verzeichnisse mit wachsendem
 # Inhalt, plus jede einzelne Workflow-Datei als Selbstschutz).
 GESCHUETZTE_ORDNER: tuple[str, ...] = (
     "data/rankings/",
@@ -180,8 +155,7 @@ GESCHUETZTE_ORDNER: tuple[str, ...] = (
 )
 
 # Nur diese Top-Level-Namen sind in der jeweiligen Datei geschuetzt --
-# der Rest der Datei darf sich frei aendern. Siehe Modul-Docstring fuer
-# die drei Ergaenzungen ueber die urspruengliche Vorgabe hinaus.
+# der Rest der Datei darf sich frei aendern.
 GESCHUETZTE_SYMBOLE: dict[str, frozenset[str]] = {
     "src/momentum/config.py": frozenset(
         {
@@ -286,19 +260,6 @@ def ermittle_geaenderte_dateien(
         return None, f"ein Eintrag der Datei-Liste hat kein 'filename'-Feld ({exc})."
 
 
-def ermittle_label_ereignisse(
-    repo: str, nummer: int, *, laeufer=subprocess.run, limit: int = EREIGNIS_LISTEN_LIMIT
-) -> tuple[list[dict] | None, str | None]:
-    daten, grund = _gh_api(
-        f"repos/{repo}/issues/{nummer}/events?per_page={limit}", laeufer=laeufer
-    )
-    if grund is not None:
-        return None, grund
-    if not isinstance(daten, list):
-        return None, "Antwort auf .../events war keine Liste."
-    return daten, None
-
-
 def _git_show(commit: str, pfad: str, *, laeufer=subprocess.run) -> tuple[str | None, str | None]:
     try:
         ergebnis = laeufer(["git", "show", f"{commit}:{pfad}"], capture_output=True, text=True)
@@ -309,21 +270,6 @@ def _git_show(commit: str, pfad: str, *, laeufer=subprocess.run) -> tuple[str | 
         # geloescht), ist das KEIN technischer Fehlschlag -- leerer Text.
         return "", None
     return ergebnis.stdout, None
-
-
-def _commit_zeitpunkt(commit: str, *, laeufer=subprocess.run) -> tuple[str | None, str | None]:
-    try:
-        ergebnis = laeufer(
-            ["git", "show", "-s", "--format=%cI", commit], capture_output=True, text=True
-        )
-    except OSError as exc:
-        return None, f"git liess sich nicht aufrufen ({type(exc).__name__}: {exc})."
-    if ergebnis.returncode != 0:
-        return None, f"git show -s {commit} endete mit rc={ergebnis.returncode}: {ergebnis.stderr.strip()}"
-    zeile = ergebnis.stdout.strip()
-    if not zeile:
-        return None, f"git show -s {commit} lieferte keinen Zeitstempel."
-    return zeile, None
 
 
 # ------------------------------------------------------------- AST-Vergleich
@@ -365,33 +311,6 @@ def symbol_verletzungen(
     return verletzt
 
 
-# --------------------------------------------------------------- Freigabe
-
-
-def gueltige_freigabe(
-    ereignisse: list[dict], *, letzter_push_iso: str
-) -> bool:
-    """True, wenn das JUENGSTE 'labeled'-Ereignis fuer FREIGABE_LABEL
-    von FREIGABE_AKTEUR stammt UND NACH `letzter_push_iso` liegt."""
-    treffer = [
-        e
-        for e in ereignisse
-        if e.get("event") == "labeled"
-        and isinstance(e.get("label"), dict)
-        and e["label"].get("name") == FREIGABE_LABEL
-    ]
-    if not treffer:
-        return False
-    juengstes = max(treffer, key=lambda e: e.get("created_at") or "")
-    akteur = (juengstes.get("actor") or {}).get("login")
-    if akteur != FREIGABE_AKTEUR:
-        return False
-    zeitpunkt = juengstes.get("created_at")
-    if not zeitpunkt:
-        return False
-    return zeitpunkt > letzter_push_iso
-
-
 # -------------------------------------------------------------------- main()
 
 
@@ -415,10 +334,10 @@ def main(argv: list[str] | None = None, *, laeufer=subprocess.run) -> int:
         log(f"Schutz-Sperre: ROT (fail-closed) — Diff nicht lesbar: {grund}")
         return 1
 
-    verletzungen: list[str] = []
+    beruehrungen: list[str] = []
     for pfad in dateien:
         if ist_voll_geschuetzter_pfad(pfad):
-            verletzungen.append(f"{pfad} (ganze Datei geschuetzt)")
+            beruehrungen.append(f"{pfad} (ganze Datei geschuetzt)")
             continue
         namen = GESCHUETZTE_SYMBOLE.get(pfad)
         if namen is None:
@@ -436,44 +355,24 @@ def main(argv: list[str] | None = None, *, laeufer=subprocess.run) -> int:
             log(f"Schutz-Sperre: ROT (fail-closed) — {pfad} liess sich nicht parsen.")
             return 1
         if betroffene:
-            verletzungen.append(f"{pfad}: {', '.join(betroffene)}")
+            beruehrungen.append(f"{pfad}: {', '.join(betroffene)}")
 
-    if not verletzungen:
+    if not beruehrungen:
         log("Schutz-Sperre: keine geschuetzte Zone beruehrt — gruen.")
         return 0
 
-    log("Schutz-Sperre: geschuetzte Zone(n) beruehrt:")
-    for zeile in verletzungen:
+    log("Schutz-Sperre: geschuetzte Zone(n) beruehrt — Easys Entscheidung noetig:")
+    for zeile in beruehrungen:
         log(f"  - {zeile}")
 
     if titel.strip().startswith(WAECHTER_TITEL_PRAEFIX):
         log(
-            f"Schutz-Sperre: ROT — PR-Titel beginnt mit {WAECHTER_TITEL_PRAEFIX!r}, "
-            "das gilt IMMER, auch mit Label (Regel 4)."
+            f"Schutz-Sperre: Hinweis — PR-Titel beginnt mit {WAECHTER_TITEL_PRAEFIX!r} "
+            "UND beruehrt eine geschuetzte Zone. Agenten mergen nie; dieser PR "
+            "braucht wie jeder andere Easys bewusste Entscheidung."
         )
-        return 1
 
-    letzter_push_iso, grund = _commit_zeitpunkt(kopf_sha, laeufer=laeufer)
-    if grund is not None:
-        log(f"Schutz-Sperre: ROT (fail-closed) — Push-Zeitpunkt nicht ermittelbar: {grund}")
-        return 1
-
-    ereignisse, grund = ermittle_label_ereignisse(repo, nummer, laeufer=laeufer)
-    if grund is not None:
-        log(f"Schutz-Sperre: ROT (fail-closed) — Label-Ereignisse nicht lesbar: {grund}")
-        return 1
-
-    if gueltige_freigabe(ereignisse, letzter_push_iso=letzter_push_iso):
-        log(
-            f"Schutz-Sperre: GRUEN — gueltige Freigabe ({FREIGABE_LABEL!r} von "
-            f"{FREIGABE_AKTEUR!r}, nach dem letzten Push {letzter_push_iso})."
-        )
-        return 0
-
-    log(
-        f"Schutz-Sperre: ROT — keine gueltige Freigabe (Label {FREIGABE_LABEL!r} von "
-        f"{FREIGABE_AKTEUR!r}, NACH dem letzten Push {letzter_push_iso})."
-    )
+    log("Schutz-Sperre: ROT — nicht verboten, nur eine Entscheidung wert.")
     return 1
 
 
