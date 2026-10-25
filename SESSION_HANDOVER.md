@@ -1,6 +1,7 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 25.10.2026**, nach PR #78 (Schutz-Sperre auf Ampel umgestellt).
+**Stand: 25.10.2026**, nach PR #79 (Agenten-Kontrolle, Auftrag 5 der
+Automatisierung — **noch offen, Manual-Merge, Easy entscheidet**).
 Nachgezogen: PR #76 (Wiedervorlagen-Wächter — `faellig`-Kommentare in
 §3 plus eigener Wächter, Schritt 2 der am 24.10.2026 festgelegten
 Automatisierung), PR #77 (Schutz-Sperre — PR-Check gegen geschützte
@@ -8,7 +9,10 @@ Zonen, Schritt 3 desselben Plans, **ausnahmsweise trotz rotem
 Eigen-Check gemergt** — das Label ließ sich am iPhone nicht setzen,
 ohne Ruleset nicht blockierend), PR #78 (Schutz-Sperre: Label-Freigabe
 entfernt, reine Ampel statt Sperre — Grund: Code/Agenten handeln als
-easywebb911, siehe §4 Punkt 14 und §7.8).
+easywebb911, siehe §4 Punkt 14 und §7.8, **gemergt**), PR #79
+(Agenten-Kontrolle — Alarm, wenn der geplante Wächter-Agent sich seit
+über 48 Std. nicht mehr gemeldet hat, siehe §4 Punkt 15 — PR offen,
+Schutz-Sperre erwartungsgemäß rot, da Workflow-Dateien berührt sind).
 Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
 nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
@@ -221,6 +225,8 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) <!-- faellig: offen --> | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **offen, keine Frist** <!-- faellig: offen --> | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 | **ca. 10 Handelstage nach Merge von PR #74** <!-- faellig: offen --> | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
+| **31.10.2026** <!-- faellig: 2026-10-31 --> | **Erster echter Testtag für den Wächter-Agenten** (geplanter Claude-Task, täglich 12:31 Berlin-Zeit, siehe §4 Punkt 15) — prüfen: ist der Oktober-Stichtag (30.10.2026) inzwischen da, und hat der Wächter-Agent das korrekt erkannt/gemeldet? Zugleich die erste Gelegenheit, die Agenten-Kontrolle (PR #79, sofern gemergt) an einem echten Tagesrhythmus statt nur an simulierten Daten zu beobachten. | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
+| **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, und war sein Befund (falls einer kam) sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
 Stichtag selbst (samt Überschuss-Ampel-Realprobe), der erste Vergleich
@@ -666,6 +672,57 @@ Easys eigene Entscheidung, kein serverseitiges Merge-Gatter.*
   (Universum-Alter) nur TEILWEISE abgedeckt: die Alters-Schwelle warnt
   irgendwann, erkennt aber keine Umbenennung selbst, nur das
   Verstreichen der Zeit. Weiterhin offen, unverändert gegenüber PR #74.
+
+**15. Auftrag 5 konkretisiert: drei geplante Claude-Tasks (seit
+25.10.2026) PLUS Agenten-Kontrolle gegen deren eigenes Ausbleiben (PR
+#79).** *(Easys eigene Task-Einstellungen sind die Quelle, hier nur
+dokumentiert; PR #79 noch offen, Manual-Merge)*
+
+Entscheidung (4) oben ("Agenten mergen NIE") bleibt unverändert die
+Grundregel. Konkret eingerichtet (25.10.2026, außerhalb dieses Repos, in
+Easys Claude-Task-Einstellungen) sind drei geplante Tasks — **keiner von
+ihnen merged**, Zustellung ausschließlich über `ntfy_relay.yml` (PR #75),
+Claudes eigener Push-Kanal bewusst deaktiviert:
+
+- **Wächter**, täglich 12:31 Berlin-Zeit (≈ 11:31 UTC Winterzeit) —
+  prüft Läufe/Wächter/Rankings, bereitet bei Bedarf `[Wächter]`-PRs vor
+  (höchstens einer pro Tag, nur wenn Tests grün, byte-identisch wo
+  nötig, UND die Schutz-Sperre grün bleibt). Meldet täglich: gesund =
+  lautlos (dieselbe Herzschlag-Ausnahme wie `push_waechter_ok`, siehe
+  §8 Lesson, Entscheid 10.08.2026).
+- **Lit-Check**, sonntags 09:56 Berlin-Zeit.
+- **Monatsrundgang**, am 3. jedes Monats, 08:32 Berlin-Zeit.
+
+Alle drei laufen ohne Rückfrage (auto) — änderbar einzig in den
+Task-eigenen Einstellungen, nicht in diesem Repo.
+
+**Entscheid, hier festgehalten:** das tägliche, lautlose Lebenszeichen
+des Wächter-Agenten ist eine bewusste, ausdrückliche Ausnahme von der
+Kein-Herzschlag-Regel vom 10.08.2026 — exakt dasselbe Präzedenzprinzip
+wie beim Totmannschalter selbst (`push_waechter_ok`, lautlos per
+Priorität `min`): die eigene Abwesenheit des Agenten muss auffallen
+können. **PR #79 (Agenten-Kontrolle) ist das Werkzeug, das dieses
+Lebenszeichen tatsächlich überwacht** — siehe `src/momentum/
+agenten_kontrolle.py`. **Lit-Check und Monatsrundgang sind von dieser
+Lebenszeichen-Prüfung ausdrücklich NICHT erfasst**: beide laufen an
+einem fixen Tag im Monat/in der Woche, ihr eigenes Ausbleiben wäre schon
+ohne eigenen Wächter offensichtlich (der fällige Tag vergeht sichtbar,
+ohne dass etwas passiert).
+
+**Bekannte Grenze, offen benannt statt verschwiegen:** „Agenten mergen
+nie" existiert bisher nur als dem Agenten gegebene Anweisung, nicht als
+technische Durchsetzung — jeder Agent handelt in der GitHub-API SELBST
+als `easywebb911` (Entscheidung (5) oben), könnte also technisch auch
+mergen. Das ist **„Weg B"**: ein bewusst gewählter, hier dokumentierter
+Risiko-Akzept, keine übersehene Lücke. Eine technische Durchsetzung
+(eigene GitHub-App/zweites Konto) wurde bereits bei Entscheidung (4)
+geprüft und bewusst nicht gebaut.
+
+**Revert-Pfad für PR #79:** ein Revert dieses einen Merge-Commits nimmt
+Kontroll-Modul (`agenten_kontrolle.py`), den neuen Workflow
+(`agenten_kontrolle.yml`), die zugehörigen Tests UND die eine
+`run-name`-Zeile in `ntfy_relay.yml` als EINE Einheit zurück — keine
+verstreuten Reste.
 
 ---
 
@@ -1196,3 +1253,4 @@ hier, damit niemand sie erneut aufmacht.
 | Schutz-Sperre gebaut (Auftrag 3 der Automatisierung) — PR-Check gegen geschützte Zonen, baut nur den Check, keinen Merge-Workflow | #77 | siehe §4 Punkt 14, §7.8 |
 | **PR #77 gemergt — ausnahmsweise trotz rotem Eigen-Check** (Label am iPhone nicht setzbar; ohne Ruleset nicht blockierend) | #77 | siehe §4 Punkt 14 |
 | Schutz-Sperre auf reine Ampel umgestellt — Label-Freigabe entfernt, weil Code/Agenten als easywebb911 handeln (Entscheidung (5)) und jede Freigabe "von easywebb911" fälschbar wäre; Auftrag 5 umdefiniert: Agenten mergen nie | #78 | siehe §4 Punkt 14, §7.8 |
+| **Agenten-Kontrolle gebaut** (Auftrag 5, konkretisiert) — meldet laut, wenn sich der geplante Wächter-Agent seit über 48 Std. nicht mehr über `ntfy_relay.yml` gemeldet hat; eine Zeile (`run-name`) in `ntfy_relay.yml` ergänzt, damit der Lauf-Titel überhaupt geprüft werden kann — **PR noch offen, Manual-Merge, Easy entscheidet** | #79 | siehe §4 Punkt 15 |

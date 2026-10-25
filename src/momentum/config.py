@@ -62,6 +62,10 @@ TOP_N = 5
 # -- eine Wahrheit, kein zweiter Ort in JavaScript.
 REPO_SLUG = "easywebb911/Momentum-Report"
 WORKFLOW_LAUF = "lauf.yml"
+# Agenten-Kontrolle (siehe agenten_kontrolle.py) liest hierueber die
+# Laeufe des ntfy-Relays, um das Lebenszeichen des Waechter-Agenten zu
+# pruefen.
+WORKFLOW_NTFY_RELAY = "ntfy_relay.yml"
 
 # --- Datenbeschaffung -----------------------------------------------------
 # Puffer: der Nenner der 12-1-Rendite liegt bis zu ~395 Tage zurueck.

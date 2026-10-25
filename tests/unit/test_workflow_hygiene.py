@@ -79,6 +79,11 @@ def test_es_gibt_die_erwarteten_workflows():
         # Automatisierung vom 24.10.2026). Baut NUR den Check, keinen
         # Merge-Workflow.
         "schutz_sperre.yml",
+        # Die Agenten-Kontrolle (siehe agenten_kontrolle.py) -- sie
+        # meldet, wenn sich der geplante Waechter-Agent (Auftrag 5) seit
+        # ueber 48 Std. nicht mehr per ntfy_relay.yml gemeldet hat, das
+        # kein einzelner Agenten-Lauf selbst melden kann.
+        "agenten_kontrolle.yml",
     }
 
 
