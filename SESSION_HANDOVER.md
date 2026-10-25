@@ -1,13 +1,13 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 25.10.2026**, nach PR #76 (Wiedervorlagen-Wächter).
-Nachgezogen: PR #74 (Daten-Abdeckungs-Wächter — Kursabruf, iShares-
-Kursvergleich, Universum-Alter/Sektoren, Schritt 1 der am 24.10.2026
-festgelegten Automatisierung), PR #75 (ntfy-Relay — Weiterleitung an
-`notify.push()` für spätere geplante Agenten, Schritt 4 desselben
-Plans, gemergt UND per echtem Testlauf bestätigt), PR #76
+**Stand: 25.10.2026**, nach PR #77 (Schutz-Sperre).
+Nachgezogen: PR #75 (ntfy-Relay — Weiterleitung an `notify.push()` für
+spätere geplante Agenten, Schritt 4 der am 24.10.2026 festgelegten
+Automatisierung, gemergt UND per echtem Testlauf bestätigt), PR #76
 (Wiedervorlagen-Wächter — `faellig`-Kommentare in §3 plus eigener
-Wächter, Schritt 2 desselben Plans, siehe §4 Punkt 14 und §6).
+Wächter, Schritt 2 desselben Plans), PR #77 (Schutz-Sperre — PR-Check
+gegen geschützte Zonen, Schritt 3 desselben Plans, siehe §4 Punkt 14
+und §7.8).
 Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
 nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
@@ -549,20 +549,35 @@ Rauschen ist, lässt sich mit nur ca. 6 Wochen Beobachtung nicht sicher
 sagen — die Beobachtung über den Lauf-Zeitversatz-Wächter läuft
 unverändert weiter.
 
-**14. Automatisierungsplan vom 24.10.2026 — Schritte 1, 2 und 4 gebaut
-(PR #74, #76, #75), drei offene Punkte verbleiben.** *(Easys
-Entscheid/Klärung nötig, siehe die Punkte b–d unten; Punkt (a) ist mit
-PR #76 geschlossen, siehe dort)*
+**14. Automatisierungsplan vom 24.10.2026 — Schritte 1, 2, 3 und 4
+gebaut (PR #74, #76, #77, #75), zwei offene Punkte verbleiben.**
+*(Easys Entscheid/Klärung nötig, siehe die Punkte b/d unten; Punkt (a)
+ist mit PR #76 geschlossen, Punkt (c) betrifft weiterhin `lauf.yml`
+selbst und bleibt bis nach dem 30.10.2026-Stichtag offen)*
 
 **Ziel des Plans** (Easys Formulierung): Datenfehler ohne mein Zutun
 finden, melden, ungefährliche reparieren; ich entscheide nur Score-/
 Signal-/Methodik-Fragen. **Reihenfolge:** 1. Daten-Abdeckungs-Wächter
 (**gemergt, PR #74**) — 2. Wiedervorlagen mit Fälligkeitsdatum
-(**dieser PR, #76**) — 3. Schutz-Sperre — 4. ntfy-Relay (**gemergt und
-per Testlauf bewiesen, PR #75**) — 5. geplante Agenten. **„Schritt 6"
-(eingefrorene Tests) entfällt** — geprüft, es existieren keine
+(**gemergt, PR #76**) — 3. Schutz-Sperre (**dieser PR, #77** — baut NUR
+den Check, keinen Merge-Workflow) — 4. ntfy-Relay (**gemergt und per
+Testlauf bewiesen, PR #75**) — 5. geplante Agenten, noch offen. **„Schritt
+6" (eingefrorene Tests) entfällt** — geprüft, es existieren keine
 Freeze-Dokumente in diesem Projekt (einziger Treffer auf „freeze":
 `tests/unit/test_freeze.py`, ein gewöhnlicher Unit-Test, kein Dokument).
+
+**Entscheidung (3) — Schutz-Sperre als reiner PR-Check (PR #77), keine
+Durchsetzung ohne Auftrag 5:** die geschützten Zonen stehen jetzt als
+Code in `schutz_sperre.py` und als Abschrift in §7.8. Freigabe
+ausschließlich per Label `freigabe-easy`, gesetzt von `easywebb911`
+NACH dem letzten Push (per Issue-Events geprüft, nicht nur
+Label-Vorhandensein). `[Wächter]`-PR-Titel bleiben bei Berührung einer
+geschützten Zone IMMER rot, auch mit Label. `.github/workflows/**` und
+der Check selbst sind Teil der geschützten Zonen (Selbstschutz).
+**Wichtig, ausdrücklich:** ohne das Main-Schutz-Ruleset (Entscheidung
+(2) unten) blockiert ein roter Check KEINEN manuellen Merge — er wird
+erst zur harten Grenze, wenn ein künftiger Merge-Workflow (Auftrag 5)
+ihn abfragt.
 
 **Entscheidung (1) — Wiedervorlagen-Format (PR #76):** der
 `faellig`-Kommentar lebt direkt in §3 von SESSION_HANDOVER.md, KEINE
@@ -606,8 +621,9 @@ nach dem 30.10.2026-Stichtag, weil beide `run.py` berühren würden.
 *(a) ist geschlossen — siehe „Entscheidung (2)" oben.*
 
 - **(b) GitHub kann Pfad-basierte Merge-Verbote nicht je Akteur
-  erzwingen.** Für Auftrag 5 vorher prüfen, ob ein Merge-Workflow mit
-  eigener Pfad-Prüflogik als harte Grenze dienen kann, statt einem
+  erzwingen.** Die Pfad-Prüflogik selbst steht jetzt bereit
+  (`schutz_sperre.py`, PR #77) — offen bleibt, wie ein künftiger
+  Merge-Workflow (Auftrag 5) sie VOR dem Mergen abfragt, statt einem
   Agenten direkt Merge-Rechte zu geben.
 - **(c) `lauf.yml` interpoliert `${{ inputs.datum }}` direkt in die
   Shell** (Injektions-Muster) — heute harmlos (nur Easy löst das
@@ -956,6 +972,51 @@ Rangfolge nie an — festgehalten in
   entkoppelter Ticker (`docs/app.js`, `tickAnzeigen`) — zählt gleichmäßig
   im Sekundentakt statt sprunghaft im Poll-Abstand.
 
+### 7.8 Geschützte Zonen (Schutz-Sperre, Auftrag 3 der Automatisierung vom 24.10.2026, PR #77)
+
+**Die einzige Quelle ist der Code** (`src/momentum/schutz_sperre.py`,
+`GESCHUETZTE_DATEIEN`/`GESCHUETZTE_ORDNER`/`GESCHUETZTE_SYMBOLE`) —
+diese Liste hier ist eine Abschrift zum schnellen Nachschlagen, kein
+zweiter, womöglich abweichender Ort.
+
+**Ganze Datei geschützt:** `scoring.py`, `evaluation.py`, `universe.py`
+(Default-Deny-Gatter, siehe §8 „Kronjuwel"), `kursvergleich.py`,
+`kursvergleich_us.py` (Vergleichsgatter, kann `RankingNotPossible`
+auslösen), `data/konfluenz_historie.json`, `test_freeze.py`,
+`test_scoring_values.py`, `test_konfluenz_python.py` (Golden-Tests),
+`schutz_sperre.py` + seine Tests (Selbstschutz) — sowie **jeder Pfad**
+unter `data/rankings/`, `data/evaluation/`, `.github/workflows/`.
+CODEOWNERS existiert in diesem Repo nicht.
+
+**Nur bestimmte Namen geschützt (AST-Vergleich Basis gegen Kopf):**
+`config.py` (`WEIGHT_MOMENTUM_12_1`, `WEIGHT_HIGH_52W`, `SCORE_SCALE`,
+`MOMENTUM_LOOKBACK_MONTHS`, `MOMENTUM_SKIP_MONTHS`,
+`HIGH_52W_WINDOW_DAYS`, `LIQUIDITY_MIN_MEDIAN_TURNOVER`,
+`LIQUIDITY_WINDOW_MONTHS`, `MIN_UNIVERSE_COVERAGE`, `TOP_N`,
+`HISTORY_DAYS`, `Market`, `MARKETS`, `_check_weights_are_backed`);
+`ranking.py` (`is_last_weekday_of_month`, `due_months`, `resolve_asof`,
+`_juengster_werktag`, `zu_frueh_fuer_stichtag`, `median_turnover`,
+`build_ranking`); `konfluenz.py` (`elliott_long`, `konfluenz`,
+`neue_konfluenz_treffer`); `ishares.py` (`MAX_ALTER_HANDELSTAGE`);
+`run.py` (`process_market`, `_kursvergleich`, `_download_window`,
+`main`) — diese vier `run.py`-Funktionen sind eine Ergänzung über die
+ursprüngliche Vorgabe hinaus (real belegt durch PR #70, deren
+zwei-Zeilen-Ergänzung mitten in `process_market` ohne diese Ergänzung
+spurlos durchgelaufen wäre — siehe PR #77 für den Rückblick auf
+#67–#76).
+
+**Freigabe:** Label `freigabe-easy`, gesetzt von `easywebb911` NACH dem
+letzten Push (Issue-Events der API, nicht nur Label-Vorhandensein). Ein
+PR-Titel, der mit `[Wächter]` beginnt, bleibt bei Berührung einer
+geschützten Zone IMMER rot, auch mit Label.
+
+**Kein Ruleset dahinter, ausdrücklich:** ein roter Check blockiert ohne
+das Main-Schutz-Ruleset (bewusst disabled, siehe §4 Punkt 14) KEINEN
+manuellen Merge. Die harte Grenze entsteht erst mit dem Merge-Workflow
+aus Auftrag 5 (geplante Agenten), der diesen Check vor dem Mergen
+abfragt — bis dahin ist die Sperre eine Melde-, keine Durchsetzungs-
+Instanz.
+
 ---
 
 ## 8. Lessons (teuer bezahlt)
@@ -1096,3 +1157,4 @@ hier, damit niemand sie erneut aufmacht.
 | ntfy-Relay gebaut (Auftrag 4 der Automatisierung) — spätere geplante Agenten können jetzt melden, ohne das ntfy-Topic zu kennen | #75 | siehe §4 Punkt 14 |
 | **Testlauf des ntfy-Relays** — über „Run workflow" ausgelöst, Nachricht real auf dem iPhone angekommen; Auftrag 4 damit vollständig abgeschlossen, nicht nur gemergt | #75 | ehemals §3-Wiedervorlage „nach Merge von PR #75", jetzt erledigt |
 | Wiedervorlagen-Wächter gebaut (Auftrag 2 der Automatisierung) — §3 trägt jetzt `faellig`-Kommentare, meldet "Heute fällig"/"Überfällig" zustandslos | #76 | siehe §4 Punkt 14, §6 |
+| Schutz-Sperre gebaut (Auftrag 3 der Automatisierung) — PR-Check gegen geschützte Zonen, baut nur den Check, keinen Merge-Workflow | #77 | siehe §4 Punkt 14, §7.8 |
