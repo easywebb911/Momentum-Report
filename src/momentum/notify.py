@@ -78,15 +78,26 @@ NACHRICHT_BLOCK_GRENZE = 2000
 # auffaellt, bis der Waechter schon ins Leere sucht.
 FEHLSCHLAG_ANKERTEXT = "ntfy hat den Push abgelehnt:"
 
-# ntfy-Prioritaeten: 1 = min, 3 = normal, 4 = hoch (loest auf dem iPhone
-# die auffaellige Zustellung aus). Mehr braucht dieses Werkzeug nicht.
+# ntfy-Prioritaeten: 1 = min, 2 = low, 3 = normal, 4 = hoch (loest auf dem
+# iPhone die auffaellige Zustellung aus) -- die vier Stufen, die ntfys
+# eigene fuenfstufige Skala (min/low/default/high/max) deckt, OHNE "max"
+# (5): dieses Projekt kennt bislang keinen Anlass lauter als "high".
+#
+# "low" kam erst mit ntfy_relay.py (Auftrag 4 der Automatisierung vom
+# 24.10.2026) dazu -- WIDERSPRUCH GEMELDET statt still uebergangen
+# (Kriterium 2): der Auftrag verlangte die Wahl "min/low/default/high"
+# als Workflow-Eingabe, aber diese Tabelle kannte "low" bisher nicht
+# (push() haette mit KeyError abgebrochen). Rein additiv nachgetragen,
+# an derselben Stelle in der ntfy-eigenen Skala (zwischen min und
+# default) -- kein bestehender Aufrufer uebergibt "low", also aendert
+# sich an keinem vorhandenen Push etwas.
 #
 # "min" ist seit Easys Produktentscheid vom 10.08.2026 die TRAGENDE
 # Trennlinie dieses Moduls: Nachrichten, die sagen "alles in Ordnung",
 # gehen ausschliesslich ueber diese Stufe raus. ntfy stellt sie ohne Ton
 # und ohne Banner zu -- sie erscheinen nur in der Liste der App. Damit
 # behaelt der klingelnde Kanal genau eine Bedeutung: es ist etwas kaputt.
-PRIORITIES = {"min": 1, "default": 3, "high": 4}
+PRIORITIES = {"min": 1, "low": 2, "default": 3, "high": 4}
 
 MISSING_TOPIC_BANNER = (
     "PUSH NICHT VERSCHICKT: Das Repository-Secret NTFY_TOPIC ist nicht "

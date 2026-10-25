@@ -1,11 +1,12 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 25.10.2026**, nach PR #74 (Daten-Abdeckungs-Wächter).
-Nachgezogen: PR #72 (Sektor-Konzentrations-Hinweis), PR #73
-(Stichtag-Schutz vergleicht vollen Zeitpunkt statt nur Uhrzeit — siehe
-§4 Punkt 13), PR #74 (Daten-Abdeckungs-Wächter — Kursabruf, iShares-
-Kursvergleich, Universum-Alter/Sektoren, erster Schritt der am
-24.10.2026 festgelegten Automatisierung, siehe §4 Punkt 14 und §6).
+**Stand: 25.10.2026**, nach PR #75 (ntfy-Relay).
+Nachgezogen: PR #73 (Stichtag-Schutz vergleicht vollen Zeitpunkt statt
+nur Uhrzeit — siehe §4 Punkt 13), PR #74 (Daten-Abdeckungs-Wächter —
+Kursabruf, iShares-Kursvergleich, Universum-Alter/Sektoren, Schritt 1
+der am 24.10.2026 festgelegten Automatisierung), PR #75 (ntfy-Relay —
+Weiterleitung an `notify.push()` für spätere geplante Agenten, Schritt 4
+desselben Plans, siehe §4 Punkt 14 und §6).
 Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
 nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
@@ -218,6 +219,7 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **offen, keine Frist** | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 | **ca. 10 Handelstage nach Merge von PR #74** | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
+| **nach Merge von PR #75** | **Testlauf des ntfy-Relays.** Einmal über „Run workflow" mit einem harmlosen Testtext auslösen (siehe PR-Text #75 für die genauen Eingaben) und bestätigen, dass die Nachricht tatsächlich auf dem iPhone ankommt — bisher nur gegen eine eingesetzte Test-Funktion (`pusher`) geprüft, nie gegen echtes ntfy. | Siehe §4 Punkt 14 — Auftrag 4 ist erst mit diesem echten Empfangsnachweis vollständig abgeschlossen, nicht schon mit dem Merge allein. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
 Stichtag selbst (samt Überschuss-Ampel-Realprobe), der erste Vergleich
@@ -547,24 +549,37 @@ Rauschen ist, lässt sich mit nur ca. 6 Wochen Beobachtung nicht sicher
 sagen — die Beobachtung über den Lauf-Zeitversatz-Wächter läuft
 unverändert weiter.
 
-**14. Automatisierungsplan vom 24.10.2026 — Schritt 1 gebaut (PR #74),
-fünf offene Punkte dabei aufgeworfen.** *(Easys Entscheid/Klärung nötig,
-siehe die Punkte a–e unten)*
+**14. Automatisierungsplan vom 24.10.2026 — Schritte 1 und 4 gebaut
+(PR #74, #75), vier offene Punkte dabei aufgeworfen.** *(Easys
+Entscheid/Klärung nötig, siehe die Punkte a–d unten)*
 
 **Ziel des Plans** (Easys Formulierung): Datenfehler ohne mein Zutun
 finden, melden, ungefährliche reparieren; ich entscheide nur Score-/
 Signal-/Methodik-Fragen. **Reihenfolge:** 1. Daten-Abdeckungs-Wächter
-(dieser PR) — 2. Wiedervorlagen mit Fälligkeitsdatum — 3. Schutz-Sperre
-— 4. ntfy-Relay — 5. geplante Agenten. **„Schritt 6" (eingefrorene
-Tests) entfällt** — geprüft, es existieren keine Freeze-Dokumente in
-diesem Projekt (einziger Treffer auf „freeze": `tests/unit/
-test_freeze.py`, ein gewöhnlicher Unit-Test, kein Dokument).
+(**gemergt, PR #74**) — 2. Wiedervorlagen mit Fälligkeitsdatum — 3.
+Schutz-Sperre — 4. ntfy-Relay (**dieser PR, #75**) — 5. geplante
+Agenten. **„Schritt 6" (eingefrorene Tests) entfällt** — geprüft, es
+existieren keine Freeze-Dokumente in diesem Projekt (einziger Treffer
+auf „freeze": `tests/unit/test_freeze.py`, ein gewöhnlicher Unit-Test,
+kein Dokument).
 
 **Festgehaltene Entscheidungen:** Nachrichten ausschließlich bei
 Warnung, kein „alles ok"-Digest (bestehende Regel seit 10.08.2026, siehe
-§8/notify.py-Kopf) — der neue Wächter hält sich daran. Der Wächter liest
-ausschließlich von außen (Git-Historie, aktueller Dateistand) und
-greift an keiner Stelle in `run.py` ein.
+§8/notify.py-Kopf) — beide neuen Bausteine halten sich daran (das
+ntfy-Relay versendet nur auf ausdrückliche Anforderung per
+`workflow_dispatch`, nie nach Zeitplan). Keiner der beiden greift in
+`run.py` ein; das Relay ruft `notify.push()` direkt auf, keine zweite
+ntfy-Implementierung.
+
+**Befund aus dem laufenden Betrieb von PR #74, hier ergänzt:** Prüfung B
+(iShares-Kursvergleich) des Daten-Abdeckungs-Wächters greift unter der
+heutigen Lauf-Kadenz **kaum** — das Feld `kursvergleich` steht nur bei
+Stichtags-Läufen in `data/status.json` (ca. einmal im Monat), ein
+7-Tage-Fenster sieht deshalb fast nie die geforderten mindestens zwei
+Beobachtungen. Für eine **tägliche** Prüfung bräuchte es stattdessen
+einen eigenen Zähler im Lauf selbst (`run.py`) — das gehört zusammen mit
+dem unten unter (d) genannten Elliott-Zähler in denselben Folgeauftrag
+nach dem 30.10.2026-Stichtag, weil beide `run.py` berühren würden.
 
 **Offene Punkte, hier gemeldet statt selbst entschieden:**
 
@@ -579,14 +594,17 @@ greift an keiner Stelle in `run.py` ein.
   Shell** (Injektions-Muster) — heute harmlos (nur Easy löst das
   manuell aus), aber unsauber. Fix bewusst zurückgestellt bis NACH dem
   Stichtag 30.10.2026, weil er `lauf.yml` selbst berührt.
-- **(d) Elliott-Zähler** (Unterscheidung „Quelle unerreichbar" vs.
-  „Quelle leer/veraltet") als Folgeauftrag nach dem 30.10.2026-Stichtag
-  — bewusst außerhalb dieses PRs (siehe Modul-Docstring,
-  `datenabdeckung_waechter.py`).
+- **(d) Folgeauftrag nach dem 30.10.2026-Stichtag, gebündelt:**
+  **Elliott-Zähler** (Unterscheidung „Quelle unerreichbar" vs. „Quelle
+  leer/veraltet", bewusst außerhalb von PR #74) UND **ein täglicher
+  Kursvergleichs-Zähler im Lauf** (siehe Befund oben, macht Prüfung B
+  erst wirksam) — beide berühren `run.py` und gehören deshalb in
+  denselben, erst nach dem Stichtag angegangenen Auftrag.
 - **(e) Eine Wikipedia-Spaltenumbenennung bleibt bis zum nächsten
-  Universum-Rebuild unbemerkt** — durch Prüfung C dieses PRs (Universum-
-  Alter) nur TEILWEISE abgedeckt: die Alters-Schwelle warnt irgendwann,
-  erkennt aber keine Umbenennung selbst, nur das Verstreichen der Zeit.
+  Universum-Rebuild unbemerkt** — durch Prüfung C von PR #74
+  (Universum-Alter) nur TEILWEISE abgedeckt: die Alters-Schwelle warnt
+  irgendwann, erkennt aber keine Umbenennung selbst, nur das
+  Verstreichen der Zeit. Weiterhin offen, unverändert gegenüber PR #74.
 
 ---
 
@@ -1054,3 +1072,4 @@ hier, damit niemand sie erneut aufmacht.
 | Information Discreteness (Da/Gurun/Warachka 2014) für beide Universen diagnostiziert, keine Aufnahme in den Score | #68/#69 | siehe §2, §4 Punkt 7 |
 | Split-Wächter gebaut (MNST-Vorfall US 2026-08 als Auslöser) | #70 | siehe §2, §4 Punkt 9 |
 | **Universum hatte keinen Alters-Wächter** — jetzt behoben (Kursabruf und iShares-Kursvergleich gleich mit abgedeckt) | #74 | siehe §4 Punkt 14, §6 |
+| ntfy-Relay gebaut (Auftrag 4 der Automatisierung) — spätere geplante Agenten können jetzt melden, ohne das ntfy-Topic zu kennen | #75 | siehe §4 Punkt 14 |
