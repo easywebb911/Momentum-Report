@@ -392,9 +392,16 @@ def test_main_event_abruf_scheitert_ist_rot(tmp_path):
 
 
 def test_main_ereignis_datei_fehlt_ist_rot():
-    code = main(laeufer=_laeufer())
-    # Ohne monkeypatchtes os.environ liest main() die echte Umgebung --
-    # in der Testumgebung ohne GITHUB_EVENT_PATH gesetzt, also fail-closed.
+    """Bewusst explizit auf eine LEERE Umgebung umgeschaltet, statt sich
+    darauf zu verlassen, dass GITHUB_EVENT_PATH ambient nicht gesetzt
+    ist -- in einem echten GitHub-Actions-Lauf (auch in DIESER Suite,
+    wenn sie als `pull_request`-Check laeuft) ist diese Variable IMMER
+    gesetzt, lokal dagegen meist nicht. Ohne diese Umschaltung haengt
+    das Ergebnis vom Ausfuehrungsort ab -- genau das soll dieser Test
+    nicht tun."""
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr("os.environ", {})
+        code = main(laeufer=_laeufer())
     assert code == 1
 
 
