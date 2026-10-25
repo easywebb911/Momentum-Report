@@ -55,6 +55,12 @@ def test_es_gibt_die_erwarteten_workflows():
         # -- er meldet, wenn juengste lauf.yml-Laeufe deutlich spaeter als
         # der nominelle Cron-Zeitpunkt (21:45 UTC) gestartet sind (PR #53).
         "lauf_zeitversatz_waechter.yml",
+        # Der Daten-Abdeckungs-Waechter (siehe datenabdeckung_waechter.py)
+        # -- er meldet, wenn eine Fremdquelle (Kursabruf, iShares-
+        # Kursvergleich) ohne Fehler, aber leer antwortet, oder wenn die
+        # Universum-Dateien zu weit veralten/Sektoren fehlen, das kein
+        # gewoehnlicher Lauf selbst melden kann.
+        "datenabdeckung_waechter.yml",
     }
 
 

@@ -1,11 +1,13 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 19.10.2026**, nach PR #73 (Stichtag-Schutz-Fix).
+**Stand: 25.10.2026**, nach PR #74 (Daten-Abdeckungs-Wächter).
 Nachgezogen: PR #72 (Sektor-Konzentrations-Hinweis), PR #73
 (Stichtag-Schutz vergleicht vollen Zeitpunkt statt nur Uhrzeit — siehe
-§4 Punkt 13). Repo `easywebb911/Momentum-Report`, Branch `main` — den
-aktuellen Stand nennt `git log -1`, er steht hier bewusst nicht als
-Zahl.
+§4 Punkt 13), PR #74 (Daten-Abdeckungs-Wächter — Kursabruf, iShares-
+Kursvergleich, Universum-Alter/Sektoren, erster Schritt der am
+24.10.2026 festgelegten Automatisierung, siehe §4 Punkt 14 und §6).
+Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
+nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
 Dieses Dokument ist der Übergabepunkt zwischen zwei Arbeits-Sitzungen. Es
 beantwortet drei Fragen: *Was läuft gerade?*, *Was ist offen?*, *Was darf
@@ -215,6 +217,7 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **30.10.2026** | **Erster echter Test des Stichtag-Schutz-Fixes** (PR #73, siehe §4 Punkt 13) — Oktober endet Fr 30.10./Sa 31.10.2026, exakt die Konstellation aus dem Fund. Prüfen: erscheint das Oktober-Ranking (US + DE) noch am 30./31.10., nicht erst am folgenden Werktag (02.11.)? Ein verspäteter Lauf, der dennoch sofort einfriert, ist der positive Beleg; bleibt es bei einer Verzögerung, ist der Fix unwirksam geblieben und muss erneut untersucht werden. | Siehe §4 Punkt 13 — derselbe Stichtag wie die beiden Zeilen oben (Split-Wächter, Sektor-Hinweis), diesmal zur Stichtag-Mechanik selbst. |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **offen, keine Frist** | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
+| **ca. 10 Handelstage nach Merge von PR #74** | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
 Stichtag selbst (samt Überschuss-Ampel-Realprobe), der erste Vergleich
@@ -544,6 +547,47 @@ Rauschen ist, lässt sich mit nur ca. 6 Wochen Beobachtung nicht sicher
 sagen — die Beobachtung über den Lauf-Zeitversatz-Wächter läuft
 unverändert weiter.
 
+**14. Automatisierungsplan vom 24.10.2026 — Schritt 1 gebaut (PR #74),
+fünf offene Punkte dabei aufgeworfen.** *(Easys Entscheid/Klärung nötig,
+siehe die Punkte a–e unten)*
+
+**Ziel des Plans** (Easys Formulierung): Datenfehler ohne mein Zutun
+finden, melden, ungefährliche reparieren; ich entscheide nur Score-/
+Signal-/Methodik-Fragen. **Reihenfolge:** 1. Daten-Abdeckungs-Wächter
+(dieser PR) — 2. Wiedervorlagen mit Fälligkeitsdatum — 3. Schutz-Sperre
+— 4. ntfy-Relay — 5. geplante Agenten. **„Schritt 6" (eingefrorene
+Tests) entfällt** — geprüft, es existieren keine Freeze-Dokumente in
+diesem Projekt (einziger Treffer auf „freeze": `tests/unit/
+test_freeze.py`, ein gewöhnlicher Unit-Test, kein Dokument).
+
+**Festgehaltene Entscheidungen:** Nachrichten ausschließlich bei
+Warnung, kein „alles ok"-Digest (bestehende Regel seit 10.08.2026, siehe
+§8/notify.py-Kopf) — der neue Wächter hält sich daran. Der Wächter liest
+ausschließlich von außen (Git-Historie, aktueller Dateistand) und
+greift an keiner Stelle in `run.py` ein.
+
+**Offene Punkte, hier gemeldet statt selbst entschieden:**
+
+- **(a) Ruleset „Main-Schutz" seit 02.08.2026 `enforcement: disabled`,
+  Grund unbekannt.** Easy klärt, ob das beabsichtigt ist. Aufträge 3
+  (Schutz-Sperre) und 5 (geplante Agenten) hängen an dieser Klärung.
+- **(b) GitHub kann Pfad-basierte Merge-Verbote nicht je Akteur
+  erzwingen.** Für Auftrag 5 vorher prüfen, ob ein Merge-Workflow mit
+  eigener Pfad-Prüflogik als harte Grenze dienen kann, statt einem
+  Agenten direkt Merge-Rechte zu geben.
+- **(c) `lauf.yml` interpoliert `${{ inputs.datum }}` direkt in die
+  Shell** (Injektions-Muster) — heute harmlos (nur Easy löst das
+  manuell aus), aber unsauber. Fix bewusst zurückgestellt bis NACH dem
+  Stichtag 30.10.2026, weil er `lauf.yml` selbst berührt.
+- **(d) Elliott-Zähler** (Unterscheidung „Quelle unerreichbar" vs.
+  „Quelle leer/veraltet") als Folgeauftrag nach dem 30.10.2026-Stichtag
+  — bewusst außerhalb dieses PRs (siehe Modul-Docstring,
+  `datenabdeckung_waechter.py`).
+- **(e) Eine Wikipedia-Spaltenumbenennung bleibt bis zum nächsten
+  Universum-Rebuild unbemerkt** — durch Prüfung C dieses PRs (Universum-
+  Alter) nur TEILWEISE abgedeckt: die Alters-Schwelle warnt irgendwann,
+  erkennt aber keine Umbenennung selbst, nur das Verstreichen der Zeit.
+
 ---
 
 ## 5. Hygiene-Backlog
@@ -614,11 +658,13 @@ selbst — dasselbe „melden, nie handeln"-Muster wie Stufe 0):
 | Push-Zustellungs-Wächter (`push_zustellung_waechter.py`) | fehlgeschlagene ntfy-Versandversuche (Log-Scan über `gh api`/`gh run view --log`, bewusst ohne Datei-Persistenz) | ≥ 1 Fehlschlag in 7 Tagen | #65 |
 | Lauf-Zeitversatz-Beobachtung (`lauf_zeitversatz_waechter.py`) | Startverzug von `lauf.yml` gegenüber 21:45 UTC | > 4 Std. bei mind. einem der letzten 10 Läufe | #65 |
 | Split-Wächter (`split_waechter.py`) | Tagesreihe (`bundle.adjusted`) eines Titels mit Naht nahe einem Split-Verhältnis — vermutlich noch nicht nachbereinigte Split-Vorgeschichte (siehe §4 Punkt 9) | Verhältnis innerhalb ±3 % von 2, 3, 4, 5 oder 10 (bewusst ohne 3:2) | #70 |
+| Daten-Abdeckungs-Wächter (`datenabdeckung_waechter.py`) | Kursabruf und iShares-Kursvergleich (Git-Historie von `data/status.json`), Universum-Alter und Sektor-Abdeckung — Auftrag 1 des Automatisierungsplans vom 24.10.2026, siehe §4 Punkt 14 | 24h/7-Tage-Fenster, ≥ 2 Beobachtungen, 180 Tage Universum-Alter — alle als Startwert markiert | #74 |
 
-Alle fünf: lautlos bzw. ohne Sirene (ntfy-Priorität „min"/„default", nie
+Alle sechs: lautlos bzw. ohne Sirene (ntfy-Priorität „min"/„default", nie
 „high"), nur Lese-Rechte, je ein statischer Quelltext-Test gegen jeden
 schreibenden Aufruf. Vier laufen als eigener wöchentlicher Cron
 (montags, teils 07:30 UTC gemeinsam mit dem Totmannschalter); der
+Daten-Abdeckungs-Wächter läuft täglich (06:37 UTC, siehe PR #74); der
 Split-Wächter ist der **einzige, der nicht als eigener Workflow läuft**
 — er braucht die vollständige Tagesreihe (`bundle.adjusted`), die nur
 während des eigentlichen Stichtags-Laufs existiert und nirgends
@@ -1007,3 +1053,4 @@ hier, damit niemand sie erneut aufmacht.
 | Wegwerf-Workflow `probe_ishares_neu.yml` (#62) zurückgebaut | #67 | siehe §2, §5 |
 | Information Discreteness (Da/Gurun/Warachka 2014) für beide Universen diagnostiziert, keine Aufnahme in den Score | #68/#69 | siehe §2, §4 Punkt 7 |
 | Split-Wächter gebaut (MNST-Vorfall US 2026-08 als Auslöser) | #70 | siehe §2, §4 Punkt 9 |
+| **Universum hatte keinen Alters-Wächter** — jetzt behoben (Kursabruf und iShares-Kursvergleich gleich mit abgedeckt) | #74 | siehe §4 Punkt 14, §6 |

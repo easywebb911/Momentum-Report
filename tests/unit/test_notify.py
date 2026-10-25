@@ -226,6 +226,12 @@ def test_kein_herzschlag_push_vorhanden():
         # push_vertrag_gebrochen meldet), kommt also nie bei "alles ok".
         "push_agent_datumsformat_unklar",
         "push_data_conflict",
+        # Kein Herzschlag: datenabdeckung_waechter.py meldet sich
+        # ausschliesslich bei Warnung (Uebergang gesund->Warnung oder
+        # faellige woechentliche Erinnerung) oder bei technischem
+        # Fehlschlag der Ermittlung -- ein gesunder Lauf bleibt stumm,
+        # dieselbe Form wie push_vertrag_gebrochen/push_split_verdacht.
+        "push_datenabdeckung_warnung",
         # Kein Herzschlag, aus demselben Grund wie push_waechter_ok
         # weiter unten (Prioritaet min, siehe dort) -- UND zusaetzlich
         # noch enger: sie kommt anders als push_waechter_ok nicht bei
