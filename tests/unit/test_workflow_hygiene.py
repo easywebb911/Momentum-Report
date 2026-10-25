@@ -67,6 +67,11 @@ def test_es_gibt_die_erwarteten_workflows():
         # ntfy-Topic selbst zu kennen (Auftrag 4 der Automatisierung vom
         # 24.10.2026).
         "ntfy_relay.yml",
+        # Der Wiedervorlagen-Waechter (siehe wiedervorlagen_waechter.py)
+        # -- er liest §3 von SESSION_HANDOVER.md und meldet faellige/
+        # ueberfaellige Wiedervorlagen, das keine Zeile selbst melden
+        # kann (Auftrag 2 der Automatisierung vom 24.10.2026).
+        "wiedervorlagen_waechter.yml",
     }
 
 

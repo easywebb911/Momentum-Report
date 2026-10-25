@@ -285,6 +285,12 @@ def test_kein_herzschlag_push_vorhanden():
         # ohne Banner zu. Der Test unten nagelt genau das fest; ohne die
         # Prioritaet waere diese Zeile hier nicht zu rechtfertigen.
         "push_waechter_ok",
+        # Kein Herzschlag: der Wiedervorlagen-Waechter meldet sich
+        # ausschliesslich, wenn §3 (SESSION_HANDOVER.md) eine heute
+        # faellige oder zur woechentlichen Erinnerung ueberfaellige Zeile
+        # zeigt -- "offen"-Zeilen und noch nicht faellige Termine bleiben
+        # stumm (siehe tests/unit/test_wiedervorlagen_waechter.py).
+        "push_wiedervorlage_faellig",
         # Ebenfalls kein Herzschlag, aus BEIDEN Gruenden zugleich:
         # Prioritaet min (wie push_waechter_ok direkt oben) UND kommt aus
         # lauf_zeitversatz_waechter.py nur, wenn mindestens einer der

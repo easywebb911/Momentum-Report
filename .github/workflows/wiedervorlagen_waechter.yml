@@ -1,0 +1,53 @@
+# WIEDERVORLAGEN-WAECHTER. Liest §3 ("Wiedervorlagen") von
+# SESSION_HANDOVER.md und meldet, wenn eine Zeile heute faellig oder zur
+# woechentlichen Erinnerung ueberfaellig ist -- Auftrag 2 der
+# Automatisierung vom 24.10.2026 (siehe wiedervorlagen_waechter.py).
+#
+# ZEITPUNKT, hier begruendet: "morgens Berlin-Zeit", bewusst NICHT zur
+# vollen/halben Stunde. GitHub wertet Cron-Zeitplaene ausschliesslich in
+# UTC aus (DST-unabhaengig) -- 06:52 UTC entspricht 07:52 MEZ
+# (Winterzeit) bzw. 08:52 MESZ (Sommerzeit), in BEIDEN Faellen noch
+# Morgen in Berlin. Bewusst NACH dem Daten-Abdeckungs-Waechter (06:37
+# UTC, siehe datenabdeckung_waechter.yml) und NACH dem woechentlichen
+# Slot der uebrigen vier Waechter (montags 07:30 UTC) -- unabhaengige
+# Zeitpunkte, kein gemeinsamer Engpass.
+#
+# Bewusst ein EIGENER Workflow, getrennt von den bestehenden Waechtern:
+# neue Datenquelle (§3 von SESSION_HANDOVER.md statt Git-Historie/PR-API).
+#
+# HARTE GRENZE: dieser Workflow MELDET nur, er AENDERT NIE
+# SESSION_HANDOVER.md oder irgendeine andere Datei -- serverseitig
+# erzwungen durch die Rechte unten (NUR `contents: read`) UND durch
+# einen statischen Test (tests/unit/test_wiedervorlagen_waechter.py),
+# der den Quelltext von wiedervorlagen_waechter.py auf jeden
+# schreibenden Aufruf durchsucht.
+name: Wiedervorlagen-Wächter
+
+on:
+  schedule:
+    - cron: "52 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: wiedervorlagen_waechter.py und notify.py sind
+      # reine Standardbibliothek.
+      - name: Wiedervorlagen auf Faelligkeit pruefen
+        run: python -m momentum.wiedervorlagen_waechter

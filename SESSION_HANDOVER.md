@@ -1,12 +1,13 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 25.10.2026**, nach PR #75 (ntfy-Relay).
-Nachgezogen: PR #73 (Stichtag-Schutz vergleicht vollen Zeitpunkt statt
-nur Uhrzeit — siehe §4 Punkt 13), PR #74 (Daten-Abdeckungs-Wächter —
-Kursabruf, iShares-Kursvergleich, Universum-Alter/Sektoren, Schritt 1
-der am 24.10.2026 festgelegten Automatisierung), PR #75 (ntfy-Relay —
-Weiterleitung an `notify.push()` für spätere geplante Agenten, Schritt 4
-desselben Plans, siehe §4 Punkt 14 und §6).
+**Stand: 25.10.2026**, nach PR #76 (Wiedervorlagen-Wächter).
+Nachgezogen: PR #74 (Daten-Abdeckungs-Wächter — Kursabruf, iShares-
+Kursvergleich, Universum-Alter/Sektoren, Schritt 1 der am 24.10.2026
+festgelegten Automatisierung), PR #75 (ntfy-Relay — Weiterleitung an
+`notify.push()` für spätere geplante Agenten, Schritt 4 desselben
+Plans, gemergt UND per echtem Testlauf bestätigt), PR #76
+(Wiedervorlagen-Wächter — `faellig`-Kommentare in §3 plus eigener
+Wächter, Schritt 2 desselben Plans, siehe §4 Punkt 14 und §6).
 Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
 nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
@@ -211,15 +212,14 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 
 | Wann | Was | Warum |
 |---|---|---|
-| **laufend, montags** | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
-| **25.–31.10.2026** | **Drittes Vertragstest-Fenster — jetzt mit dreifachem Zweck.** (a) Erster echter Wirksamkeitstest von PR #63 (BlackRock-URL) und PR #64 (Nachrichtenkürzung) unter echten Bedingungen — `vertrag.yml` lief seit deren Merge (02./03.10.) noch kein einziges Mal. (b) Zugleich die nächste Chance auf eine zweite Woche echter DE-Abweichungszahlen (siehe §4 Punkt 1) — das 25.–30.09.-Fenster lieferte keine: alle fünf iShares-Quellen waren die ganze Woche tot (siehe §4 Punkt 6). (c) **Der 30.10.2026-Monats-Stichtag in diesem Fenster ist zugleich der erste echte Wirksamkeitstest des neuen Split-Wächters** (PR #70, siehe §4 Punkt 9) — Zeile direkt darunter. | Siehe §4 Punkt 1 (DE-Toleranz), §4 Punkt 6 (iShares-Totalausfall, PR #63/#64-Wirksamkeit) und §4 Punkt 9 (Split-Wächter) — explizit terminierte Wiedervorlage, nicht nur „irgendwann". |
-| **30.10.2026** | **Erster echter Test des Split-Wächters** (`split_waechter.py`, PR #70) — der nächste Monats-Stichtag-Lauf nach dem Merge. Bisher nur an einer synthetischen, aus dem MNST-Vorfall rekonstruierten Reihe geprüft (siehe Testdatei), noch nie an echten Live-Daten. Prüfen: löst er bei einem echten, inzwischen bereits nachbereinigten Split fälschlich an (Fehlalarm) oder bleibt er bei einer normalen Reihe erwartungsgemäß stumm? | Siehe §4 Punkt 9 — Teil desselben Fensters wie die Zeile oben, hier als eigene Zeile, weil der Anlass (Split-Erkennung) ein anderer ist als der Vertragstest. |
-| **30.10.2026** | **Erster echter Lauf nach dem Merge des Sektor-Konzentrations-Hinweises** (PR #72, siehe §4 Punkt 11). Bisher nur an den eingefrorenen September-Rankings geprüft (US zeigte 5/5 Information Technology). Prüfen: zeigt der Hinweis beim Oktober-Stichtag weiterhin eine Konzentration, oder ist die Top-5 inzwischen breiter gestreut (≤ 2/5)? Beides ist ein normales Ergebnis, keine Fehlfunktion — nur die erste reale Beobachtung außerhalb der Diagnose-Daten. | Siehe §4 Punkt 11 — derselbe Stichtag wie die Split-Wächter-Zeile oben, aber ein anderer Anlass (Sektor-Hinweis statt Split-Erkennung). |
-| **30.10.2026** | **Erster echter Test des Stichtag-Schutz-Fixes** (PR #73, siehe §4 Punkt 13) — Oktober endet Fr 30.10./Sa 31.10.2026, exakt die Konstellation aus dem Fund. Prüfen: erscheint das Oktober-Ranking (US + DE) noch am 30./31.10., nicht erst am folgenden Werktag (02.11.)? Ein verspäteter Lauf, der dennoch sofort einfriert, ist der positive Beleg; bleibt es bei einer Verzögerung, ist der Fix unwirksam geblieben und muss erneut untersucht werden. | Siehe §4 Punkt 13 — derselbe Stichtag wie die beiden Zeilen oben (Split-Wächter, Sektor-Hinweis), diesmal zur Stichtag-Mechanik selbst. |
-| **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
-| **offen, keine Frist** | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
-| **ca. 10 Handelstage nach Merge von PR #74** | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
-| **nach Merge von PR #75** | **Testlauf des ntfy-Relays.** Einmal über „Run workflow" mit einem harmlosen Testtext auslösen (siehe PR-Text #75 für die genauen Eingaben) und bestätigen, dass die Nachricht tatsächlich auf dem iPhone ankommt — bisher nur gegen eine eingesetzte Test-Funktion (`pusher`) geprüft, nie gegen echtes ntfy. | Siehe §4 Punkt 14 — Auftrag 4 ist erst mit diesem echten Empfangsnachweis vollständig abgeschlossen, nicht schon mit dem Merge allein. |
+| **laufend, montags** <!-- faellig: offen --> | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
+| **25.–31.10.2026** <!-- faellig: 2026-10-25 --> | **Drittes Vertragstest-Fenster — jetzt mit dreifachem Zweck.** (a) Erster echter Wirksamkeitstest von PR #63 (BlackRock-URL) und PR #64 (Nachrichtenkürzung) unter echten Bedingungen — `vertrag.yml` lief seit deren Merge (02./03.10.) noch kein einziges Mal. (b) Zugleich die nächste Chance auf eine zweite Woche echter DE-Abweichungszahlen (siehe §4 Punkt 1) — das 25.–30.09.-Fenster lieferte keine: alle fünf iShares-Quellen waren die ganze Woche tot (siehe §4 Punkt 6). (c) **Der 30.10.2026-Monats-Stichtag in diesem Fenster ist zugleich der erste echte Wirksamkeitstest des neuen Split-Wächters** (PR #70, siehe §4 Punkt 9) — Zeile direkt darunter. | Siehe §4 Punkt 1 (DE-Toleranz), §4 Punkt 6 (iShares-Totalausfall, PR #63/#64-Wirksamkeit) und §4 Punkt 9 (Split-Wächter) — explizit terminierte Wiedervorlage, nicht nur „irgendwann". |
+| **30.10.2026** <!-- faellig: 2026-10-30 --> | **Erster echter Test des Split-Wächters** (`split_waechter.py`, PR #70) — der nächste Monats-Stichtag-Lauf nach dem Merge. Bisher nur an einer synthetischen, aus dem MNST-Vorfall rekonstruierten Reihe geprüft (siehe Testdatei), noch nie an echten Live-Daten. Prüfen: löst er bei einem echten, inzwischen bereits nachbereinigten Split fälschlich an (Fehlalarm) oder bleibt er bei einer normalen Reihe erwartungsgemäß stumm? | Siehe §4 Punkt 9 — Teil desselben Fensters wie die Zeile oben, hier als eigene Zeile, weil der Anlass (Split-Erkennung) ein anderer ist als der Vertragstest. |
+| **30.10.2026** <!-- faellig: 2026-10-30 --> | **Erster echter Lauf nach dem Merge des Sektor-Konzentrations-Hinweises** (PR #72, siehe §4 Punkt 11). Bisher nur an den eingefrorenen September-Rankings geprüft (US zeigte 5/5 Information Technology). Prüfen: zeigt der Hinweis beim Oktober-Stichtag weiterhin eine Konzentration, oder ist die Top-5 inzwischen breiter gestreut (≤ 2/5)? Beides ist ein normales Ergebnis, keine Fehlfunktion — nur die erste reale Beobachtung außerhalb der Diagnose-Daten. | Siehe §4 Punkt 11 — derselbe Stichtag wie die Split-Wächter-Zeile oben, aber ein anderer Anlass (Sektor-Hinweis statt Split-Erkennung). |
+| **30.10.2026** <!-- faellig: 2026-10-30 --> | **Erster echter Test des Stichtag-Schutz-Fixes** (PR #73, siehe §4 Punkt 13) — Oktober endet Fr 30.10./Sa 31.10.2026, exakt die Konstellation aus dem Fund. Prüfen: erscheint das Oktober-Ranking (US + DE) noch am 30./31.10., nicht erst am folgenden Werktag (02.11.)? Ein verspäteter Lauf, der dennoch sofort einfriert, ist der positive Beleg; bleibt es bei einer Verzögerung, ist der Fix unwirksam geblieben und muss erneut untersucht werden. | Siehe §4 Punkt 13 — derselbe Stichtag wie die beiden Zeilen oben (Split-Wächter, Sektor-Hinweis), diesmal zur Stichtag-Mechanik selbst. |
+| **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) <!-- faellig: offen --> | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
+| **offen, keine Frist** <!-- faellig: offen --> | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
+| **ca. 10 Handelstage nach Merge von PR #74** <!-- faellig: offen --> | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
 Stichtag selbst (samt Überschuss-Ampel-Realprobe), der erste Vergleich
@@ -549,19 +549,39 @@ Rauschen ist, lässt sich mit nur ca. 6 Wochen Beobachtung nicht sicher
 sagen — die Beobachtung über den Lauf-Zeitversatz-Wächter läuft
 unverändert weiter.
 
-**14. Automatisierungsplan vom 24.10.2026 — Schritte 1 und 4 gebaut
-(PR #74, #75), vier offene Punkte dabei aufgeworfen.** *(Easys
-Entscheid/Klärung nötig, siehe die Punkte a–d unten)*
+**14. Automatisierungsplan vom 24.10.2026 — Schritte 1, 2 und 4 gebaut
+(PR #74, #76, #75), drei offene Punkte verbleiben.** *(Easys
+Entscheid/Klärung nötig, siehe die Punkte b–d unten; Punkt (a) ist mit
+PR #76 geschlossen, siehe dort)*
 
 **Ziel des Plans** (Easys Formulierung): Datenfehler ohne mein Zutun
 finden, melden, ungefährliche reparieren; ich entscheide nur Score-/
 Signal-/Methodik-Fragen. **Reihenfolge:** 1. Daten-Abdeckungs-Wächter
-(**gemergt, PR #74**) — 2. Wiedervorlagen mit Fälligkeitsdatum — 3.
-Schutz-Sperre — 4. ntfy-Relay (**dieser PR, #75**) — 5. geplante
-Agenten. **„Schritt 6" (eingefrorene Tests) entfällt** — geprüft, es
-existieren keine Freeze-Dokumente in diesem Projekt (einziger Treffer
-auf „freeze": `tests/unit/test_freeze.py`, ein gewöhnlicher Unit-Test,
-kein Dokument).
+(**gemergt, PR #74**) — 2. Wiedervorlagen mit Fälligkeitsdatum
+(**dieser PR, #76**) — 3. Schutz-Sperre — 4. ntfy-Relay (**gemergt und
+per Testlauf bewiesen, PR #75**) — 5. geplante Agenten. **„Schritt 6"
+(eingefrorene Tests) entfällt** — geprüft, es existieren keine
+Freeze-Dokumente in diesem Projekt (einziger Treffer auf „freeze":
+`tests/unit/test_freeze.py`, ein gewöhnlicher Unit-Test, kein Dokument).
+
+**Entscheidung (1) — Wiedervorlagen-Format (PR #76):** der
+`faellig`-Kommentar lebt direkt in §3 von SESSION_HANDOVER.md, KEINE
+zweite Datei — eine Quelle für Mensch UND Wächter. Ab jetzt gilt
+verbindlich: **jede neue Zeile in §3 braucht ab sofort einen
+`faellig`-Kommentar** (Datum oder `offen`), sonst schlägt der
+Format-Test (`tests/unit/test_wiedervorlagen_waechter.py::
+test_jede_zeile_in_paragraph_3_hat_einen_gueltigen_faellig_kommentar`)
+beim nächsten Lauf der Testsuite rot an.
+
+**Entscheidung (2) — Ruleset „Main-Schutz" bleibt bewusst disabled,
+Punkt (a) aus PR #74 damit geschlossen:** seit 02.08.2026
+`enforcement: disabled`, weil es Bot-Direktpushes (GH013) blockierte
+und ein Bypass-Eintrag „GitHub Actions" sich am iPhone nicht einrichten
+lässt. **Bleibt aus.** Folge für Auftrag 3 (Schutz-Sperre) und 5
+(geplante Agenten): die harte Grenze liegt NICHT im Ruleset, sondern im
+**Merge-Schritt selbst** — ein Agent ohne Merge-Recht, bzw. ein eigener
+Merge-Workflow, der PRs mit geschützten Pfaden verweigert. Punkt (b)
+unten (Pfad-basierte Merge-Verbote) baut direkt darauf auf.
 
 **Festgehaltene Entscheidungen:** Nachrichten ausschließlich bei
 Warnung, kein „alles ok"-Digest (bestehende Regel seit 10.08.2026, siehe
@@ -583,9 +603,8 @@ nach dem 30.10.2026-Stichtag, weil beide `run.py` berühren würden.
 
 **Offene Punkte, hier gemeldet statt selbst entschieden:**
 
-- **(a) Ruleset „Main-Schutz" seit 02.08.2026 `enforcement: disabled`,
-  Grund unbekannt.** Easy klärt, ob das beabsichtigt ist. Aufträge 3
-  (Schutz-Sperre) und 5 (geplante Agenten) hängen an dieser Klärung.
+*(a) ist geschlossen — siehe „Entscheidung (2)" oben.*
+
 - **(b) GitHub kann Pfad-basierte Merge-Verbote nicht je Akteur
   erzwingen.** Für Auftrag 5 vorher prüfen, ob ein Merge-Workflow mit
   eigener Pfad-Prüflogik als harte Grenze dienen kann, statt einem
@@ -677,12 +696,14 @@ selbst — dasselbe „melden, nie handeln"-Muster wie Stufe 0):
 | Lauf-Zeitversatz-Beobachtung (`lauf_zeitversatz_waechter.py`) | Startverzug von `lauf.yml` gegenüber 21:45 UTC | > 4 Std. bei mind. einem der letzten 10 Läufe | #65 |
 | Split-Wächter (`split_waechter.py`) | Tagesreihe (`bundle.adjusted`) eines Titels mit Naht nahe einem Split-Verhältnis — vermutlich noch nicht nachbereinigte Split-Vorgeschichte (siehe §4 Punkt 9) | Verhältnis innerhalb ±3 % von 2, 3, 4, 5 oder 10 (bewusst ohne 3:2) | #70 |
 | Daten-Abdeckungs-Wächter (`datenabdeckung_waechter.py`) | Kursabruf und iShares-Kursvergleich (Git-Historie von `data/status.json`), Universum-Alter und Sektor-Abdeckung — Auftrag 1 des Automatisierungsplans vom 24.10.2026, siehe §4 Punkt 14 | 24h/7-Tage-Fenster, ≥ 2 Beobachtungen, 180 Tage Universum-Alter — alle als Startwert markiert | #74 |
+| Wiedervorlagen-Wächter (`wiedervorlagen_waechter.py`) | §3 von SESSION_HANDOVER.md (`faellig`-Kommentare) — meldet "Heute fällig"/"Überfällig", Auftrag 2 desselben Plans, siehe §4 Punkt 14 | Erinnerung höchstens 1×/Woche (Tag 1, 8, 15, …), zustandslos aus dem Datum berechnet | #76 |
 
-Alle sechs: lautlos bzw. ohne Sirene (ntfy-Priorität „min"/„default", nie
+Alle sieben: lautlos bzw. ohne Sirene (ntfy-Priorität „min"/„default", nie
 „high"), nur Lese-Rechte, je ein statischer Quelltext-Test gegen jeden
-schreibenden Aufruf. Vier laufen als eigener wöchentlicher Cron
+schreibenden Aufruf. Fünf laufen als eigener wöchentlicher Cron
 (montags, teils 07:30 UTC gemeinsam mit dem Totmannschalter); der
-Daten-Abdeckungs-Wächter läuft täglich (06:37 UTC, siehe PR #74); der
+Daten-Abdeckungs-Wächter läuft täglich (06:37 UTC, siehe PR #74), der
+Wiedervorlagen-Wächter ebenfalls täglich (06:52 UTC, siehe PR #76); der
 Split-Wächter ist der **einzige, der nicht als eigener Workflow läuft**
 — er braucht die vollständige Tagesreihe (`bundle.adjusted`), die nur
 während des eigentlichen Stichtags-Laufs existiert und nirgends
@@ -1073,3 +1094,5 @@ hier, damit niemand sie erneut aufmacht.
 | Split-Wächter gebaut (MNST-Vorfall US 2026-08 als Auslöser) | #70 | siehe §2, §4 Punkt 9 |
 | **Universum hatte keinen Alters-Wächter** — jetzt behoben (Kursabruf und iShares-Kursvergleich gleich mit abgedeckt) | #74 | siehe §4 Punkt 14, §6 |
 | ntfy-Relay gebaut (Auftrag 4 der Automatisierung) — spätere geplante Agenten können jetzt melden, ohne das ntfy-Topic zu kennen | #75 | siehe §4 Punkt 14 |
+| **Testlauf des ntfy-Relays** — über „Run workflow" ausgelöst, Nachricht real auf dem iPhone angekommen; Auftrag 4 damit vollständig abgeschlossen, nicht nur gemergt | #75 | ehemals §3-Wiedervorlage „nach Merge von PR #75", jetzt erledigt |
+| Wiedervorlagen-Wächter gebaut (Auftrag 2 der Automatisierung) — §3 trägt jetzt `faellig`-Kommentare, meldet "Heute fällig"/"Überfällig" zustandslos | #76 | siehe §4 Punkt 14, §6 |

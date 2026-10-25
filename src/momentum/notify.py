@@ -491,6 +491,31 @@ def push_handover_pflege_faellig(text: str, **kwargs) -> bool:
     )
 
 
+def push_wiedervorlage_faellig(text: str, **kwargs) -> bool:
+    """Push (15): der Wiedervorlagen-Wächter (siehe
+    wiedervorlagen_waechter.py) hat mindestens eine Zeile aus §3
+    ("Wiedervorlagen") von SESSION_HANDOVER.md gesehen, die heute faellig
+    oder zur woechentlichen Erinnerung ueberfaellig ist -- oder konnte
+    das nicht ermitteln.
+
+    LAUTLOS wie push_pr_verwaist/push_handover_pflege_faellig, aus
+    demselben Grund: eine Erinnerung an einen selbst gesetzten Termin,
+    kein Alarm. Das eigentliche Nachsehen/Erledigen bleibt Easys
+    Entscheidung -- dieser Push ersetzt nur das Erinnern daran.
+    """
+    return push(
+        "📅 Wiedervorlagen-Wächter",
+        (
+            f"{text}\n\n"
+            "Diese Nachricht kommt lautlos. Das eigentliche Nachsehen/"
+            "Erledigen bleibt Easys Entscheidung -- dieser Push ersetzt "
+            "nur das Erinnern daran."
+        ),
+        priority="min",
+        **kwargs,
+    )
+
+
 def push_pr_verwaist(text: str, **kwargs) -> bool:
     """Push (10): der PR-Verwaisungs-Waechter (siehe
     pr_verwaisung_waechter.py) hat einen oder mehrere offene PRs gesehen,
