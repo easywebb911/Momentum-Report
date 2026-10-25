@@ -72,6 +72,13 @@ def test_es_gibt_die_erwarteten_workflows():
         # ueberfaellige Wiedervorlagen, das keine Zeile selbst melden
         # kann (Auftrag 2 der Automatisierung vom 24.10.2026).
         "wiedervorlagen_waechter.yml",
+        # Die Schutz-Sperre (siehe schutz_sperre.py) -- ein PR-Check, der
+        # rot wird, wenn ein PR eine geschuetzte Zone (Score/Ranking/
+        # Stichtag/Konfluenz-Entscheidung/geschuetzte Daten/Golden-Tests/
+        # Selbstschutz) ohne gueltige Freigabe beruehrt (Auftrag 3 der
+        # Automatisierung vom 24.10.2026). Baut NUR den Check, keinen
+        # Merge-Workflow.
+        "schutz_sperre.yml",
     }
 
 

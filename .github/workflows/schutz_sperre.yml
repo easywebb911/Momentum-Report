@@ -1,0 +1,76 @@
+# SCHUTZ-SPERRE. Ein PR-Check (kein Merge-Workflow -- Auftrag 3 der
+# Automatisierung vom 24.10.2026 baut NUR diesen Check, siehe
+# src/momentum/schutz_sperre.py): wird rot, wenn ein PR eine geschuetzte
+# Zone (Score/Ranking/Stichtag/Konfluenz-Entscheidung/geschuetzte
+# Daten/Golden-Tests/Selbstschutz) beruehrt, ausser er traegt das Label
+# "freigabe-easy", gesetzt von easywebb911 NACH dem letzten Push. Ein
+# PR-Titel, der mit "[Wächter]" beginnt, wird bei Beruehrung IMMER rot,
+# auch mit Label.
+#
+# OHNE RULESET BLOCKIERT EIN ROTER CHECK KEINEN MANUELLEN MERGE -- siehe
+# Modul-Docstring. Die harte Grenze entsteht erst, wenn ein kuenftiger
+# Merge-Workflow (Auftrag 5) diesen Check vor dem Mergen abfragt.
+#
+# FAIL-CLOSED: kann dieser Check den Diff oder die PR-/Label-Ereignisse
+# nicht lesen, ist er ROT, nicht gruen (siehe schutz_sperre.py).
+#
+# HARTE GRENZE, wie bei jedem Pruef-Baustein dieses Projekts: dieser
+# Workflow SCHREIBT NICHTS -- kein Label, kein Kommentar, kein Merge.
+# Serverseitig erzwungen durch die Rechte unten (nur `contents: read`,
+# `pull-requests: read`, `issues: read`) UND durch einen statischen Test
+# (tests/unit/test_schutz_sperre.py), der den Quelltext von
+# schutz_sperre.py auf jeden schreibenden Aufruf durchsucht.
+#
+# KEINE Workflow-Interpolation (weder Eingabefelder noch PR-Text) in
+# einer `run:`-Zeile -- dieser Workflow hat gar keine Eingabefelder;
+# alles,
+# was das Skript braucht (PR-Nummer, Titel, Basis-/Kopf-SHA, Label-
+# Ereignisse), liest es selbst aus `GITHUB_EVENT_PATH` bzw. ueber
+# `gh api`, nie aus einer Workflow-Interpolation.
+name: Schutz-Sperre
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+concurrency:
+  # Bewusst ABWEICHEND von der Projekt-Policy "nie abwuergen" (die gilt
+  # fuer schreibende Laeufe wie lauf.yml): dieser Check ist rein lesend
+  # und bezieht sich je Lauf auf EINEN bestimmten PR-Kopf-Commit --
+  # ueberholt ein neuer Push den alten Check-Lauf, ist dessen Ergebnis
+  # ohnehin veraltet. Abbrechen statt warten vermeidet nur einen
+  # nutzlosen, bereits ueberholten Lauf.
+  group: schutz-sperre-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+    steps:
+      # fetch-depth: 0 -- bewusst die VOLLE Historie: dieser Check liest
+      # `git show`/`git log` gegen Basis- UND Kopf-Commit des PR, ein
+      # flacher Checkout haette beide nicht zuverlaessig verfuegbar.
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: schutz_sperre.py ist reine Standardbibliothek.
+      # `gh` steht auf den GitHub-Runnern bereits vorinstalliert bereit.
+      - name: Geschuetzte Zonen pruefen
+        run: python -m momentum.schutz_sperre
