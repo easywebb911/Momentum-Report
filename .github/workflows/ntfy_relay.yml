@@ -1,0 +1,68 @@
+# NTFY-RELAY. Nur per Hand ausgeloest (`workflow_dispatch`) -- damit
+# spaetere geplante Agenten (Auftrag 5 der Automatisierung vom
+# 24.10.2026) Easy benachrichtigen koennen, OHNE das ntfy-Topic selbst
+# zu kennen. Leitet Titel/Nachricht/Tags/Prioritaet an die bestehende
+# `notify.push()` weiter -- keine zweite ntfy-Implementierung (siehe
+# src/momentum/ntfy_relay.py).
+#
+# INJEKTION: jeder Eingabewert laeuft NUR ueber `env:` unten, NIE direkt
+# in einer `run:`-Zeile (`${{ inputs.* }}` steht an KEINER Stelle in
+# einem `run:`-Block dieser Datei) -- ein statischer Test
+# (tests/unit/test_ntfy_relay.py) prueft das nach. Das Python-Skript
+# selbst fuehrt keinen der Eingabewerte je als Befehl aus, sie bleiben
+# reiner Text im JSON-Feld "message".
+#
+# HARTE GRENZE: dieser Workflow SCHREIBT NICHTS ins Repository --
+# serverseitig erzwungen durch die Rechte unten (nur `contents: read`,
+# fuer den Checkout noetig).
+name: ntfy-Relay
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Titel der Nachricht"
+        required: true
+        type: string
+      message:
+        description: "Nachrichtentext"
+        required: true
+        type: string
+      tags:
+        description: "Tags, kommagetrennt (optional, z. B. 'warning,bell')"
+        required: false
+        type: string
+      priority:
+        description: "Prioritaet"
+        required: true
+        default: default
+        type: choice
+        options: [min, low, default, high]
+
+permissions:
+  contents: read
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      RELAY_TITLE: ${{ inputs.title }}
+      RELAY_MESSAGE: ${{ inputs.message }}
+      RELAY_TAGS: ${{ inputs.tags }}
+      RELAY_PRIORITY: ${{ inputs.priority }}
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: ntfy_relay.py und notify.py sind reine
+      # Standardbibliothek.
+      - name: Nachricht weiterleiten
+        run: python -m momentum.ntfy_relay

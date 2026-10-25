@@ -61,6 +61,12 @@ def test_es_gibt_die_erwarteten_workflows():
         # Universum-Dateien zu weit veralten/Sektoren fehlen, das kein
         # gewoehnlicher Lauf selbst melden kann.
         "datenabdeckung_waechter.yml",
+        # ntfy-Relay (siehe ntfy_relay.py) -- leitet Text an die
+        # bestehende notify.push() weiter, nur per Hand ausgeloest, damit
+        # spaetere geplante Agenten (Auftrag 5) melden koennen, ohne das
+        # ntfy-Topic selbst zu kennen (Auftrag 4 der Automatisierung vom
+        # 24.10.2026).
+        "ntfy_relay.yml",
     }
 
 
