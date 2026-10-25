@@ -16,6 +16,7 @@
 # serverseitig erzwungen durch die Rechte unten (nur `contents: read`,
 # fuer den Checkout noetig).
 name: ntfy-Relay
+run-name: "ntfy: ${{ inputs.title }}"
 
 on:
   workflow_dispatch:

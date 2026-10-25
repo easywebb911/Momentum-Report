@@ -1,0 +1,66 @@
+# AGENTEN-KONTROLLE. Meldet, wenn sich der geplante Waechter-Agent
+# (Auftrag 5 der Automatisierung vom 24.10.2026, taeglich ~11:31 UTC)
+# seit ueber 48 Std. nicht mehr ueber ntfy_relay.yml gemeldet hat -- das
+# kein einzelner Agenten-Lauf selbst melden kann (siehe
+# src/momentum/agenten_kontrolle.py, Modul-Docstring).
+#
+# ZEITPUNKT, hier begruendet: der Waechter-Agent laeuft nominell ~11:31
+# UTC. lauf_zeitversatz_waechter.py hat bei EINEM ANDEREN Zeitplan
+# (lauf.yml, 21:45 UTC) bereits Verzoegerungen bis zu einigen Stunden
+# beobachtet; dieser Auftrag verlangt ausdruecklich, bis zu ~8 Std.
+# Scheduler-Drift einzuplanen. 11:31 + 8h = 19:31 UTC -- dieser Workflow
+# laeuft bewusst klar DANACH, um selbst bei maximaler Drift nicht VOR dem
+# (verspaeteten) Agenten-Lauf zu pruefen: 20:07 UTC, bewusst NICHT auf
+# der vollen/halben Stunde (36 Minuten Puffer nach 19:31).
+#
+# `workflow_dispatch`: fuer Handtests, OHNE Eingabefelder -- es gibt
+# nichts einzugeben, alles kommt aus der Actions-API/Git-Historie selbst.
+#
+# HARTE GRENZE: dieser Workflow MELDET nur, er AENDERT NIE eine Datei und
+# LOEST NIE einen Merge aus -- serverseitig erzwungen durch die Rechte
+# unten (nur `contents: read`, `actions: read`) UND durch einen
+# statischen Test (tests/unit/test_agenten_kontrolle.py), der den
+# Quelltext von agenten_kontrolle.py auf jeden schreibenden Aufruf UND
+# auf jede `gh pr merge`-Konstante durchsucht.
+#
+# KEINE `${{ inputs.* }}`-Interpolation in einer `run:`-Zeile -- dieser
+# Workflow hat gar keine Eingabefelder.
+name: Agenten-Kontrolle
+
+on:
+  schedule:
+    - cron: "7 20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      # fetch-depth: 0 -- bewusst die VOLLE Historie: das Modul sucht per
+      # `git log -S` den Commit, der `run-name:` in ntfy_relay.yml
+      # einfuehrt (Anlaufschutz, siehe agenten_kontrolle.py), ein flacher
+      # Checkout haette diesen Commit nicht zuverlaessig verfuegbar.
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Kein pip install: agenten_kontrolle.py und notify.py sind reine
+      # Standardbibliothek. `gh`/`git` stehen auf den GitHub-Runnern
+      # bereits vorinstalliert bereit.
+      - name: Lebenszeichen des Waechter-Agenten pruefen
+        run: python -m momentum.agenten_kontrolle

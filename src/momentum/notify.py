@@ -771,6 +771,30 @@ def push_datenabdeckung_warnung(text: str, **kwargs) -> bool:
     )
 
 
+def push_waechter_agent_stumm(text: str, **kwargs) -> bool:
+    """Push (16): agenten_kontrolle.py hat in den letzten FENSTER_STUNDEN
+    (48) keinen erfolgreichen ntfy_relay.yml-Lauf gefunden, dessen Titel
+    mit "ntfy: Momentum-Waechter" beginnt -- der geplante Waechter-Agent
+    (Auftrag 5 der Automatisierung vom 24.10.2026) hat sich damit laenger
+    nicht gemeldet, als seine eigene taegliche Kadenz erklaert.
+
+    Wie push_run_failed/push_lauf_ueberfaellig MIT Sirene (Prioritaet
+    "high", Tag "rotating_light"): das ist kein woechentlicher
+    Lebenszeichen-Push wie push_waechter_ok, sondern genau das Gegenteil
+    -- sie meldet sich AUSSCHLIESSLICH, wenn das Lebenszeichen AUSBLEIBT,
+    nie bei jedem Lauf der Agenten-Kontrolle (siehe deren Modul-
+    Docstring, FAIL-SOFT fuer den technischen Fehlerfall, der bewusst
+    GAR KEINEN Push ausloest).
+    """
+    return push(
+        "Momentum-Report: Wächter-Agent stumm",
+        text,
+        priority="high",
+        tags="rotating_light",
+        **kwargs,
+    )
+
+
 def push_split_verdacht(eintraege: list[tuple[str, str]], **kwargs) -> bool:
     """Push (13): split_waechter.py hat mindestens einen Titel gefunden, dessen
     Tages-Kursreihe (dieselbe, mit der momentum_12_1/high_52w_ratio rechnen)

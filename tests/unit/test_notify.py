@@ -284,6 +284,14 @@ def test_kein_herzschlag_push_vorhanden():
         # aber sie klingelt nie: ntfy stellt Prioritaet 1 ohne Ton und
         # ohne Banner zu. Der Test unten nagelt genau das fest; ohne die
         # Prioritaet waere diese Zeile hier nicht zu rechtfertigen.
+        # Kein Herzschlag, aus dem GEGENTEILIGEN Grund wie push_waechter_ok
+        # direkt unten: agenten_kontrolle.py meldet sich ausschliesslich,
+        # wenn das taegliche Lebenszeichen des Waechter-Agenten AUSBLEIBT
+        # (kein erfolgreicher ntfy_relay.yml-Lauf mit passendem Titel in
+        # FENSTER_STUNDEN) -- bleibt es aus, bleibt der Lauf der
+        # Agenten-Kontrolle selbst komplett stumm, siehe
+        # tests/unit/test_agenten_kontrolle.py.
+        "push_waechter_agent_stumm",
         "push_waechter_ok",
         # Kein Herzschlag: der Wiedervorlagen-Waechter meldet sich
         # ausschliesslich, wenn §3 (SESSION_HANDOVER.md) eine heute
