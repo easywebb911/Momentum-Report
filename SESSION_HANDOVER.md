@@ -1,13 +1,14 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 25.10.2026**, nach PR #77 (Schutz-Sperre).
-Nachgezogen: PR #75 (ntfy-Relay — Weiterleitung an `notify.push()` für
-spätere geplante Agenten, Schritt 4 der am 24.10.2026 festgelegten
-Automatisierung, gemergt UND per echtem Testlauf bestätigt), PR #76
-(Wiedervorlagen-Wächter — `faellig`-Kommentare in §3 plus eigener
-Wächter, Schritt 2 desselben Plans), PR #77 (Schutz-Sperre — PR-Check
-gegen geschützte Zonen, Schritt 3 desselben Plans, siehe §4 Punkt 14
-und §7.8).
+**Stand: 25.10.2026**, nach PR #78 (Schutz-Sperre auf Ampel umgestellt).
+Nachgezogen: PR #76 (Wiedervorlagen-Wächter — `faellig`-Kommentare in
+§3 plus eigener Wächter, Schritt 2 der am 24.10.2026 festgelegten
+Automatisierung), PR #77 (Schutz-Sperre — PR-Check gegen geschützte
+Zonen, Schritt 3 desselben Plans, **ausnahmsweise trotz rotem
+Eigen-Check gemergt** — das Label ließ sich am iPhone nicht setzen,
+ohne Ruleset nicht blockierend), PR #78 (Schutz-Sperre: Label-Freigabe
+entfernt, reine Ampel statt Sperre — Grund: Code/Agenten handeln als
+easywebb911, siehe §4 Punkt 14 und §7.8).
 Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
 nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
@@ -550,34 +551,58 @@ sagen — die Beobachtung über den Lauf-Zeitversatz-Wächter läuft
 unverändert weiter.
 
 **14. Automatisierungsplan vom 24.10.2026 — Schritte 1, 2, 3 und 4
-gebaut (PR #74, #76, #77, #75), zwei offene Punkte verbleiben.**
-*(Easys Entscheid/Klärung nötig, siehe die Punkte b/d unten; Punkt (a)
-ist mit PR #76 geschlossen, Punkt (c) betrifft weiterhin `lauf.yml`
+gebaut (PR #74, #76, #77+#78, #75), Auftrag 5 umdefiniert, EIN offener
+Punkt verbleibt.** *(Easys Entscheid/Klärung bei Punkt (d); Punkte (a)
+und (b) sind geschlossen, Punkt (c) betrifft weiterhin `lauf.yml`
 selbst und bleibt bis nach dem 30.10.2026-Stichtag offen)*
 
 **Ziel des Plans** (Easys Formulierung): Datenfehler ohne mein Zutun
 finden, melden, ungefährliche reparieren; ich entscheide nur Score-/
 Signal-/Methodik-Fragen. **Reihenfolge:** 1. Daten-Abdeckungs-Wächter
 (**gemergt, PR #74**) — 2. Wiedervorlagen mit Fälligkeitsdatum
-(**gemergt, PR #76**) — 3. Schutz-Sperre (**dieser PR, #77** — baut NUR
-den Check, keinen Merge-Workflow) — 4. ntfy-Relay (**gemergt und per
-Testlauf bewiesen, PR #75**) — 5. geplante Agenten, noch offen. **„Schritt
-6" (eingefrorene Tests) entfällt** — geprüft, es existieren keine
-Freeze-Dokumente in diesem Projekt (einziger Treffer auf „freeze":
-`tests/unit/test_freeze.py`, ein gewöhnlicher Unit-Test, kein Dokument).
+(**gemergt, PR #76**) — 3. Schutz-Sperre (**gemergt als Check, PR #77;
+auf reine Ampel umgestellt, PR #78 — siehe Entscheidung (3) unten**) —
+4. ntfy-Relay (**gemergt und per Testlauf bewiesen, PR #75**) — 5.
+geplante Agenten, **umdefiniert statt gebaut** (siehe Entscheidung (4)
+unten). **„Schritt 6" (eingefrorene Tests) entfällt** — geprüft, es
+existieren keine Freeze-Dokumente in diesem Projekt (einziger Treffer
+auf „freeze": `tests/unit/test_freeze.py`, ein gewöhnlicher Unit-Test,
+kein Dokument).
 
-**Entscheidung (3) — Schutz-Sperre als reiner PR-Check (PR #77), keine
-Durchsetzung ohne Auftrag 5:** die geschützten Zonen stehen jetzt als
-Code in `schutz_sperre.py` und als Abschrift in §7.8. Freigabe
-ausschließlich per Label `freigabe-easy`, gesetzt von `easywebb911`
-NACH dem letzten Push (per Issue-Events geprüft, nicht nur
-Label-Vorhandensein). `[Wächter]`-PR-Titel bleiben bei Berührung einer
-geschützten Zone IMMER rot, auch mit Label. `.github/workflows/**` und
-der Check selbst sind Teil der geschützten Zonen (Selbstschutz).
-**Wichtig, ausdrücklich:** ohne das Main-Schutz-Ruleset (Entscheidung
-(2) unten) blockiert ein roter Check KEINEN manuellen Merge — er wird
-erst zur harten Grenze, wenn ein künftiger Merge-Workflow (Auftrag 5)
-ihn abfragt.
+**Entscheidung (5) — Identität von Code/Agenten, Grundlage für (3) und
+(4):** Schritt 0 einer eigenen Diagnose-Sitzung (vor PR #78) ergab, per
+`gh api user`/`get_me()` UND am realen Beispiel PR #77 (`user.login`
+UND `merged_by` jeweils `"easywebb911"`, obwohl ein Agent es geöffnet
+hätte) **belegt, nicht vermutet:** der Code dieses Repos — und jeder
+künftige automatisiert arbeitende Agent — handelt in der GitHub-API
+SELBST als `easywebb911`. Jede Freigabe "von easywebb911" (Label oder
+Kommentar) wäre deshalb vom selben Agenten, der sie prüft, trivial
+fälschbar.
+
+**Entscheidung (3) — Schutz-Sperre ist eine Ampel, keine Sperre (PR
+#78, korrigiert gegenüber PR #77):** die ursprüngliche Label-Freigabe
+(`freigabe-easy` von `easywebb911`, nach dem letzten Push) ist wegen
+Entscheidung (5) **wertlos und wurde vollständig entfernt**, kein
+Ersatzweg. Die Zonenerkennung selbst (Pfad- und Symbol-Ebene,
+Selbstschutz, fail-closed) bleibt unverändert — siehe §7.8. Der Check
+zeigt nur noch GRÜN (keine geschützte Zone berührt) oder ROT
+(geschützte Zone berührt, **Easys Entscheidung nötig** — nicht
+"verboten"). `[Wächter]`-PR-Titel mit berührter Zone bleiben rot und
+bekommen zusätzlich eine eigene Hinweis-Zeile in der Check-Ausgabe.
+**Wichtig, unverändert gegenüber PR #77:** ohne das Main-Schutz-Ruleset
+(Entscheidung (2) unten) blockiert ein roter Check ohnehin keinen
+manuellen Merge — das war mit PR #78 nie der Punkt, der sich geändert
+hat.
+
+**Entscheidung (4) — Auftrag 5 umdefiniert: Agenten mergen NIE.**
+Direkte Folge aus Entscheidung (5): eine technische Freigabe-Grenze
+bräuchte eine vom Agenten UNTERSCHEIDBARE Identität (eigene GitHub-App
+oder ein zweites Konto) — bewusst nicht gebaut. Stattdessen gilt für
+geplante Agenten künftig dasselbe Prinzip wie seit PR #49 für den
+Reparatur-Agenten Stufe 3: sie öffnen PRs für Klasse-A-Reparaturen
+(ungefährlich, eng begrenzt) und melden per ntfy-Relay (PR #75) — Easy
+sieht die Schutz-Sperre-Ampel, entscheidet und merged selbst. Kein
+Auto-Merge, auch nicht bei grüner Ampel.
 
 **Entscheidung (1) — Wiedervorlagen-Format (PR #76):** der
 `faellig`-Kommentar lebt direkt in §3 von SESSION_HANDOVER.md, KEINE
@@ -620,11 +645,12 @@ nach dem 30.10.2026-Stichtag, weil beide `run.py` berühren würden.
 
 *(a) ist geschlossen — siehe „Entscheidung (2)" oben.*
 
-- **(b) GitHub kann Pfad-basierte Merge-Verbote nicht je Akteur
-  erzwingen.** Die Pfad-Prüflogik selbst steht jetzt bereit
-  (`schutz_sperre.py`, PR #77) — offen bleibt, wie ein künftiger
-  Merge-Workflow (Auftrag 5) sie VOR dem Mergen abfragt, statt einem
-  Agenten direkt Merge-Rechte zu geben.
+*(b) ist geschlossen — siehe „Entscheidung (4)" oben: die Frage
+"wie fragt ein Merge-Workflow die Pfad-Prüflogik vor dem Mergen ab"
+stellt sich nicht mehr, weil Agenten gar keine Merge-Rechte bekommen,
+mit oder ohne Abfrage. `schutz_sperre.py` bleibt eine reine Ampel fürs
+Easys eigene Entscheidung, kein serverseitiges Merge-Gatter.*
+
 - **(c) `lauf.yml` interpoliert `${{ inputs.datum }}` direkt in die
   Shell** (Injektions-Muster) — heute harmlos (nur Easy löst das
   manuell aus), aber unsauber. Fix bewusst zurückgestellt bis NACH dem
@@ -972,7 +998,7 @@ Rangfolge nie an — festgehalten in
   entkoppelter Ticker (`docs/app.js`, `tickAnzeigen`) — zählt gleichmäßig
   im Sekundentakt statt sprunghaft im Poll-Abstand.
 
-### 7.8 Geschützte Zonen (Schutz-Sperre, Auftrag 3 der Automatisierung vom 24.10.2026, PR #77)
+### 7.8 Geschützte Zonen (Schutz-Sperre-AMPEL, Auftrag 3 der Automatisierung vom 24.10.2026, PR #77, auf Ampel umgestellt in PR #78)
 
 **Die einzige Quelle ist der Code** (`src/momentum/schutz_sperre.py`,
 `GESCHUETZTE_DATEIEN`/`GESCHUETZTE_ORDNER`/`GESCHUETZTE_SYMBOLE`) —
@@ -1005,17 +1031,27 @@ zwei-Zeilen-Ergänzung mitten in `process_market` ohne diese Ergänzung
 spurlos durchgelaufen wäre — siehe PR #77 für den Rückblick auf
 #67–#76).
 
-**Freigabe:** Label `freigabe-easy`, gesetzt von `easywebb911` NACH dem
-letzten Push (Issue-Events der API, nicht nur Label-Vorhandensein). Ein
-PR-Titel, der mit `[Wächter]` beginnt, bleibt bei Berührung einer
-geschützten Zone IMMER rot, auch mit Label.
+**Keine Freigabe mehr, seit PR #78 — bewusst entfernt, kein Ersatzweg:**
+die ursprüngliche Label-Freigabe (`freigabe-easy` von `easywebb911`,
+nach dem letzten Push) wurde vollständig entfernt. Grund (siehe §4
+Punkt 14, Entscheidung (5)): der Code dieses Repos — und jeder
+künftige Agent — handelt in der GitHub-API selbst als `easywebb911`,
+eine Freigabe "von easywebb911" wäre also vom selben Agenten fälschbar,
+der sie prüft. Der Check zeigt seitdem nur noch GRÜN (keine geschützte
+Zone berührt) oder ROT (geschützte Zone berührt, **Easys Entscheidung
+nötig** — nicht "verboten"). Ein PR-Titel, der mit `[Wächter]` beginnt
+UND eine geschützte Zone berührt, bleibt immer rot und bekommt
+zusätzlich eine eigene Hinweis-Zeile in der Check-Ausgabe.
 
-**Kein Ruleset dahinter, ausdrücklich:** ein roter Check blockiert ohne
-das Main-Schutz-Ruleset (bewusst disabled, siehe §4 Punkt 14) KEINEN
-manuellen Merge. Die harte Grenze entsteht erst mit dem Merge-Workflow
-aus Auftrag 5 (geplante Agenten), der diesen Check vor dem Mergen
-abfragt — bis dahin ist die Sperre eine Melde-, keine Durchsetzungs-
-Instanz.
+**Kein Ruleset dahinter, ausdrücklich — unverändert seit PR #77:** ein
+roter Check blockiert ohne das Main-Schutz-Ruleset (bewusst disabled,
+siehe §4 Punkt 14) KEINEN manuellen Merge. **Anders als ursprünglich in
+PR #77 vorgesehen, entsteht daraus auch KEINE spätere harte Grenze:**
+Auftrag 5 (geplante Agenten) wurde umdefiniert (§4 Punkt 14,
+Entscheidung (4)) — Agenten mergen grundsätzlich nie, mit oder ohne
+grüne Ampel. Diese Ampel ist und bleibt eine Melde-, keine
+Durchsetzungs-Instanz; sie hilft Easy beim Hinsehen, ersetzt aber nie
+Easys eigene Entscheidung.
 
 ---
 
@@ -1158,3 +1194,5 @@ hier, damit niemand sie erneut aufmacht.
 | **Testlauf des ntfy-Relays** — über „Run workflow" ausgelöst, Nachricht real auf dem iPhone angekommen; Auftrag 4 damit vollständig abgeschlossen, nicht nur gemergt | #75 | ehemals §3-Wiedervorlage „nach Merge von PR #75", jetzt erledigt |
 | Wiedervorlagen-Wächter gebaut (Auftrag 2 der Automatisierung) — §3 trägt jetzt `faellig`-Kommentare, meldet "Heute fällig"/"Überfällig" zustandslos | #76 | siehe §4 Punkt 14, §6 |
 | Schutz-Sperre gebaut (Auftrag 3 der Automatisierung) — PR-Check gegen geschützte Zonen, baut nur den Check, keinen Merge-Workflow | #77 | siehe §4 Punkt 14, §7.8 |
+| **PR #77 gemergt — ausnahmsweise trotz rotem Eigen-Check** (Label am iPhone nicht setzbar; ohne Ruleset nicht blockierend) | #77 | siehe §4 Punkt 14 |
+| Schutz-Sperre auf reine Ampel umgestellt — Label-Freigabe entfernt, weil Code/Agenten als easywebb911 handeln (Entscheidung (5)) und jede Freigabe "von easywebb911" fälschbar wäre; Auftrag 5 umdefiniert: Agenten mergen nie | #78 | siehe §4 Punkt 14, §7.8 |
