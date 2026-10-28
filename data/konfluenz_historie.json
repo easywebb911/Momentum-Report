@@ -95,6 +95,18 @@
       "quelle": "automatisch"
     },
     {
+      "ticker": "CRWD",
+      "name": "CrowdStrike Holdings Inc.",
+      "momentum_rang": 4,
+      "momentum_score": 97.177419,
+      "momentum_stichtag": "2026-09-30",
+      "elliott_score": 67.21,
+      "elliott_close": 268.02,
+      "markt": "us",
+      "markt_name": "USA",
+      "quelle": "automatisch"
+    },
+    {
       "ticker": "FTNT",
       "name": "Fortinet Inc.",
       "momentum_rang": 2,
