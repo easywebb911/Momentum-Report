@@ -1,18 +1,21 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 25.10.2026**, nach PR #79 (Agenten-Kontrolle, Auftrag 5 der
-Automatisierung — **noch offen, Manual-Merge, Easy entscheidet**).
-Nachgezogen: PR #76 (Wiedervorlagen-Wächter — `faellig`-Kommentare in
-§3 plus eigener Wächter, Schritt 2 der am 24.10.2026 festgelegten
-Automatisierung), PR #77 (Schutz-Sperre — PR-Check gegen geschützte
-Zonen, Schritt 3 desselben Plans, **ausnahmsweise trotz rotem
-Eigen-Check gemergt** — das Label ließ sich am iPhone nicht setzen,
-ohne Ruleset nicht blockierend), PR #78 (Schutz-Sperre: Label-Freigabe
-entfernt, reine Ampel statt Sperre — Grund: Code/Agenten handeln als
-easywebb911, siehe §4 Punkt 14 und §7.8, **gemergt**), PR #79
-(Agenten-Kontrolle — Alarm, wenn der geplante Wächter-Agent sich seit
-über 48 Std. nicht mehr gemeldet hat, siehe §4 Punkt 15 — PR offen,
-Schutz-Sperre erwartungsgemäß rot, da Workflow-Dateien berührt sind).
+**Stand: 31.10.2026**, nach PR #80 (Abbruchpfad: Ausscheidegründe in der
+Meldung "kein Titel mit vollstaendiger Historie" — **noch offen,
+Manual-Merge, Easy entscheidet**). Nachgezogen: PR #76
+(Wiedervorlagen-Wächter — `faellig`-Kommentare in §3 plus eigener
+Wächter, Schritt 2 der am 24.10.2026 festgelegten Automatisierung),
+PR #77 (Schutz-Sperre — PR-Check gegen geschützte Zonen, Schritt 3
+desselben Plans, **ausnahmsweise trotz rotem Eigen-Check gemergt** —
+das Label ließ sich am iPhone nicht setzen, ohne Ruleset nicht
+blockierend), PR #78 (Schutz-Sperre: Label-Freigabe entfernt, reine
+Ampel statt Sperre — Grund: Code/Agenten handeln als easywebb911,
+siehe §4 Punkt 14 und §7.8, **gemergt**), PR #79 (Agenten-Kontrolle —
+Alarm, wenn der geplante Wächter-Agent sich seit über 48 Std. nicht
+mehr gemeldet hat, siehe §4 Punkt 15 — **gemergt**, Merge-Commit
+`9f0238c`, 25.10.2026, 20:22 UTC, per `gh`/API gegenprüft), PR #80
+(dieser PR — Abbruchpfad-Meldung, siehe §4 Punkt 16, PR offen, Schutz-
+Sperre erwartungsgemäß rot, da `build_ranking` geschütztes Symbol ist).
 Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
 nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
@@ -219,14 +222,14 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 |---|---|---|
 | **laufend, montags** <!-- faellig: offen --> | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
 | **25.–31.10.2026** <!-- faellig: 2026-10-25 --> | **Drittes Vertragstest-Fenster — jetzt mit dreifachem Zweck.** (a) Erster echter Wirksamkeitstest von PR #63 (BlackRock-URL) und PR #64 (Nachrichtenkürzung) unter echten Bedingungen — `vertrag.yml` lief seit deren Merge (02./03.10.) noch kein einziges Mal. (b) Zugleich die nächste Chance auf eine zweite Woche echter DE-Abweichungszahlen (siehe §4 Punkt 1) — das 25.–30.09.-Fenster lieferte keine: alle fünf iShares-Quellen waren die ganze Woche tot (siehe §4 Punkt 6). (c) **Der 30.10.2026-Monats-Stichtag in diesem Fenster ist zugleich der erste echte Wirksamkeitstest des neuen Split-Wächters** (PR #70, siehe §4 Punkt 9) — Zeile direkt darunter. | Siehe §4 Punkt 1 (DE-Toleranz), §4 Punkt 6 (iShares-Totalausfall, PR #63/#64-Wirksamkeit) und §4 Punkt 9 (Split-Wächter) — explizit terminierte Wiedervorlage, nicht nur „irgendwann". |
-| **30.10.2026** <!-- faellig: 2026-10-30 --> | **Erster echter Test des Split-Wächters** (`split_waechter.py`, PR #70) — der nächste Monats-Stichtag-Lauf nach dem Merge. Bisher nur an einer synthetischen, aus dem MNST-Vorfall rekonstruierten Reihe geprüft (siehe Testdatei), noch nie an echten Live-Daten. Prüfen: löst er bei einem echten, inzwischen bereits nachbereinigten Split fälschlich an (Fehlalarm) oder bleibt er bei einer normalen Reihe erwartungsgemäß stumm? | Siehe §4 Punkt 9 — Teil desselben Fensters wie die Zeile oben, hier als eigene Zeile, weil der Anlass (Split-Erkennung) ein anderer ist als der Vertragstest. |
-| **30.10.2026** <!-- faellig: 2026-10-30 --> | **Erster echter Lauf nach dem Merge des Sektor-Konzentrations-Hinweises** (PR #72, siehe §4 Punkt 11). Bisher nur an den eingefrorenen September-Rankings geprüft (US zeigte 5/5 Information Technology). Prüfen: zeigt der Hinweis beim Oktober-Stichtag weiterhin eine Konzentration, oder ist die Top-5 inzwischen breiter gestreut (≤ 2/5)? Beides ist ein normales Ergebnis, keine Fehlfunktion — nur die erste reale Beobachtung außerhalb der Diagnose-Daten. | Siehe §4 Punkt 11 — derselbe Stichtag wie die Split-Wächter-Zeile oben, aber ein anderer Anlass (Sektor-Hinweis statt Split-Erkennung). |
-| **30.10.2026** <!-- faellig: 2026-10-30 --> | **Erster echter Test des Stichtag-Schutz-Fixes** (PR #73, siehe §4 Punkt 13) — Oktober endet Fr 30.10./Sa 31.10.2026, exakt die Konstellation aus dem Fund. Prüfen: erscheint das Oktober-Ranking (US + DE) noch am 30./31.10., nicht erst am folgenden Werktag (02.11.)? Ein verspäteter Lauf, der dennoch sofort einfriert, ist der positive Beleg; bleibt es bei einer Verzögerung, ist der Fix unwirksam geblieben und muss erneut untersucht werden. | Siehe §4 Punkt 13 — derselbe Stichtag wie die beiden Zeilen oben (Split-Wächter, Sektor-Hinweis), diesmal zur Stichtag-Mechanik selbst. |
+| **30.10.2026, jetzt mit Vorbehalt** <!-- faellig: 2026-10-31 --> | **Erster echter Test des Split-Wächters** (`split_waechter.py`, PR #70) — das Oktober-Ranking liegt seit Lauf 96 (31.10., 09:16 UTC, Commit `8e29c5d`) vor, **die Split-Wächter-Beobachtung selbst ist noch NICHT geprüft** (dieser Auftrag hat nur die Abbruchmeldung gebaut, nicht die Rankings ausgewertet). | Siehe §4 Punkt 9 und §4 Punkt 16 — Oktober-Daten jetzt da, Auswertung bleibt offen. |
+| **30.10.2026, jetzt mit Vorbehalt** <!-- faellig: 2026-10-31 --> | **Erster echter Lauf nach dem Merge des Sektor-Konzentrations-Hinweises** (PR #72, siehe §4 Punkt 11) — Oktober-Ranking liegt vor (Lauf 96), **ob der Hinweis weiterhin eine Konzentration zeigt oder die Top-5 inzwischen breiter gestreut ist, ist noch NICHT geprüft**. | Siehe §4 Punkt 11 und §4 Punkt 16 — Oktober-Daten jetzt da, Auswertung bleibt offen. |
 | **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) <!-- faellig: offen --> | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
 | **offen, keine Frist** <!-- faellig: offen --> | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 | **ca. 10 Handelstage nach Merge von PR #74** <!-- faellig: offen --> | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
 | **31.10.2026** <!-- faellig: 2026-10-31 --> | **Erster echter Testtag für den Wächter-Agenten** (geplanter Claude-Task, täglich 12:31 Berlin-Zeit, siehe §4 Punkt 15) — prüfen: ist der Oktober-Stichtag (30.10.2026) inzwischen da, und hat der Wächter-Agent das korrekt erkannt/gemeldet? Zugleich die erste Gelegenheit, die Agenten-Kontrolle (PR #79, sofern gemergt) an einem echten Tagesrhythmus statt nur an simulierten Daten zu beobachten. | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
 | **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, und war sein Befund (falls einer kam) sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
+| **beim nächsten Abbruch** <!-- faellig: offen --> | **Beim nächsten Abbruch "kein Titel mit vollstaendiger Historie" die neue Zahlen-Meldung (PR #80) auswerten und die Yahoo-Adj-Close-Vermutung belegen oder widerlegen.** | Siehe §4 Punkt 16 — die Ursache des 30./31.10.-Vorfalls ist bisher nur vermutet, nicht belegt. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
 Stichtag selbst (samt Überschuss-Ampel-Realprobe), der erste Vergleich
@@ -675,8 +678,9 @@ Easys eigene Entscheidung, kein serverseitiges Merge-Gatter.*
 
 **15. Auftrag 5 konkretisiert: drei geplante Claude-Tasks (seit
 25.10.2026) PLUS Agenten-Kontrolle gegen deren eigenes Ausbleiben (PR
-#79).** *(Easys eigene Task-Einstellungen sind die Quelle, hier nur
-dokumentiert; PR #79 noch offen, Manual-Merge)*
+#79, gemergt).** *(Easys eigene Task-Einstellungen sind die Quelle,
+hier nur dokumentiert; PR #79 Merge-Commit `9f0238c`, 25.10.2026
+20:22 UTC)*
 
 Entscheidung (4) oben ("Agenten mergen NIE") bleibt unverändert die
 Grundregel. Konkret eingerichtet (25.10.2026, außerhalb dieses Repos, in
@@ -723,6 +727,96 @@ Kontroll-Modul (`agenten_kontrolle.py`), den neuen Workflow
 (`agenten_kontrolle.yml`), die zugehörigen Tests UND die eine
 `run-name`-Zeile in `ntfy_relay.yml` als EINE Einheit zurück — keine
 verstreuten Reste.
+
+**Betrieb der drei Tasks, erste Woche — mit echten Störungen, belegt
+wo möglich:**
+- **27.10.2026:** der Wächter-Task meldete `USAGE_LIMIT_REACHED`
+  (Claude-eigenes Nutzungslimit erreicht) — **ungeprüft** (das ist ein
+  Easy-gemeldeter Befund aus der Task-Oberfläche, nicht aus diesem
+  Repo belegbar). **Die Agenten-Kontrolle hat das Ausbleiben korrekt
+  erkannt und gemeldet:** Lauf Nr. 3, 28.10.2026 23:58 UTC (Actions-
+  Run `40790950697`, Job-Log wörtlich „Waechter: Push verschickt.") —
+  zu diesem Zeitpunkt lag der letzte (einzige bisherige)
+  `ntfy_relay.yml`-Lauf mit einem `run-name` ueberhaupt **noch nie**
+  vor (siehe Modul-Docstring, Anlaufschutz-Beispiel), und der
+  PR-#79-Merge selbst lag zu diesem Zeitpunkt bereits gut 75 Std.
+  zurück — mehr als `FENSTER_STUNDEN` (48). Damit ist "meldete korrekt
+  nach über 48 Std." nicht nur Easys Bericht, sondern per Job-Log
+  belegt.
+- **30.10.2026:** der Wächter-Task hatte laut Easy keinen Repo-Zugriff
+  (HTTP 403, `add_repo` nicht gefunden) — **ungeprüft** (ebenfalls nur
+  aus der Task-Oberfläche berichtet). Der Aufgabentext wurde
+  daraufhin um „add_repo per ToolSearch laden" ergänzt — **ungeprüft**,
+  ob das die Ursache behebt.
+- **Ergebnis des Laufs vom 31.10.2026, 12:31 Berlin-Zeit: ungeprüft**
+  — zum Zeitpunkt dieser Nachziehung noch nicht ausgewertet.
+
+**Bislang noch KEIN einziger `ntfy_relay.yml`-Lauf mit einem Titel, der
+mit "ntfy: Momentum-Waechter" beginnt** (`gh api .../ntfy_relay.yml/runs`
+zeigt weiterhin nur den einen Lauf von PR #75, 25.10., vor Einführung von
+`run-name`) — die Agenten-Kontrolle hat seit ihrem Merge bei JEDEM ihrer
+fünf bisherigen Läufe (26.–30.10., alle grün) entsprechend keinen
+echten Treffer gefunden; ob sie seit Ablauf der 48-Std.-Anlaufschutz-
+Frist (ab ca. 27.10. 20:22 UTC) bei jedem weiteren Lauf erneut gemeldet
+hat, ist naheliegend, aber nur für Lauf Nr. 3 (siehe oben) tatsächlich
+per Job-Log nachgeprüft — die übrigen vier Läufe **ungeprüft**.
+
+**16. Oktober-Stichtag-Vorfall 30./31.10.2026 — zwei Abbrüche,
+Ursache ungeprüft/vermutet, Gegenmaßnahme in PR #80.** *(siehe §3,
+Wiedervorlage offen)*
+
+Vier Läufe, alle per `gh api`/Job-Log gegengeprüft:
+- **Lauf 93** (planmäßig, 30.10.2026, 01:20 UTC, Actions-Run
+  `40985254613`, erfolgreich): hielt den Oktober-Stichtag für BEIDE
+  Märkte erwartungsgemäß zurück — Job-Log wörtlich „Stichtag
+  2026-10-30 zurueckgehalten: Lauf um 01:20 UTC liegt vor 21:00 UTC
+  [US] / 16:30 UTC [DE]" (siehe `ranking.zu_frueh_fuer_stichtag`, PR
+  #53/#73).
+- **Lauf 94** (planmäßig, 31.10.2026, **01:02 UTC** — Actions-Run
+  `41153318736`, fehlgeschlagen): lief trotz Rutsch über Mitternacht
+  korrekt in die Oktober-Stichtag-Rechnung hinein (**realer
+  Wirksamkeitsnachweis für PR #73**, der genau diesen Mitternachts-
+  Fall gegen das volle Datum statt nur die Uhrzeit absichert), brach
+  dann ab: Job-Log wörtlich „LAUF ABGEBROCHEN: us: kein Titel mit
+  vollstaendiger Historie". **Korrektur gegenüber der ursprünglichen
+  Angabe „02:02 UTC":** der tatsächlich geloggte Start ist 01:02 UTC
+  — Widerspruch hier gemeldet, nicht stillschweigend übernommen.
+- **Lauf 95** (manuell, 31.10.2026, 08:07 UTC, Actions-Run
+  `41183266440`, fehlgeschlagen): US lief vollständig durch (Stichtag
+  2026-10-30, Geldmarkt 3,69 %), DE brach danach ab — Job-Log wörtlich
+  „LAUF ABGEBROCHEN: de: kein Titel mit vollstaendiger Historie".
+- **Lauf 96** (manuell, 31.10.2026, 09:14 UTC, Actions-Run,
+  Commit `8e29c5d`, 09:16:31 UTC, erfolgreich): schrieb
+  `data/rankings/us_2026-10.json` (496 von 503 bewertet) UND
+  `de_2026-10.json` (**81 von 81 liquiden Titeln bewertet — keine
+  einzige Historie-Lücke mehr**, belegt per `git show origin/main:
+  data/rankings/de_2026-10.json`).
+
+**Ursache ungeprüft, eine Vermutung, mit Indiz:** Yahoo liefert `Adj
+Close` für den letzten Handelstag mutmaßlich verspätet (derselbe
+Mechanismus wie beim 31.08.2026-Vorfall, §4 Punkt 2 — dort betraf es
+den seither entkoppelten Kursvergleichspfad, der Score-Pfad bleibt
+laut `data.py` bewusst an `Adj Close` gekoppelt). **Indiz, kein
+Beweis:** zwischen Lauf 95 (08:07 UTC, DE-Abbruch) und Lauf 96 (09:14
+UTC, DE vollständig) liegt gut eine Stunde, in der sich NICHTS am Code
+änderte — nur die Zeit verging. Eine echte Belegprüfung (rohe
+Yahoo-Antwort je Titel) stand nicht auf diesem Auftrag; siehe §3,
+offene Wiedervorlage.
+
+**Der Lauf ist Alles-oder-nichts, unverändert:** ein DE-Abbruch verwirft
+auch ein bereits fertig gerechnetes US-Ranking im selben Lauf (Lauf 95
+schrieb trotz US-Erfolg NICHTS — `main()` in `run.py` verarbeitet die
+Märkte sequenziell in einer Schleife, ein `RankingNotPossible` in einem
+späteren Markt bricht den gesamten Lauf ab, BEVOR irgendetwas
+geschrieben wird; nur ein zuvor bereits abgeschlossener Markt-Schritt
+bleibt als Seiteneffekt erhalten). Eine Änderung daran wäre
+Stichtag-Logik — nicht Teil dieses Auftrags, eigener Entscheid von
+Easy, falls gewünscht.
+
+**PR #80 (dieser PR) ist die direkte Gegenmaßnahme:** die
+Abbruchmeldung nennt jetzt Zahlen je Ausscheidegrund (ohne
+Stichtagskurs/ohne Monatsendkurs/sonstige), damit ein künftiger
+Abbruch ohne Rätselraten lesbar ist — siehe PR-Text für die Belege.
 
 ---
 
@@ -1179,6 +1273,10 @@ Easys eigene Entscheidung.
     Run `37339845773`) — siehe Dokument-Kopf. Lesson 11 ist damit die
     erste Lesson dieses Dokuments, die sich nicht nur beschreibt, sondern
     einmal tatsächlich als behoben beobachten ließ.
+12. **Ein Abbruch ohne Ausscheidegründe ist nicht diagnostizierbar.**
+    Lauf #94/#95 (31.10.2026) brachen mit „kein Titel mit vollstaendiger
+    Historie" ab — die Zähler dafür existierten im Code bereits, wurden
+    aber nie ausgegeben. Behoben in PR #80.
 
 ---
 
@@ -1253,4 +1351,5 @@ hier, damit niemand sie erneut aufmacht.
 | Schutz-Sperre gebaut (Auftrag 3 der Automatisierung) — PR-Check gegen geschützte Zonen, baut nur den Check, keinen Merge-Workflow | #77 | siehe §4 Punkt 14, §7.8 |
 | **PR #77 gemergt — ausnahmsweise trotz rotem Eigen-Check** (Label am iPhone nicht setzbar; ohne Ruleset nicht blockierend) | #77 | siehe §4 Punkt 14 |
 | Schutz-Sperre auf reine Ampel umgestellt — Label-Freigabe entfernt, weil Code/Agenten als easywebb911 handeln (Entscheidung (5)) und jede Freigabe "von easywebb911" fälschbar wäre; Auftrag 5 umdefiniert: Agenten mergen nie | #78 | siehe §4 Punkt 14, §7.8 |
-| **Agenten-Kontrolle gebaut** (Auftrag 5, konkretisiert) — meldet laut, wenn sich der geplante Wächter-Agent seit über 48 Std. nicht mehr über `ntfy_relay.yml` gemeldet hat; eine Zeile (`run-name`) in `ntfy_relay.yml` ergänzt, damit der Lauf-Titel überhaupt geprüft werden kann — **PR noch offen, Manual-Merge, Easy entscheidet** | #79 | siehe §4 Punkt 15 |
+| **Agenten-Kontrolle gebaut und gemergt** (Auftrag 5, konkretisiert) — meldet laut, wenn sich der geplante Wächter-Agent seit über 48 Std. nicht mehr über `ntfy_relay.yml` gemeldet hat; eine Zeile (`run-name`) in `ntfy_relay.yml` ergänzt, damit der Lauf-Titel überhaupt geprüft werden kann. Merge-Commit `9f0238c`, 25.10.2026 20:22 UTC (per `gh`/API gegenprüft) | #79 | siehe §4 Punkt 15 |
+| **Stichtag-Schutz-Fix (PR #73) real bewiesen:** Lauf 94 (31.10.2026, 01:02 UTC, über Mitternacht gerutscht) lief korrekt in die Oktober-Stichtag-Rechnung hinein statt sie fälschlich "zu früh" zurückzuhalten — exakt die Konstellation aus dem PR-#73-Fund, jetzt real eingetreten und bestanden | #73 | siehe §4 Punkt 13, §4 Punkt 16, Actions-Run `41153318736` |
