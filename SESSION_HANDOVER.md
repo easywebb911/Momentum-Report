@@ -1,21 +1,22 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 31.10.2026**, nach PR #80 (Abbruchpfad: Ausscheidegründe in der
-Meldung "kein Titel mit vollstaendiger Historie" — **noch offen,
-Manual-Merge, Easy entscheidet**). Nachgezogen: PR #76
-(Wiedervorlagen-Wächter — `faellig`-Kommentare in §3 plus eigener
-Wächter, Schritt 2 der am 24.10.2026 festgelegten Automatisierung),
-PR #77 (Schutz-Sperre — PR-Check gegen geschützte Zonen, Schritt 3
-desselben Plans, **ausnahmsweise trotz rotem Eigen-Check gemergt** —
-das Label ließ sich am iPhone nicht setzen, ohne Ruleset nicht
-blockierend), PR #78 (Schutz-Sperre: Label-Freigabe entfernt, reine
-Ampel statt Sperre — Grund: Code/Agenten handeln als easywebb911,
-siehe §4 Punkt 14 und §7.8, **gemergt**), PR #79 (Agenten-Kontrolle —
-Alarm, wenn der geplante Wächter-Agent sich seit über 48 Std. nicht
-mehr gemeldet hat, siehe §4 Punkt 15 — **gemergt**, Merge-Commit
-`9f0238c`, 25.10.2026, 20:22 UTC, per `gh`/API gegenprüft), PR #80
-(dieser PR — Abbruchpfad-Meldung, siehe §4 Punkt 16, PR offen, Schutz-
-Sperre erwartungsgemäß rot, da `build_ranking` geschütztes Symbol ist).
+**Stand: 31.10.2026**, nach PR #81 (Evaluation-Seite: Gesamtrückblick
+vor Monatsrückblick — reine Anzeige, **noch offen, SELF-Merge**).
+Nachgezogen: PR #76 (Wiedervorlagen-Wächter — `faellig`-Kommentare in
+§3 plus eigener Wächter, Schritt 2 der am 24.10.2026 festgelegten
+Automatisierung), PR #77 (Schutz-Sperre — PR-Check gegen geschützte
+Zonen, Schritt 3 desselben Plans, **ausnahmsweise trotz rotem
+Eigen-Check gemergt** — das Label ließ sich am iPhone nicht setzen,
+ohne Ruleset nicht blockierend), PR #78 (Schutz-Sperre: Label-Freigabe
+entfernt, reine Ampel statt Sperre — Grund: Code/Agenten handeln als
+easywebb911, siehe §4 Punkt 14 und §7.8, **gemergt**), PR #79
+(Agenten-Kontrolle — Alarm, wenn der geplante Wächter-Agent sich seit
+über 48 Std. nicht mehr gemeldet hat, siehe §4 Punkt 15 — **gemergt**,
+Merge-Commit `9f0238c`, 25.10.2026, 20:22 UTC, per `gh`/API
+gegenprüft), PR #80 (Abbruchpfad-Meldung, siehe §4 Punkt 16 —
+**gemergt**, Merge-Commit `569e385`, 31.10.2026, 10:42 UTC, per
+`gh`/API gegenprüft), PR #81 (dieser PR — Evaluation-Reihenfolge,
+siehe §2 unten, PR offen, Schutz-Sperre lokal grün geprüft).
 Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
 nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
@@ -197,6 +198,8 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #71 | `a5a0fe8`→`5c646ef` | 09.10. | SESSION_HANDOVER.md auf Stand nach PR #70 gebracht (#66–#70 nachgezogen) | SELF |
 | #72 | `6fc76f7`→`0f94675` | 13.10. | Sektor-Konzentrations-Hinweis (reine Anzeige, je Markt getrennt, Schwelle 3 von 5) — siehe §4 Punkt 11 | SELF |
 | #73 | `5e932e3` (Merge-Commit folgt — PR zum Zeitpunkt dieses Eintrags noch offen) | 19.10. | Stichtag-Schutz vergleicht vollen Zeitpunkt statt nur Uhrzeit (Fund: Mitternachts-Rutsch am Monatsende hielt den Stichtag fälschlich für "zu früh") — siehe §4 Punkt 13 | MANUAL |
+| #80 | `2ef3679`→`569e385` | 31.10. | Abbruchmeldung "kein Titel mit vollstaendiger Historie" nennt jetzt Zahlen je Ausscheidegrund — siehe §4 Punkt 16 | MANUAL |
+| #81 | `95596a9` (Merge-Commit folgt — PR zum Zeitpunkt dieses Eintrags noch offen) | 31.10. | Evaluation-Seite: Gesamtrückblick vor Monatsrückblick (reine Anzeige, Blöcke vertauscht) | SELF |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -813,10 +816,11 @@ bleibt als Seiteneffekt erhalten). Eine Änderung daran wäre
 Stichtag-Logik — nicht Teil dieses Auftrags, eigener Entscheid von
 Easy, falls gewünscht.
 
-**PR #80 (dieser PR) ist die direkte Gegenmaßnahme:** die
-Abbruchmeldung nennt jetzt Zahlen je Ausscheidegrund (ohne
-Stichtagskurs/ohne Monatsendkurs/sonstige), damit ein künftiger
-Abbruch ohne Rätselraten lesbar ist — siehe PR-Text für die Belege.
+**PR #80, gemergt (Merge-Commit `569e385`, 31.10.2026, 10:42 UTC), ist
+die direkte Gegenmaßnahme:** die Abbruchmeldung nennt jetzt Zahlen je
+Ausscheidegrund (ohne Stichtagskurs/ohne Monatsendkurs/sonstige),
+damit ein künftiger Abbruch ohne Rätselraten lesbar ist — siehe
+PR-Text für die Belege.
 
 ---
 
