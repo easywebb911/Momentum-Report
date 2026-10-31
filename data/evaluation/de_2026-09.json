@@ -1,0 +1,59 @@
+{
+  "ausgewerteter_monat": "2026-09",
+  "end_stichtag": "2026-10-30",
+  "index_vergleich": {
+    "differenz": -0.06894952,
+    "end": 25818.2109,
+    "index_name": "DAX",
+    "index_ticker": "^GDAXI",
+    "start": 25199.1895,
+    "top5_veraenderung": -0.04438439,
+    "veraenderung": 0.02456513
+  },
+  "markt": "de",
+  "neutral_schwelle": 0.02,
+  "schema": 2,
+  "start_stichtag": "2026-09-30",
+  "titel": [
+    {
+      "klasse": "negativ",
+      "kurs_end": 57.54,
+      "kurs_start": 59.3,
+      "name": "RWE AG",
+      "ticker": "RWE.DE",
+      "veraenderung": -0.02967958
+    },
+    {
+      "klasse": "positiv",
+      "kurs_end": 58.68,
+      "kurs_start": 57.0,
+      "name": "DEUTSCHE POST AG",
+      "ticker": "DHL.DE",
+      "veraenderung": 0.02947369
+    },
+    {
+      "klasse": "positiv",
+      "kurs_end": 21.04,
+      "kurs_start": 20.38,
+      "name": "EVONIK INDUSTRIES AG",
+      "ticker": "EVK.DE",
+      "veraenderung": 0.03238474
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 12.015,
+      "kurs_start": 14.64,
+      "name": "THYSSENKRUPP AG",
+      "ticker": "TKA.DE",
+      "veraenderung": -0.17930326
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 38.84,
+      "kurs_start": 41.98,
+      "name": "JENOPTIK N AG",
+      "ticker": "JEN.DE",
+      "veraenderung": -0.07479752
+    }
+  ]
+}

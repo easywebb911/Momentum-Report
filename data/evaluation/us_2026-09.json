@@ -1,0 +1,59 @@
+{
+  "ausgewerteter_monat": "2026-09",
+  "end_stichtag": "2026-10-30",
+  "index_vergleich": {
+    "differenz": -0.1282122,
+    "end": 17011.1406,
+    "index_name": "S&P 500",
+    "index_ticker": "^SP500TR",
+    "start": 17160.4102,
+    "top5_veraenderung": -0.13691068,
+    "veraenderung": -0.00869848
+  },
+  "markt": "us",
+  "neutral_schwelle": 0.02,
+  "schema": 2,
+  "start_stichtag": "2026-09-30",
+  "titel": [
+    {
+      "klasse": "negativ",
+      "kurs_end": 55.09,
+      "kurs_start": 63.89,
+      "name": "Hewlett Packard Enterprise",
+      "ticker": "HPE",
+      "veraenderung": -0.13773673
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 136.08,
+      "kurs_start": 178.76,
+      "name": "Fortinet",
+      "ticker": "FTNT",
+      "veraenderung": -0.23875586
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 365.87,
+      "kurs_start": 397.31,
+      "name": "Palo Alto Networks",
+      "ticker": "PANW",
+      "veraenderung": -0.07913218
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 250.43,
+      "kurs_start": 264.75,
+      "name": "CrowdStrike",
+      "ticker": "CRWD",
+      "veraenderung": -0.05408879
+    },
+    {
+      "klasse": "negativ",
+      "kurs_end": 504.8,
+      "kurs_start": 611.76,
+      "name": "Advanced Micro Devices",
+      "ticker": "AMD",
+      "veraenderung": -0.17483983
+    }
+  ]
+}

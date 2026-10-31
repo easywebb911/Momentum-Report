@@ -2,73 +2,73 @@
   "maerkte": {
     "de": {
       "name": "Deutschland",
-      "stichtag": "2026-09-30",
+      "stichtag": "2026-10-30",
       "top5": [
         {
           "rang": 1,
-          "score": 89.506173,
-          "stichtag": "2026-09-30",
-          "ticker": "RWE.DE"
-        },
-        {
-          "rang": 2,
-          "score": 88.271605,
-          "stichtag": "2026-09-30",
+          "score": 90.0,
+          "stichtag": "2026-10-30",
           "ticker": "DHL.DE"
         },
         {
-          "rang": 3,
-          "score": 86.419753,
-          "stichtag": "2026-09-30",
+          "rang": 2,
+          "score": 87.5,
+          "stichtag": "2026-10-30",
           "ticker": "EVK.DE"
         },
         {
+          "rang": 3,
+          "score": 86.25,
+          "stichtag": "2026-10-30",
+          "ticker": "BAYN.DE"
+        },
+        {
           "rang": 4,
-          "score": 85.802469,
-          "stichtag": "2026-09-30",
-          "ticker": "TKA.DE"
+          "score": 86.25,
+          "stichtag": "2026-10-30",
+          "ticker": "DB1.DE"
         },
         {
           "rang": 5,
-          "score": 82.716049,
-          "stichtag": "2026-09-30",
-          "ticker": "JEN.DE"
+          "score": 85.625,
+          "stichtag": "2026-10-30",
+          "ticker": "DHER.DE"
         }
       ]
     },
     "us": {
       "name": "USA",
-      "stichtag": "2026-09-30",
+      "stichtag": "2026-10-30",
       "top5": [
         {
           "rang": 1,
-          "score": 98.084677,
-          "stichtag": "2026-09-30",
-          "ticker": "HPE"
+          "score": 97.171717,
+          "stichtag": "2026-10-30",
+          "ticker": "TRGP"
         },
         {
           "rang": 2,
-          "score": 97.782258,
-          "stichtag": "2026-09-30",
-          "ticker": "FTNT"
+          "score": 94.848485,
+          "stichtag": "2026-10-30",
+          "ticker": "APA"
         },
         {
           "rang": 3,
-          "score": 97.379032,
-          "stichtag": "2026-09-30",
-          "ticker": "PANW"
+          "score": 94.444444,
+          "stichtag": "2026-10-30",
+          "ticker": "XOM"
         },
         {
           "rang": 4,
-          "score": 97.177419,
-          "stichtag": "2026-09-30",
-          "ticker": "CRWD"
+          "score": 92.424242,
+          "stichtag": "2026-10-30",
+          "ticker": "VTRS"
         },
         {
           "rang": 5,
-          "score": 96.774194,
-          "stichtag": "2026-09-30",
-          "ticker": "AMD"
+          "score": 91.818182,
+          "stichtag": "2026-10-30",
+          "ticker": "DVN"
         }
       ]
     }
