@@ -1,8 +1,12 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 31.10.2026**, nach PR #81 (Evaluation-Seite: Gesamtrückblick
-vor Monatsrückblick — reine Anzeige, **noch offen, SELF-Merge**).
-Nachgezogen: PR #76 (Wiedervorlagen-Wächter — `faellig`-Kommentare in
+**Stand: 31.10.2026, nachmittags**, nach PR #81 (Evaluation-Seite:
+Gesamtrückblick vor Monatsrückblick — **gemergt**, Merge-Commit
+`0972fe7`, 31.10.2026 10:58 UTC) und der **Umstellung der drei geplanten
+Claude-Tasks auf Nur-Lesen + App-Push samt Abschaltung der
+Agenten-Kontrolle** (31.10.2026, Entscheidung Easy, siehe §4 Punkt 15).
+Das Oktober-Ranking (Stichtag 30.10.) liegt vor, die Wiedervorlagen vom
+30./31.10. sind ausgewertet (§3, §10). Nachgezogen: PR #76 (Wiedervorlagen-Wächter — `faellig`-Kommentare in
 §3 plus eigener Wächter, Schritt 2 der am 24.10.2026 festgelegten
 Automatisierung), PR #77 (Schutz-Sperre — PR-Check gegen geschützte
 Zonen, Schritt 3 desselben Plans, **ausnahmsweise trotz rotem
@@ -15,8 +19,8 @@ easywebb911, siehe §4 Punkt 14 und §7.8, **gemergt**), PR #79
 Merge-Commit `9f0238c`, 25.10.2026, 20:22 UTC, per `gh`/API
 gegenprüft), PR #80 (Abbruchpfad-Meldung, siehe §4 Punkt 16 —
 **gemergt**, Merge-Commit `569e385`, 31.10.2026, 10:42 UTC, per
-`gh`/API gegenprüft), PR #81 (dieser PR — Evaluation-Reihenfolge,
-siehe §2 unten, PR offen, Schutz-Sperre lokal grün geprüft).
+`gh`/API gegenprüft), PR #81 (Evaluation-Reihenfolge, siehe §2 —
+**gemergt**, `0972fe7`, per `gh`/API gegenprüft).
 Repo `easywebb911/Momentum-Report`, Branch `main` — den aktuellen Stand
 nennt `git log -1`, er steht hier bewusst nicht als Zahl.
 
@@ -51,33 +55,32 @@ einmal real bestätigt wirksam.
 
 ---
 
-## 1. Betriebszustand (11.09.2026, fünf Zeilen unten auf 05.10. nachgezogen)
+## 1. Betriebszustand (11.09.2026; Lauf-, Ranking-, Top-5-, Ampel-, Konfluenz- und PR-Zeilen auf 31.10.2026 nachgezogen)
 
 | Sache | Zustand | Beleg |
 |---|---|---|
 | GitHub Pages | **aktiv** seit 02.08., deployt bei jedem Push auf `main` | Workflow `pages-build-deployment`, angelegt 02.08.2026 16:11 — Zähler und letzter Lauf in Actions |
-| Momentum-Lauf | läuft werktäglich, **zwei Fehlschläge insgesamt** | Run 1 (02.08.2026, Datumsformat-Bruch iShares, §8 Lesson 3) — **kein** „Lauf 1"-Commit, Zählung beginnt bei „Lauf 2" (`07cbedd`). Zweiter Fehlschlag Lauf 71 (01.10.2026, 00:49 UTC, Yahoo-Rate-Limit auf `^SP500TR`, Actions-Run `36798080643`) — fail-soft griff korrekt, kein Code-Fix nötig, siehe §4 Punkt 5. Noch am selben Tag per manuellem Dispatch nachgeholt (Lauf 72, 21:13 UTC, Actions-Run `36927209332`). Sonst durchgehend grün. |
-| Ranking | eingefroren zum **30.09.2026** (dritter scharfer Stichtag), beide Märkte — Juli-/August-Stand bleiben parallel als eigene, nie überschriebene Dateien stehen; geschrieben von Lauf 72 (manueller Nachlauf, siehe Zeile oben), nicht vom nächsten planmäßigen Lauf | `data/rankings/us_2026-09.json`, `de_2026-09.json` (und weiterhin `*_2026-08.json`, `*_2026-07.json`) |
-| US-Top-5 (Sep.) | HPE, FTNT, PANW, CRWD, AMD — 497 von 503 im Universum bewertet | `us_2026-09.json` → `top`, `abdeckung` — Kursvergleich **entfallen** (iShares-Totalausfall, siehe §4 Punkt 6), die yfinance-Momentum-Rangfolge selbst unberührt |
-| DE-Top-5 (Sep.) | RWE.DE, DHL.DE, EVK.DE, TKA.DE, JEN.DE — 82 von 102 im Universum bewertet | `de_2026-09.json` → `top`, `abdeckung` — Kursvergleich **entfallen** (iShares-Totalausfall, siehe §4 Punkt 6), die yfinance-Momentum-Rangfolge selbst unberührt |
-| Überschuss-Ampel | weiterhin live, keine Warnung in beiden Märkten | US: Rendite +15,74 %, Geldmarkt (`^IRX`) **+3,68 %**, Überschuss **+12,06 %**. DE: Rendite +5,52 %, Geldmarkt (€STR/EZB) **+2,02 %**, Überschuss **+3,50 %**. Beide `trend_ampel` in den September-Rankings |
+| Momentum-Lauf | läuft werktäglich, **vier Fehlschläge insgesamt**, alle fail-soft (nichts veröffentlicht, nichts eingefroren) | Run 1 (02.08.2026, Datumsformat-Bruch iShares, §8 Lesson 3) — **kein** „Lauf 1"-Commit, Zählung beginnt bei „Lauf 2" (`07cbedd`). Lauf 71 (01.10.2026, 00:49 UTC, Yahoo-Rate-Limit auf `^SP500TR`, Actions-Run `36798080643`), noch am selben Tag per manuellem Dispatch nachgeholt (Lauf 72, Actions-Run `36927209332`), siehe §4 Punkt 5. Lauf 94 und Lauf 95 (31.10.2026, Actions-Runs `41153318736`/`41183266440`, „kein Titel mit vollstaendiger Historie"), per manuellem Lauf 96 nachgeholt (Actions-Run `41187870579`, Commit `8e29c5d`), siehe §4 Punkt 16. Sonst durchgehend grün. |
+| Ranking | eingefroren zum **30.10.2026** (vierter scharfer Stichtag), beide Märkte — Juli-/August-/September-Stand bleiben parallel als eigene, nie überschriebene Dateien stehen; geschrieben von Lauf 96 (manueller Nachlauf, siehe Zeile oben), nicht vom planmäßigen Lauf | `data/rankings/us_2026-10.json`, `de_2026-10.json` (und weiterhin `*_2026-09.json`, `*_2026-08.json`, `*_2026-07.json`) |
+| US-Top-5 (Okt.) | TRGP, APA, XOM, VTRS, DVN — 496 von 503 im Universum bewertet; **4 von 5 im Sektor Energy** (Sektor-Hinweis aus PR #72 erscheint auf der Seite) | `us_2026-10.json` → `top`, `abdeckung`; Kursvergleich `ok` (SXR8, 492 verglichen, 0 über Toleranz); Hinweis in `docs/index.html` (`sektor-hinweis`) |
+| DE-Top-5 (Okt.) | DHL.DE, EVK.DE, BAYN.DE, DB1.DE, DHER.DE — 81 von 102 im Universum bewertet (21 am Handelbarkeits-Filter) | `de_2026-10.json` → `top`, `abdeckung`; Kursvergleich `ok` (100 verglichen, 0 über Toleranz) |
+| Überschuss-Ampel | weiterhin live, keine Warnung in beiden Märkten | US: Rendite +12,11 %, Geldmarkt (`^IRX`) **+3,69 %**, Überschuss **+8,41 %**. DE: Rendite +7,76 %, Geldmarkt (€STR/EZB) **+2,06 %**, Überschuss **+5,70 %**. Beide `trend_ampel` in den Oktober-Rankings |
 | Universen | **beide VERIFIED**, Stand 03.08.2026 (seither nicht neu gezogen) | `universe/universe_us.txt`, `universe_de.txt` (Kopfzeile `# STATUS: VERIFIED`) |
 | Beschreibende Angaben | vorhanden (Name + Sektor je Ticker) | `universe/ticker_meta_us.json`, `ticker_meta_de.json` |
 | Konfluenz — Export | `docs/data/top5.json`, schreibt sich bei jedem neuen Ranking neu | `run.py::_schreibe_top5`, seit `e695b54` (Lauf 9) |
-| Konfluenz — Push/Stand | **live, erster echter Treffer bereits eingetreten**: `de:TKA.DE` | PR #46 (`62257b4`); `data/konfluenz_stand.json` — der erste Produktionslauf, der die Mechanik überhaupt scharf prüfte, war Lauf 54 (07.09., nach PR #46/#47/#48) |
-| Konfluenz — Historie | drei Einträge: zwei manuell rekonstruiert (TKA.DE 17./24.08., SIE.DE 27.08., Stichtag Juli — Elliott-Seite nicht belegbar), **ein automatisch erfasster** (TKA.DE, Stichtag 31.08., Elliott-Score 81,54, Kurs 14,90 €) | PR #47 (`ba99293`), PR #48 (`c9e5688`); `data/konfluenz_historie.json` — jeder Eintrag trägt `quelle`: `"automatisch"` oder `"manuell_rekonstruiert"` |
+| Konfluenz — Push/Stand | **live**; erster echter Treffer war `de:TKA.DE`; Stand 31.10.2026: `de:DHL.DE`, `de:EVK.DE` | PR #46 (`62257b4`); `data/konfluenz_stand.json` — der erste Produktionslauf, der die Mechanik überhaupt scharf prüfte, war Lauf 54 (07.09., nach PR #46/#47/#48). Ob der Stand schon auf die Oktober-Top-5 reagiert hat, ist **ungeprüft** (hängt an der Elliott-Seite) |
+| Konfluenz — Historie | wächst automatisch; die zwei manuell rekonstruierten Juli-Einträge (TKA.DE, SIE.DE — Elliott-Seite nicht belegbar) stehen weiterhin drin, alle übrigen sind `"automatisch"` (Stichtage 31.08. und 30.09.); Anzahl bewusst nicht abgeschrieben | PR #47 (`ba99293`), PR #48 (`c9e5688`); `data/konfluenz_historie.json` — jeder Eintrag trägt `quelle`: `"automatisch"` oder `"manuell_rekonstruiert"`. Einige Ticker stehen je Stichtag doppelt (z. B. TKA.DE 31.08., DHL.DE 30.09.) — ob das gewollt ist (mehrere Elliott-Treffer) oder ein Doppel-Eintrag, ist **ungeprüft** |
 | Reparatur-Agent (Stufe 3) | **erste, bewusst schmale Ausbaustufe gebaut** — nur Datumsformat-Drift bei den drei DE-iShares-Bestandslisten; noch nie ausgelöst (kein passender Fund seit Einführung) | PR #49 (`a2343cc`); `tools/agent_datumsformat.py`, `tools/agent_datumsformat_oeffnen.py`, zweiter Job in `vertrag.yml` |
 | ntfy-Push | verdrahtet, **zwei Push-Arten inzwischen live bewiesen**: Ranking-Push (Probe 08.08.) und Konfluenz-Push (siehe Zeile oben) | Lauf 19 (Probe); `konfluenz_stand.json`/`konfluenz_historie.json` als Nebenbeweis für den Konfluenz-Push (Zustellung selbst nicht am Gerät nachgeprüft, nur die serverseitige Wirkung) |
 | Kurse | Stand je Markt in `kurse_vom` | `data/status.json` |
 | Tests | vollständig grün (unit + design/Playwright) | `pytest` (Zähler bewusst nicht abgeschrieben — er wächst mit jedem PR) |
-| Offene PRs | **keine** | GitHub-PR-Liste, Status `open` = leer |
+| Offene PRs | **keine** außer diesem Doku-PR | `gh api repos/easywebb911/Momentum-Report/pulls?state=open`, geprüft 31.10.2026 |
 
-*Hinweis zu dieser Tabelle:* Nur fünf Zeilen (Momentum-Lauf, Ranking,
-US-/DE-Top-5, Überschuss-Ampel) wurden für diese Nachziehung
-aktualisiert — direkt ausgelöst durch die in §4 Punkt 5/6 dokumentierten
-Vorfälle. Alle übrigen Zeilen (Universen, Konfluenz, Reparatur-Agent,
-ntfy, Kurse, Tests, Offene PRs) bleiben auf ihrem Stand vom 11.09.2026 —
-kein durch #59–#65 ausgelöster Anlass gefunden, sie erneut zu prüfen.
+*Hinweis zu dieser Tabelle:* Am 31.10.2026 nachgezogen wurden die Zeilen
+Momentum-Lauf, Ranking, US-/DE-Top-5, Überschuss-Ampel, Konfluenz und
+Offene PRs — ausgelöst durch den Oktober-Stichtag (§4 Punkt 16). Die
+übrigen Zeilen (Universen, Reparatur-Agent, ntfy, Kurse, Tests) bleiben
+auf ihrem früheren Stand — kein Anlass gefunden, sie erneut zu prüfen.
 
 **Cron-Fahrplan** (`.github/workflows/`):
 
@@ -89,6 +92,16 @@ kein durch #59–#65 ausgelöster Anlass gefunden, sie erneut zu prüfen.
 | Wächter (Totmannschalter) | `30 7 * * 1` (montags 07:30 UTC) + manuell | `waechter.yml` — schweigt im Normalfall, Alarm-Push + roter Lauf ab > 4 Tagen Stille |
 | Universum aktualisieren | **nur manuell** | `universum.yml` |
 | Tests | jeder Push und jeder PR | `tests.yml` |
+| Agenten-Kontrolle | **in Actions abgeschaltet seit 31.10.2026** (Status `disabled_manually`) | `agenten_kontrolle.yml` — Code und Datei bleiben unverändert im Repo; Grund und Rückweg siehe §4 Punkt 15 |
+
+Diese Tabelle nennt nur die Kern-Workflows. Weitere Wächter mit eigenem
+Fahrplan in der jeweiligen Datei (Stand 31.10.2026 alle aktiv, per `gh
+api .../actions/workflows` geprüft): `handover_waechter.yml`,
+`pr_verwaisung_waechter.yml`, `lauf_zeitversatz_waechter.yml`,
+`push_zustellung_waechter.yml`, `datenabdeckung_waechter.yml`,
+`wiedervorlagen_waechter.yml`, `schutz_sperre.yml`, `ntfy_relay.yml`
+(Letzterer seit der Umstellung vom 31.10. ohne Aufrufer, bleibt als
+Werkzeug stehen).
 
 Am Wochenende läuft nichts. Ist der letzte Lauf von Freitag, ist das
 kein Ausfall, sondern der Fahrplan.
@@ -197,9 +210,10 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #70 | `9419671`→`c56dc64` | 09.10. | Split-Wächter (`split_waechter.py`, nur Erkennen und Melden) — Auslöser: MNST-Vorfall US 2026-08, siehe §4 Punkt 9 | SELF |
 | #71 | `a5a0fe8`→`5c646ef` | 09.10. | SESSION_HANDOVER.md auf Stand nach PR #70 gebracht (#66–#70 nachgezogen) | SELF |
 | #72 | `6fc76f7`→`0f94675` | 13.10. | Sektor-Konzentrations-Hinweis (reine Anzeige, je Markt getrennt, Schwelle 3 von 5) — siehe §4 Punkt 11 | SELF |
-| #73 | `5e932e3` (Merge-Commit folgt — PR zum Zeitpunkt dieses Eintrags noch offen) | 19.10. | Stichtag-Schutz vergleicht vollen Zeitpunkt statt nur Uhrzeit (Fund: Mitternachts-Rutsch am Monatsende hielt den Stichtag fälschlich für "zu früh") — siehe §4 Punkt 13 | MANUAL |
+| #73 | `5e932e3`→`4000b68` | 19.10. | Stichtag-Schutz vergleicht vollen Zeitpunkt statt nur Uhrzeit (Fund: Mitternachts-Rutsch am Monatsende hielt den Stichtag fälschlich für "zu früh") — siehe §4 Punkt 13 | MANUAL |
 | #80 | `2ef3679`→`569e385` | 31.10. | Abbruchmeldung "kein Titel mit vollstaendiger Historie" nennt jetzt Zahlen je Ausscheidegrund — siehe §4 Punkt 16 | MANUAL |
-| #81 | `95596a9` (Merge-Commit folgt — PR zum Zeitpunkt dieses Eintrags noch offen) | 31.10. | Evaluation-Seite: Gesamtrückblick vor Monatsrückblick (reine Anzeige, Blöcke vertauscht) | SELF |
+| #81 | `95596a9`→`0972fe7` | 31.10. | Evaluation-Seite: Gesamtrückblick vor Monatsrückblick (reine Anzeige, Blöcke vertauscht) | SELF |
+| #PRNR | (dieser PR) | 31.10. | SESSION_HANDOVER.md auf Stand 31.10. nachmittags: Oktober-Stichtag ausgewertet, Wiedervorlagen 30./31.10. geschlossen, Umstellung der geplanten Tasks und Abschaltung der Agenten-Kontrolle dokumentiert | SELF |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -224,14 +238,12 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | Wann | Was | Warum |
 |---|---|---|
 | **laufend, montags** <!-- faellig: offen --> | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
-| **25.–31.10.2026** <!-- faellig: 2026-10-25 --> | **Drittes Vertragstest-Fenster — jetzt mit dreifachem Zweck.** (a) Erster echter Wirksamkeitstest von PR #63 (BlackRock-URL) und PR #64 (Nachrichtenkürzung) unter echten Bedingungen — `vertrag.yml` lief seit deren Merge (02./03.10.) noch kein einziges Mal. (b) Zugleich die nächste Chance auf eine zweite Woche echter DE-Abweichungszahlen (siehe §4 Punkt 1) — das 25.–30.09.-Fenster lieferte keine: alle fünf iShares-Quellen waren die ganze Woche tot (siehe §4 Punkt 6). (c) **Der 30.10.2026-Monats-Stichtag in diesem Fenster ist zugleich der erste echte Wirksamkeitstest des neuen Split-Wächters** (PR #70, siehe §4 Punkt 9) — Zeile direkt darunter. | Siehe §4 Punkt 1 (DE-Toleranz), §4 Punkt 6 (iShares-Totalausfall, PR #63/#64-Wirksamkeit) und §4 Punkt 9 (Split-Wächter) — explizit terminierte Wiedervorlage, nicht nur „irgendwann". |
-| **30.10.2026, jetzt mit Vorbehalt** <!-- faellig: 2026-10-31 --> | **Erster echter Test des Split-Wächters** (`split_waechter.py`, PR #70) — das Oktober-Ranking liegt seit Lauf 96 (31.10., 09:16 UTC, Commit `8e29c5d`) vor, **die Split-Wächter-Beobachtung selbst ist noch NICHT geprüft** (dieser Auftrag hat nur die Abbruchmeldung gebaut, nicht die Rankings ausgewertet). | Siehe §4 Punkt 9 und §4 Punkt 16 — Oktober-Daten jetzt da, Auswertung bleibt offen. |
-| **30.10.2026, jetzt mit Vorbehalt** <!-- faellig: 2026-10-31 --> | **Erster echter Lauf nach dem Merge des Sektor-Konzentrations-Hinweises** (PR #72, siehe §4 Punkt 11) — Oktober-Ranking liegt vor (Lauf 96), **ob der Hinweis weiterhin eine Konzentration zeigt oder die Top-5 inzwischen breiter gestreut ist, ist noch NICHT geprüft**. | Siehe §4 Punkt 11 und §4 Punkt 16 — Oktober-Daten jetzt da, Auswertung bleibt offen. |
-| **Herbst 2026** (ab ~Nov, ≥ 4 Stichtage) <!-- faellig: offen --> | **Ranking-Verlauf.** Entscheiden, ob die Seite eine Historie zeigt. | Aktuell **2 von 4** Stichtagen vorhanden (Juli, August) — noch nichts zu zeigen. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). |
+| **03.11.2026** (mit dem Monatsrundgang) <!-- faellig: 2026-11-03 --> | **Ranking-Verlauf — jetzt entscheidungsreif.** Entscheiden, ob die Seite eine Historie zeigt. | Seit dem Oktober-Stichtag liegen **4 Stichtage** vor (Juli, August, September, Oktober — `data/rankings/`), die frühere Bedingung „≥ 4 Stichtage" ist erfüllt. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). Easys Entscheid. |
 | **offen, keine Frist** <!-- faellig: offen --> | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 | **ca. 10 Handelstage nach Merge von PR #74** <!-- faellig: offen --> | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
-| **31.10.2026** <!-- faellig: 2026-10-31 --> | **Erster echter Testtag für den Wächter-Agenten** (geplanter Claude-Task, täglich 12:31 Berlin-Zeit, siehe §4 Punkt 15) — prüfen: ist der Oktober-Stichtag (30.10.2026) inzwischen da, und hat der Wächter-Agent das korrekt erkannt/gemeldet? Zugleich die erste Gelegenheit, die Agenten-Kontrolle (PR #79, sofern gemergt) an einem echten Tagesrhythmus statt nur an simulierten Daten zu beobachten. | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
-| **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, und war sein Befund (falls einer kam) sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
+| **01.11.2026** <!-- faellig: 2026-11-01 --> | **Erster Lauf eines umgestellten Tasks: Lit-Check** (sonntags 09:56 Berlin-Zeit) — prüfen: kam die Meldung als **Push über die Claude-App** an? Bleibt sie aus: Mitteilungen der Claude-App am iPhone erlaubt? Sonst den Lauf in der Task-Ansicht öffnen und „Push fehlgeschlagen" suchen. | Siehe §4 Punkt 15, Umstellung vom 31.10.2026 — Zustellweg App-Push ist bisher nur aus dem Wächter-Lauf vom 31.10. bekannt (Easy erhielt dort einen App-Push), für die neuen Aufgabentexte noch nicht belegt. |
+| **02.11.2026** (Montag) <!-- faellig: 2026-11-02 --> | **Erstes Montags-Lebenszeichen des umgestellten Wächters** („Momentum-Waechter OK TT.MM." per App-Push, sofern kein Befund) — prüfen: kam es? Bleibt es aus, ist der Wächter selbst ausgefallen; die Agenten-Kontrolle (PR #79) überwacht ihn seit 31.10. nicht mehr. | Siehe §4 Punkt 15 — das Montags-Lebenszeichen ersetzt die abgeschaltete Agenten-Kontrolle. |
+| **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, seit 31.10. Nur-Lesen + App-Push, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, kam der App-Push an, und war sein Befund sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
 | **beim nächsten Abbruch** <!-- faellig: offen --> | **Beim nächsten Abbruch "kein Titel mit vollstaendiger Historie" die neue Zahlen-Meldung (PR #80) auswerten und die Yahoo-Adj-Close-Vermutung belegen oder widerlegen.** | Siehe §4 Punkt 16 — die Ursache des 30./31.10.-Vorfalls ist bisher nur vermutet, nicht belegt. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
@@ -251,6 +263,16 @@ Kursvergleich blieb die ganze Woche „entfallen", keine einzige neue
 Abweichungszahl. Die Wiedervorlage aus der letzten Pflege ist damit
 NICHT erledigt, sondern auf das nächste Fenster verschoben (25.–31.10.,
 Zeile oben).
+
+**Das 25.–31.10.2026-Fenster hat geliefert und ist erledigt (jetzt in
+§10):** fünf `vertrag.yml`-Läufe an den Werktagen 26.–30.10. (Actions-
+Runs `40341359705`, `40514313168`, `40707762856`, `40894310972`,
+`41073466086`), jeder mit Job-Log wörtlich „Alle 12 Vertraege halten.
+Kein Push."; der DE-Kursvergleich verglich jeweils 102 bzw. 103 Titel,
+größte Abweichung jedes Mal **0,00 %** (siehe §4 Punkt 1). Der 25.10.
+(Sonntag) wurde vom Wochentag-Riegel korrekt übersprungen. Ebenfalls
+erledigt: Split-Wächter- und Sektor-Hinweis-Beobachtung am
+Oktober-Stichtag (§10).
 
 ---
 
@@ -273,6 +295,19 @@ iShares-Quellen waren die ganze Woche durch HTTP 404 tot (Actions-Runs
 Punkt 6), der DE-Kursvergleich blieb durchgehend „entfallen". Nächste
 reale Chance: 25.–31.10.2026, jetzt mit bereits gemergtem URL-Fix (§2
 #63) — siehe §3. **Bis dahin weiterhin nichts ändern.**
+
+**Nachtrag 31.10.2026 — das Oktober-Fenster hat geliefert:** an allen
+fünf Werktagen 26.–30.10. lief der DE-Vergleich vollständig (102 bzw.
+103 Titel verglichen, 0 ohne Vergleich), größte Abweichung **jedes Mal
+0,00 %** (Job-Logs der Actions-Runs `40341359705` … `41073466086`, siehe
+§3); dazu Lauf 96 am 31.10. mit 100 verglichenen Titeln, 0 über der
+Toleranz. Zusammen mit dem 28.08. liegen damit sechs saubere Messtage
+vor, alle bei 0,00 % — die Toleranz von 1,0 % wurde nie auch nur
+annähernd berührt. **Einordnung:** das spricht dagegen, dass die
+Toleranz zu eng ist; ob sie zu weit ist (echte Abweichungen von 0,1–
+0,9 % würden nicht auffallen), lässt sich aus lauter Nullen nicht
+ablesen. **Weiterhin nichts ändern**, kein Anlass. *Ungeprüft:* warum an
+zwei Tagen 103 statt 102 Titel verglichen wurden (Universum: 102).
 
 **2. Der Vertragstest-Vorfall vom 31.08.2026 — untersucht, kein Bug,
 zwei belegte Befunde.** *(dokumentiert, nichts zu tun)*
@@ -387,6 +422,14 @@ Zwei Reparaturen, beide bereits gemergt:
 Fixes (02./03.10.) noch **kein einziges Mal** — der Workflow feuert nur
 im Fenster 25.–31. eines Monats. Ob beide Fixes unter echten Bedingungen
 halten, zeigt sich frühestens 25.–31.10.2026 (siehe §3).
+
+**Nachtrag 31.10.2026 — PR #63 real bewiesen, PR #64 nicht gebraucht:**
+alle fünf `vertrag.yml`-Läufe 26.–30.10. lasen die BlackRock-Endpunkte
+erfolgreich („Alle 12 Vertraege halten. Kein Push.", Kursvergleich DE
+und US vollständig) — der URL-Fix aus PR #63 hält unter echten
+Bedingungen. PR #64 (Nachrichtenkürzung) wurde nicht gebraucht, weil
+kein Vertrag brach; seine Wirkung unter echter Last bleibt **ungeprüft**
+(nur durch Tests belegt).
 
 **7. Lit-Check Frog-in-the-Pan / Information Discreteness — geprüft,
 nicht eingebaut.** *(dokumentiert, nichts zu tun)*
@@ -681,7 +724,10 @@ Easys eigene Entscheidung, kein serverseitiges Merge-Gatter.*
 
 **15. Auftrag 5 konkretisiert: drei geplante Claude-Tasks (seit
 25.10.2026) PLUS Agenten-Kontrolle gegen deren eigenes Ausbleiben (PR
-#79, gemergt).** *(Easys eigene Task-Einstellungen sind die Quelle,
+#79, gemergt) — am 31.10.2026 umgestellt auf Nur-Lesen + App-Push,
+Agenten-Kontrolle abgeschaltet (Abschnitt „Umstellung 31.10.2026" am
+Ende dieses Punkts; die Beschreibung direkt darunter ist der
+ursprüngliche Stand vom 25.10.).** *(Easys eigene Task-Einstellungen sind die Quelle,
 hier nur dokumentiert; PR #79 Merge-Commit `9f0238c`, 25.10.2026
 20:22 UTC)*
 
@@ -751,8 +797,15 @@ wo möglich:**
   aus der Task-Oberfläche berichtet). Der Aufgabentext wurde
   daraufhin um „add_repo per ToolSearch laden" ergänzt — **ungeprüft**,
   ob das die Ursache behebt.
-- **Ergebnis des Laufs vom 31.10.2026, 12:31 Berlin-Zeit: ungeprüft**
-  — zum Zeitpunkt dieser Nachziehung noch nicht ausgewertet.
+- **31.10.2026, 12:31 Berlin-Zeit:** wieder kein Repo-Zugriff — laut
+  dem Bericht des Tasks selbst (von Easy weitergeleitet) endete jede
+  API-Abfrage mit „HTTP 403: GitHub access to this repository is not
+  enabled for this session", `add_repo` war auch per ToolSearch nicht
+  verfügbar, der `gh`-Token galt als ungültig. Der Task las das
+  öffentliche Repo trotzdem per Kopie, prüfte das Oktober-Ranking
+  korrekt und schickte statt ntfy einen Push über die Claude-App. Die
+  Ergänzung vom 30.10. hat das Problem also **nicht** behoben — Ursache
+  siehe Umstellung unten.
 
 **Bislang noch KEIN einziger `ntfy_relay.yml`-Lauf mit einem Titel, der
 mit "ntfy: Momentum-Waechter" beginnt** (`gh api .../ntfy_relay.yml/runs`
@@ -763,6 +816,62 @@ echten Treffer gefunden; ob sie seit Ablauf der 48-Std.-Anlaufschutz-
 Frist (ab ca. 27.10. 20:22 UTC) bei jedem weiteren Lauf erneut gemeldet
 hat, ist naheliegend, aber nur für Lauf Nr. 3 (siehe oben) tatsächlich
 per Job-Log nachgeprüft — die übrigen vier Läufe **ungeprüft**.
+
+**Umstellung 31.10.2026 (Entscheidung Easy) — warum und was genau:**
+
+*Ursache, soweit belegt:* Die drei Tasks wurden am 25.10. aus dem
+claude.ai-Chat-Projekt „Momentum-Projekt" heraus angelegt. Ihre
+Bearbeiten-Ansicht (iPhone-App und claude.ai im Browser, von Easy per
+Screenshot gezeigt) bietet **kein Repository-Feld** — unter „Erweiterte
+Einstellungen → Allgemein" steht nur die Zuordnung zum Projekt. Das
+Projekt selbst bietet unter „Kontext" nur eine GitHub-*Synchronisierung*
+(Dateien als Lesestoff), keinen Repo-Zugriff für Tasks. Die
+Task-Konfiguration (per `list_triggers` gelesen) enthält kein Feld für
+Repositories; ein am 31.10. testweise aus einer Sitzung mit
+angehängtem Repo neu angelegter Task bekam ebenfalls keins (sofort
+wieder gelöscht, nie gestartet). Damit hatte der Wächter **von Anfang an
+keinen GitHub-Zugriff** — passend dazu gibt es bis heute keinen einzigen
+`ntfy_relay.yml`-Lauf eines Agenten (siehe oben). *Ungeprüft:* ob ein
+außerhalb des Projekts direkt unter claude.ai/code/routines neu
+angelegter Task ein Repository-Feld anbieten würde — nicht ausprobiert.
+
+*Neu eingestellt (Aufgabentexte per `update_trigger` ersetzt,
+31.10.2026 ca. 13:04 UTC):*
+- **Alle drei Tasks** lesen das Repo nur noch über eine öffentliche
+  Kopie (`git clone` der öffentlichen URL), rufen **keine** GitHub-API
+  auf, bauen **keine** PRs, lösen **keine** Workflows aus und melden
+  sich per **Push über die Claude-App** statt über `ntfy_relay.yml`.
+- **Wächter** (täglich 12:31 Berlin-Zeit): prüft Lauf-Commits (fehlt ein
+  Werktag?), `data/status.json` samt Historie, Rankings je Monat/Markt,
+  §3/§4 dieses Dokuments. Push **nur bei Befund**; ohne Befund **nur
+  montags** ein Lebenszeichen „Momentum-Waechter OK TT.MM.". Kennt die
+  Fehlalarm-Falle `faellige_monate_offen` (Stand vor dem Lauf).
+- **Lit-Check** (sonntags 09:56) und **Monatsrundgang** (3. des Monats,
+  08:32): Inhalt wie bisher, Zustellung per App-Push (Kurzfassung, voller
+  Bericht bleibt in der Task-Sitzung).
+- **Agenten-Kontrolle** (`agenten_kontrolle.yml`, PR #79) per
+  Actions-API abgeschaltet (Status `disabled_manually`, per `gh api`
+  gegengeprüft) — sie hätte sonst alle 48 Std. Alarm geschlagen, weil
+  kein Agent mehr über `ntfy_relay.yml` meldet. **Code, Workflow-Datei
+  und Tests bleiben unverändert im Repo.** Ihre Aufgabe übernimmt das
+  Montags-Lebenszeichen (Ausfall fällt binnen einer Woche statt 48 Std.
+  auf).
+
+*Was dadurch wegfällt, offen benannt:* Der Wächter sieht keine
+Workflow-Läufe, Job-Logs und PRs mehr und bereitet keine
+`[Wächter]`-PRs mehr vor (Klasse A entfällt). Workflow-Fehlschläge
+melden weiterhin die GitHub-Wächter selbst per ntfy (Totmannschalter,
+Vertragstest, Zeitversatz, Push-Zustellung, Daten-Abdeckung u. a.).
+Reparaturen laufen wieder über Claude im Chat + Code. „Weg B" (Agenten
+handeln als `easywebb911`) ist damit praktisch gegenstandslos — die
+Tasks haben keinen Schreibzugriff mehr.
+
+*Rückweg:* Agenten-Kontrolle auf ihrer Workflow-Seite per „Enable
+workflow" wieder einschalten
+(https://github.com/easywebb911/Momentum-Report/actions/workflows/agenten_kontrolle.yml);
+die alten Aufgabentexte stehen sinngemäß oben in diesem Punkt und lassen
+sich per `update_trigger` zurückspielen — sinnvoll erst, wenn die Tasks
+tatsächlich Repo-Zugriff bekommen.
 
 **16. Oktober-Stichtag-Vorfall 30./31.10.2026 — zwei Abbrüche,
 Ursache ungeprüft/vermutet, Gegenmaßnahme in PR #80.** *(siehe §3,
@@ -788,7 +897,7 @@ Vier Läufe, alle per `gh api`/Job-Log gegengeprüft:
   `41183266440`, fehlgeschlagen): US lief vollständig durch (Stichtag
   2026-10-30, Geldmarkt 3,69 %), DE brach danach ab — Job-Log wörtlich
   „LAUF ABGEBROCHEN: de: kein Titel mit vollstaendiger Historie".
-- **Lauf 96** (manuell, 31.10.2026, 09:14 UTC, Actions-Run,
+- **Lauf 96** (manuell, 31.10.2026, 09:14 UTC, Actions-Run `41187870579`,
   Commit `8e29c5d`, 09:16:31 UTC, erfolgreich): schrieb
   `data/rankings/us_2026-10.json` (496 von 503 bewertet) UND
   `de_2026-10.json` (**81 von 81 liquiden Titeln bewertet — keine
@@ -1281,6 +1390,16 @@ Easys eigene Entscheidung.
     Lauf #94/#95 (31.10.2026) brachen mit „kein Titel mit vollstaendiger
     Historie" ab — die Zähler dafür existierten im Code bereits, wurden
     aber nie ausgegeben. Behoben in PR #80.
+13. **Ein Zugriffsweg ist erst belegt, wenn ein echter Lauf ihn benutzt
+    hat.** Wächter-Agent, ntfy-Relay-Anbindung und Agenten-Kontrolle
+    wurden am 25.10.2026 sauber gebaut und getestet — aber der Agent
+    selbst hatte nie GitHub-Zugriff (Task aus einem Chat-Projekt, kein
+    Repository-Feld). Sechs Tage lang wurde das Ausbleiben anderen
+    Ursachen zugeschrieben (Nutzungslimit 27.10., dann ein Prompt-Zusatz
+    am 30.10.), bis der Bericht des Agenten selbst die 403-Meldung
+    zeigte. Lehre: bei jedem neuen Agenten zuerst EINEN echten Lauf
+    abwarten und dessen Zugriff im Protokoll belegen, bevor darauf
+    aufgebaut wird. Siehe §4 Punkt 15, Umstellung 31.10.2026.
 
 ---
 
@@ -1357,3 +1476,8 @@ hier, damit niemand sie erneut aufmacht.
 | Schutz-Sperre auf reine Ampel umgestellt — Label-Freigabe entfernt, weil Code/Agenten als easywebb911 handeln (Entscheidung (5)) und jede Freigabe "von easywebb911" fälschbar wäre; Auftrag 5 umdefiniert: Agenten mergen nie | #78 | siehe §4 Punkt 14, §7.8 |
 | **Agenten-Kontrolle gebaut und gemergt** (Auftrag 5, konkretisiert) — meldet laut, wenn sich der geplante Wächter-Agent seit über 48 Std. nicht mehr über `ntfy_relay.yml` gemeldet hat; eine Zeile (`run-name`) in `ntfy_relay.yml` ergänzt, damit der Lauf-Titel überhaupt geprüft werden kann. Merge-Commit `9f0238c`, 25.10.2026 20:22 UTC (per `gh`/API gegenprüft) | #79 | siehe §4 Punkt 15 |
 | **Stichtag-Schutz-Fix (PR #73) real bewiesen:** Lauf 94 (31.10.2026, 01:02 UTC, über Mitternacht gerutscht) lief korrekt in die Oktober-Stichtag-Rechnung hinein statt sie fälschlich "zu früh" zurückzuhalten — exakt die Konstellation aus dem PR-#73-Fund, jetzt real eingetreten und bestanden | #73 | siehe §4 Punkt 13, §4 Punkt 16, Actions-Run `41153318736` |
+| **Drittes Vertragstest-Fenster (25.–31.10.2026) ausgewertet:** fünf Werktags-Läufe, alle „Alle 12 Vertraege halten. Kein Push."; BlackRock-URL-Fix (PR #63) damit real bewiesen; DE-Kursvergleich jedes Mal vollständig, größte Abweichung 0,00 % | `vertrag.yml` | Actions-Runs `40341359705`, `40514313168`, `40707762856`, `40894310972`, `41073466086`; siehe §4 Punkt 1, §4 Punkt 6 |
+| **Split-Wächter am ersten echten Stichtag (30.10.) stumm — kein Fehlalarm.** Er schreibt nur bei Fund oder Fehler eine Logzeile (`split_waechter.py`, `pruefe_und_melde`); das Lauf-96-Log enthält keine einzige solche Zeile. Ob er einen echten Split erkennen würde, bleibt nur durch die Testdatei belegt | #70 | Job-Log Actions-Run `41187870579` |
+| **Sektor-Hinweis am ersten echten Stichtag (30.10.) sichtbar:** „Sektor-Häufung: 4 von 5 Top-5-Werten liegen im Sektor Energy." (US); DE ohne Hinweis | #72 | `docs/index.html` (`p.sektor-hinweis`) nach Lauf 96 |
+| **Oktober-Stichtag (30.10.2026) eingefroren**, beide Märkte — nach zwei fail-soft-Abbrüchen per manuellem Lauf 96 | `Momentum-Lauf` Lauf 96 | `8e29c5d`, `data/rankings/*_2026-10.json`, siehe §1, §4 Punkt 16 |
+| **Evaluation-Seite: Gesamtrückblick vor Monatsrückblick** | #81 | `0972fe7` |
