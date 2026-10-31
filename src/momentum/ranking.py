@@ -237,19 +237,39 @@ def build_ranking(
     high52: dict[str, float] = {}
     closes: dict[str, float] = {}
     skipped_history: list[str] = []
+    # NUR fuer die Abbruchmeldung unten gezaehlt (siehe dort) -- die
+    # Klassifizierung selbst AENDERT NICHTS an Rechenweg, Reihenfolge oder
+    # den gefangenen Ausnahmen oben; sie liest nur den bereits erzeugten
+    # Ausnahmetext mit, NACHDEM der try-Block bereits gescheitert ist.
+    ohne_stichtagskurs = 0
+    ohne_monatsendkurs = 0
+    ausscheidegrund_sonstige = 0
     for ticker in liquid:
         prices = bundle.adjusted[ticker]
         try:
             momentum[ticker] = momentum_12_1(prices, asof)
             high52[ticker] = high_52w_ratio(prices, asof)
             closes[ticker] = float(prices[asof])
-        except (InsufficientHistory, KeyError):
+        except (InsufficientHistory, KeyError) as exc:
             momentum.pop(ticker, None)
             high52.pop(ticker, None)
             skipped_history.append(ticker)
+            text = str(exc)
+            if "kein Kurs am Stichtag" in text:
+                ohne_stichtagskurs += 1
+            elif "kein Kurs in" in text:
+                ohne_monatsendkurs += 1
+            else:
+                ausscheidegrund_sonstige += 1
 
     if not momentum:
-        raise RankingNotPossible(f"{market.key}: kein Titel mit vollstaendiger Historie")
+        raise RankingNotPossible(
+            f"{market.key}: kein Titel mit vollstaendiger Historie "
+            f"(Universum {len(universe_tickers)}, mit Kursen {len(delivered)}, "
+            f"liquide {len(liquid)}, ohne Stichtagskurs {ohne_stichtagskurs}, "
+            f"ohne Monatsendkurs {ohne_monatsendkurs}, "
+            f"sonstige {ausscheidegrund_sonstige})"
+        )
 
     pct_mom = percentile_ranks(momentum)
     pct_high = percentile_ranks(high52)
