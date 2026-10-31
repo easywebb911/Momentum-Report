@@ -1217,20 +1217,6 @@ davon nichts nach und validiert nichts.</p>
         body.append("</main>")
         return "\n".join(body) + _foot()
 
-    body.append("<h2>Monatsrückblick</h2>")
-    body.append(
-        '<p class="eval-sub">Der zuletzt abgeschlossene Monat je Markt.</p>'
-    )
-    for market in markets_with_data:
-        letzter = evaluations[market.key][-1]
-        body.append(
-            f"""<div class="eval-markt">
-  <h3><span class="flag" aria-hidden="true">{e(market.flag)}</span>
-    {e(market.name)} — {e(de_monat(letzter["ausgewerteter_monat"]))}</h3>
-  {_eval_bar(_eval_counts(letzter["titel"]))}
-</div>"""
-        )
-
     body.append("<h2>Gesamtrückblick</h2>")
     body.append(
         '<p class="eval-sub">Kumuliert über alle bisher abgeschlossenen Monate.</p>'
@@ -1247,6 +1233,20 @@ davon nichts nach und validiert nichts.</p>
   <h3><span class="flag" aria-hidden="true">{e(market.flag)}</span>
     {e(market.name)} — {len(liste)}{NBSP}{monate_wort}</h3>
   {_eval_bar(gesamt)}
+</div>"""
+        )
+
+    body.append("<h2>Monatsrückblick</h2>")
+    body.append(
+        '<p class="eval-sub">Der zuletzt abgeschlossene Monat je Markt.</p>'
+    )
+    for market in markets_with_data:
+        letzter = evaluations[market.key][-1]
+        body.append(
+            f"""<div class="eval-markt">
+  <h3><span class="flag" aria-hidden="true">{e(market.flag)}</span>
+    {e(market.name)} — {e(de_monat(letzter["ausgewerteter_monat"]))}</h3>
+  {_eval_bar(_eval_counts(letzter["titel"]))}
 </div>"""
         )
 

@@ -857,3 +857,13 @@ def test_evaluation_hinweis_nennt_den_benchmark_vorbehalt():
     html = render_evaluation({"us": [_evaluation(index_vergleich="weglassen")]})
     assert "kein Erfolgsnachweis" in html
     assert "nur zusätzliche Einordnung" in html
+
+
+def test_gesamtrueckblick_steht_vor_monatsrueckblick():
+    """Reihenfolge-Tausch (reine Anzeige): Gesamtrückblick zuerst, dann
+    Monatsrückblick, dann Details je Monat -- in genau dieser Abfolge."""
+    html = render_evaluation({"us": [_evaluation(index_vergleich="weglassen")]})
+    pos_gesamt = html.index("<h2>Gesamtrückblick</h2>")
+    pos_monat = html.index("<h2>Monatsrückblick</h2>")
+    pos_details = html.index("<h2>Details je Monat</h2>")
+    assert pos_gesamt < pos_monat < pos_details
