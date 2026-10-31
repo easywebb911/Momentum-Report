@@ -74,7 +74,7 @@ einmal real bestätigt wirksam.
 | ntfy-Push | verdrahtet, **zwei Push-Arten inzwischen live bewiesen**: Ranking-Push (Probe 08.08.) und Konfluenz-Push (siehe Zeile oben) | Lauf 19 (Probe); `konfluenz_stand.json`/`konfluenz_historie.json` als Nebenbeweis für den Konfluenz-Push (Zustellung selbst nicht am Gerät nachgeprüft, nur die serverseitige Wirkung) |
 | Kurse | Stand je Markt in `kurse_vom` | `data/status.json` |
 | Tests | vollständig grün (unit + design/Playwright) | `pytest` (Zähler bewusst nicht abgeschrieben — er wächst mit jedem PR) |
-| Offene PRs | **keine** außer diesem Doku-PR | `gh api repos/easywebb911/Momentum-Report/pulls?state=open`, geprüft 31.10.2026 |
+| Offene PRs | **keine** außer diesem Doku-PR (#82) | `gh api repos/easywebb911/Momentum-Report/pulls?state=open`, geprüft 31.10.2026 |
 
 *Hinweis zu dieser Tabelle:* Am 31.10.2026 nachgezogen wurden die Zeilen
 Momentum-Lauf, Ranking, US-/DE-Top-5, Überschuss-Ampel, Konfluenz und
@@ -213,7 +213,7 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #73 | `5e932e3`→`4000b68` | 19.10. | Stichtag-Schutz vergleicht vollen Zeitpunkt statt nur Uhrzeit (Fund: Mitternachts-Rutsch am Monatsende hielt den Stichtag fälschlich für "zu früh") — siehe §4 Punkt 13 | MANUAL |
 | #80 | `2ef3679`→`569e385` | 31.10. | Abbruchmeldung "kein Titel mit vollstaendiger Historie" nennt jetzt Zahlen je Ausscheidegrund — siehe §4 Punkt 16 | MANUAL |
 | #81 | `95596a9`→`0972fe7` | 31.10. | Evaluation-Seite: Gesamtrückblick vor Monatsrückblick (reine Anzeige, Blöcke vertauscht) | SELF |
-| #PRNR | (dieser PR) | 31.10. | SESSION_HANDOVER.md auf Stand 31.10. nachmittags: Oktober-Stichtag ausgewertet, Wiedervorlagen 30./31.10. geschlossen, Umstellung der geplanten Tasks und Abschaltung der Agenten-Kontrolle dokumentiert | SELF |
+| #82 | (dieser PR, Merge-Commit folgt) | 31.10. | SESSION_HANDOVER.md auf Stand 31.10. nachmittags: Oktober-Stichtag ausgewertet, Wiedervorlagen 30./31.10. geschlossen, Umstellung der geplanten Tasks und Abschaltung der Agenten-Kontrolle dokumentiert | SELF |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
