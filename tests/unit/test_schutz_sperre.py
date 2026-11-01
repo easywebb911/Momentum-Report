@@ -145,6 +145,44 @@ def test_symbol_verletzungen_erkennt_geaenderte_konstante():
     assert betroffen == ["WEIGHT_MOMENTUM_12_1"]
 
 
+def test_fahrplan_hilfen_sind_geschuetzt():
+    """Seit PR #83: die Hilfen des Gewichts-Fahrplans stehen in der Liste --
+    die bestehenden Eintraege bleiben unveraendert dabei."""
+    assert {"GewichtsEintrag", "FAHRPLAN_BEGINN", "_pruefe_gewichtspaar"} <= CONFIG_NAMEN
+    assert {
+        "WEIGHT_MOMENTUM_12_1", "WEIGHT_HIGH_52W", "SCORE_SCALE",
+        "MOMENTUM_LOOKBACK_MONTHS", "MOMENTUM_SKIP_MONTHS", "HIGH_52W_WINDOW_DAYS",
+        "LIQUIDITY_MIN_MEDIAN_TURNOVER", "LIQUIDITY_WINDOW_MONTHS",
+        "MIN_UNIVERSE_COVERAGE", "TOP_N", "HISTORY_DAYS", "Market", "MARKETS",
+        "_check_weights_are_backed",
+    } <= CONFIG_NAMEN
+    assert len(CONFIG_NAMEN) == 17
+
+
+def test_aenderung_an_pruefe_gewichtspaar_wird_erkannt():
+    """Die echte config.py als Basis; im Kopf ist NUR die Summenpruefung in
+    _pruefe_gewichtspaar abgeschwaecht -- MARKETS und Market bleiben
+    textgleich. Frueher waere das gruen durchgelaufen, jetzt ist es rot."""
+    basis = Path("src/momentum/config.py").read_text(encoding="utf-8")
+    alt = "    if total != 1.0:\n"
+    assert basis.count(alt) == 1, "Testannahme ungueltig -- Summenpruefung nicht gefunden"
+    kopf = basis.replace(alt, "    if total > 2.0:\n")
+    betroffen = symbol_verletzungen("src/momentum/config.py", basis, kopf, CONFIG_NAMEN)
+    assert betroffen == ["_pruefe_gewichtspaar"]
+
+
+def test_aenderung_an_fahrplan_beginn_und_gewichtseintrag_wird_erkannt():
+    basis = Path("src/momentum/config.py").read_text(encoding="utf-8")
+    alt_beginn = "FAHRPLAN_BEGINN: tuple[int, int] = (1, 1)\n"
+    alt_feld = "    high_52w: float\n\n\n@dataclass(frozen=True)\nclass Market:"
+    assert basis.count(alt_beginn) == 1 and basis.count(alt_feld) == 1
+    kopf = basis.replace(alt_beginn, "FAHRPLAN_BEGINN: tuple[int, int] = (2026, 7)\n").replace(
+        alt_feld, "    high_52w: float = 0.5\n\n\n@dataclass(frozen=True)\nclass Market:"
+    )
+    betroffen = symbol_verletzungen("src/momentum/config.py", basis, kopf, CONFIG_NAMEN)
+    assert betroffen == ["FAHRPLAN_BEGINN", "GewichtsEintrag"]
+
+
 def test_symbol_verletzungen_ungeaenderte_konstante_ist_leer():
     basis = "TOP_N = 5\nWEIGHT_MOMENTUM_12_1 = 0.50\n"
     kopf = "TOP_N = 10\nWEIGHT_MOMENTUM_12_1 = 0.50\n"

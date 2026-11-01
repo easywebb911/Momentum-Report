@@ -223,7 +223,7 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #80 | `2ef3679`→`569e385` | 31.10. | Abbruchmeldung "kein Titel mit vollstaendiger Historie" nennt jetzt Zahlen je Ausscheidegrund — siehe §4 Punkt 16 | MANUAL |
 | #81 | `95596a9`→`0972fe7` | 31.10. | Evaluation-Seite: Gesamtrückblick vor Monatsrückblick (reine Anzeige, Blöcke vertauscht) | SELF |
 | #82 | `1525888`/`ab3f10e`→`4c2a655` | 31.10. | SESSION_HANDOVER.md auf Stand 31.10. nachmittags: Oktober-Stichtag ausgewertet, Wiedervorlagen 30./31.10. geschlossen, Umstellung der geplanten Tasks und Abschaltung der Agenten-Kontrolle dokumentiert | SELF |
-| #83 | `43d3115` (Inhalt; Merge-Commit folgt) | 01.11. | **Score-Gewichte je Markt als Fahrplan nach Ranking-Monat** (PR 1 von 3): US ab 2026-11 100/0, bis 2026-10 50/50; DE immer 50/50. Auswahl rein nach Stichtag-Monat, keine Anzeige-/Textänderung. Neue Tests `tests/unit/test_gewichts_fahrplan.py` (DE-Hash byte-genau wie vor dem Umbau, US-Grenze Okt/Nov, Nachholung, Determinismus). Schutz-Sperre erwartet ROT — siehe §4 Punkt 8, §7.6 | MANUAL |
+| #83 | `43d3115` (Inhalt; Merge-Commit folgt) | 01.11. | **Score-Gewichte je Markt als Fahrplan nach Ranking-Monat** (PR 1 von 3): US ab 2026-11 100/0, bis 2026-10 50/50; DE immer 50/50. Auswahl rein nach Stichtag-Monat, keine Anzeige-/Textänderung. Neue Tests `tests/unit/test_gewichts_fahrplan.py` (DE-Hash byte-genau wie vor dem Umbau, US-Grenze Okt/Nov, Nachholung, Determinismus). Nachtrag im selben PR: Fahrplan-Hilfen in `GESCHUETZTE_SYMBOLE` aufgenommen (§5 Punkt 3, §7.8). Schutz-Sperre erwartet ROT — siehe §4 Punkt 8, §7.6 | MANUAL |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -1015,15 +1015,14 @@ Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
    zurückgebaut**~~ — **erledigt durch PR #67 (06.10.2026, siehe §2,
    §10).** Datei und Eintrag im geschlossenen Workflow-Set
    (`tests/unit/test_workflow_hygiene.py`) sind entfernt.
-3. **Schutz-Sperre kennt die neuen Fahrplan-Hilfen in `config.py` noch
-   nicht** (seit PR 1 Gewichts-Fahrplan, 01.11.2026): die Fahrplan-WERTE
-   stehen in `MARKETS` und die Auswahl `gewichte_fuer` in `Market` —
-   beides geschützt. **Nicht** in `GESCHUETZTE_SYMBOLE` stehen dagegen
-   `GewichtsEintrag`, `FAHRPLAN_BEGINN` und `_pruefe_gewichtspaar`: eine
-   Änderung nur dort (z. B. eine abgeschwächte Summenprüfung) bliebe grün.
-   Nachtragen heißt `schutz_sperre.py` und seine Tests ändern (beides
-   selbst geschützt → MANUAL, Ampel rot). Bewusst nicht in PR 1, um ihn
-   schmal zu halten — Easys Entscheid, ob als eigener kleiner PR.
+3. ~~**Schutz-Sperre kannte die neuen Fahrplan-Hilfen in `config.py`
+   nicht**~~ — **geschlossen im selben PR #83 (Nachtrag 01.11.2026):**
+   `GewichtsEintrag`, `FAHRPLAN_BEGINN` und `_pruefe_gewichtspaar` stehen
+   jetzt in `GESCHUETZTE_SYMBOLE["src/momentum/config.py"]` (bestehende
+   Einträge unverändert). Beleg:
+   `tests/unit/test_schutz_sperre.py::test_aenderung_an_pruefe_gewichtspaar_wird_erkannt`
+   (eine abgeschwächte Summenprüfung wird jetzt als Berührung gemeldet;
+   mit der alten Liste wäre das Ergebnis leer, also grün gewesen).
 
 Erledigt und deshalb nicht mehr aufgeführt: Punkt „Testkontext auf
 default-deny umstellen" (#40, siehe §10), die Kosmetik-Punkte (tote
@@ -1385,11 +1384,11 @@ CODEOWNERS existiert in diesem Repo nicht.
 `MOMENTUM_LOOKBACK_MONTHS`, `MOMENTUM_SKIP_MONTHS`,
 `HIGH_52W_WINDOW_DAYS`, `LIQUIDITY_MIN_MEDIAN_TURNOVER`,
 `LIQUIDITY_WINDOW_MONTHS`, `MIN_UNIVERSE_COVERAGE`, `TOP_N`,
-`HISTORY_DAYS`, `Market`, `MARKETS`, `_check_weights_are_backed` — seit
-dem Gewichts-Fahrplan stehen dessen Werte in `MARKETS` und die Auswahl
-`gewichte_fuer` in `Market`, beides damit geschützt; die Hilfen
-`GewichtsEintrag`, `FAHRPLAN_BEGINN`, `_pruefe_gewichtspaar` dagegen
-**noch nicht**, siehe §5 Punkt 3);
+`HISTORY_DAYS`, `Market`, `MARKETS`, `_check_weights_are_backed`, seit
+PR #83 außerdem `GewichtsEintrag`, `FAHRPLAN_BEGINN`,
+`_pruefe_gewichtspaar` — die Fahrplan-Werte stehen in `MARKETS`, die
+Auswahl `gewichte_fuer` in `Market`, Form und Prüfung in den drei
+Hilfen; siehe §5 Punkt 3);
 `ranking.py` (`is_last_weekday_of_month`, `due_months`, `resolve_asof`,
 `_juengster_werktag`, `zu_frueh_fuer_stichtag`, `median_turnover`,
 `build_ranking`); `konfluenz.py` (`elliott_long`, `konfluenz`,
