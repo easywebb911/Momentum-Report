@@ -91,7 +91,7 @@ LANGER_NAME = (
 )
 
 
-def ranking(name: str, warnung: bool) -> dict:
+def ranking(name: str, warnung: bool, gewichte: tuple[float, float] = (0.5, 0.5)) -> dict:
     return {
         "markt": "us",
         "markt_name": "USA",
@@ -103,6 +103,14 @@ def ranking(name: str, warnung: bool) -> dict:
             "herkunft": "Test",
             "stand": "2026-07-31",
             "titel_gesamt": 500,
+        },
+        # Gewichte des Rankings (methode.gewicht_*): die US-Testseite traegt
+        # 100/0 -- damit steht der Karten-Hinweis "nur Info, zaehlt nicht im
+        # Score" auf jeder US-Karte und wird von ALLEN 390-px-Tests mit
+        # gemessen; DE bleibt 50/50 (Karte ohne Hinweis).
+        "methode": {
+            "gewicht_momentum_12_1": gewichte[0],
+            "gewicht_high_52w": gewichte[1],
         },
         # Beide Zustaende des Zins-Abzugs stehen auf der Testseite: der
         # Warnmarkt rechnet MIT Geldmarktsatz (laengster Satz), der ruhige
@@ -262,7 +270,7 @@ def seite(tmp_path_factory):
     views = [
         MarketView(
             MARKETS_BY_KEY["us"],
-            ranking(LANGER_NAME, warnung=True),
+            ranking(LANGER_NAME, warnung=True, gewichte=(1.0, 0.0)),
             Date(2026, 8, 3),
             {"BRK-B": 987654.32, "TICK1": 12.5, "TICK2": 1234.56, "TICK3": 9.99, "TICK4": 100.0},
             Date(2026, 8, 31),

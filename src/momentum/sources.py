@@ -210,6 +210,90 @@ _ALL = [
     ),
 ]
 
+# --- Begruendung der Gewichtung je Markt (Entscheidung Easy, 01.11.2026) ---
+# Diese fuenf Eintraege tragen KEINE Score-Zutat (deshalb nicht in
+# SCORE_COMPONENT_SOURCES), sondern die Begruendung, WIE die beiden Zutaten
+# je Markt gewichtet werden (config.Market.gewichts_fahrplan). Wo eine Arbeit
+# nicht begutachtet ist, steht das im Feld `journal` -- es erscheint so auf
+# der Methodik-Seite. Pruefstand der Angaben: SESSION_HANDOVER.md §4 Punkt 8.
+_ALL += [
+    Source(
+        key="weights_hxz",
+        authors="Hou, Xue & Zhang",
+        year=2020,
+        journal="The Review of Financial Studies 33(5), S. 2019–2133",
+        title="Replicating Anomalies",
+        claim=(
+            "Nachgerechnet so, dass große Firmen das Ergebnis bestimmen "
+            "(NYSE-Grenzen, wertgewichtet), ein Monat Haltedauer: Nähe zum "
+            "52-Wochen-Hoch 0,13 % pro Monat (t-Wert 0,38, nicht von null "
+            "unterscheidbar), Momentum über elf Monate (dort \"R11\") "
+            "1,16 % pro Monat (t-Wert 3,99)."
+        ),
+    ),
+    Source(
+        key="weights_barroso_wang",
+        authors="Barroso & Wang",
+        year=2021,
+        journal="Arbeitspapier, EFMA-Jahrestagung 2021 Leeds (nicht begutachtet)",
+        title=(
+            "What explains price momentum and 52-week high momentum when "
+            "they really work?"
+        ),
+        claim=(
+            "Hauptstichprobe 07/1972–12/2019: Außer bei kleinen Werten ist das "
+            "Kurs-Momentum der stärkere Effekt; im Durchschnitt schließt es "
+            "den 52-Wochen-Hoch-Effekt vollständig mit ein."
+        ),
+    ),
+    Source(
+        key="weights_imc",
+        authors="The Informed Momentum Company (IMC)",
+        year=2026,
+        journal="Studie eines Vermögensverwalters (nicht begutachtet, Eigeninteresse möglich)",
+        title="Buy High, Sell Higher — Evaluating the 52-week high as a momentum signal",
+        claim=(
+            "Große US-Werte, sechs Monate Haltedauer: über 06/1988–12/2025 "
+            "war die Mischung aus beiden Zutaten leicht besser als reines "
+            "Momentum (IR 0,24 gegen 0,20), im Teilzeitraum 06/2006–12/2025 "
+            "umgekehrt (0,07 gegen 0,11). Ob die Unterschiede Zufall sein "
+            "können, wurde nicht geprüft."
+        ),
+    ),
+    Source(
+        key="weights_burghof_prothmann",
+        authors="Burghof & Prothmann",
+        year=2009,
+        journal="The International Journal of Business and Finance Research 3(2), S. 47–69",
+        title="Can Stock Price Momentum Be Explained by Anchoring?",
+        claim=(
+            "Alle in Deutschland gehandelten Aktien, 1980–2008: Die Nähe zum "
+            "52-Wochen-Hoch sagte die künftige Entwicklung besser voraus als "
+            "das Momentum."
+        ),
+    ),
+    Source(
+        key="weights_franz_regele",
+        authors="Franz & Regele",
+        year=2016,
+        journal="Financial Markets and Portfolio Management 30(2), S. 161–204",
+        title="Beating the DAX, MDAX, and SDAX: investment strategies in Germany",
+        claim=(
+            "1988–2015: Eine Momentum-Prämie zeigte sich nur im SDAX, nicht "
+            "in DAX und MDAX."
+        ),
+    ),
+]
+
+# Reihenfolge, in der die Gewichtungs-Belege auf der Methodik-Seite stehen.
+WEIGHTING_SOURCES: tuple[str, ...] = (
+    "weights_hxz",
+    "weights_barroso_wang",
+    "weights_imc",
+    "weights_burghof_prothmann",
+    "weights_franz_regele",
+)
+
 SOURCES: dict[str, Source] = {s.key: s for s in _ALL}
 
 # Belege, die JEDE gewichtete Score-Komponente tragen muss.

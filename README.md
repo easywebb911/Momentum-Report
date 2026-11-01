@@ -19,21 +19,29 @@ Seite: `https://easywebb911.github.io/Momentum-Report/`
 
 | Zutat | Gewicht | Quelle |
 |---|---|---|
-| 12-1-Momentum (jüngster Monat übersprungen) | 50 % | Jegadeesh & Titman (1993), *The Journal of Finance*; Jegadeesh (1990) |
-| Nähe zum 52-Wochen-Hoch | 50 % | George & Hwang (2004), *The Journal of Finance* |
+| 12-1-Momentum (jüngster Monat übersprungen) | USA: bis Ranking Oktober 2026 50 %, ab Ranking November 2026 100 % · Deutschland: 50 % | Jegadeesh & Titman (1993), *The Journal of Finance*; Jegadeesh (1990) |
+| Nähe zum 52-Wochen-Hoch | USA: bis Ranking Oktober 2026 50 %, ab Ranking November 2026 0 % (nur noch angezeigt) · Deutschland: 50 % | George & Hwang (2004), *The Journal of Finance* |
 
-Score `0–100 = 50 × Perzentil(12-1) + 50 × Perzentil(52W-Nähe)`,
+Score `0–100 = 100 × (w₁ × Perzentil(12-1) + w₂ × Perzentil(52W-Nähe))`, mit
+den Gewichten aus dem **Gewichts-Fahrplan je Markt**
+(`config.Market.gewichts_fahrplan`), gewählt nach dem Monat des Stichtags.
 Perzentile **immer nur innerhalb eines Marktes** (Rouwenhorst 1998),
 Gleichstände deterministisch alphabetisch gebrochen.
 
-**Warum gleichgewichtet.** Die Literatur liefert *kein* Mischverhältnis für
-diese beiden Zutaten — sie untersucht sie als getrennte Strategien und
-vergleicht sie; bei George & Hwang war für den US-Markt sogar die
-52-Wochen-Nähe die stärkere. Wo Arbeiten mehrere solcher Größen
-zusammenfassen, gewichten sie üblicherweise gleich. Jedes andere Verhältnis
-wäre eine unbelegte Setzung. Damit die Mischung sichtbar bleibt, führt jeder
-Titel **zusätzlich beide Teil-Ränge** (`rank_12_1`, `rank_52w`) — auf der
-Karte als „3. von 470".
+**Warum je Markt verschieden.** Die Literatur liefert *kein* belegtes
+Mischverhältnis für diese beiden Zutaten. **USA:** Bei Messung, in der große
+Firmen das Ergebnis bestimmen, findet Hou, Xue & Zhang (2020, *The Review of
+Financial Studies*) keinen belastbaren 52-Wochen-Hoch-Effekt, wohl aber
+Momentum; Barroso & Wang (Arbeitspapier, nicht begutachtet) weisen in
+dieselbe Richtung. Gegenzahl: eine Vermögensverwalter-Studie (IMC 2026, nicht
+begutachtet) fand die Mischung über 1988–2025 leicht besser, über 2006–2025
+schlechter. **Deutschland:** weiter 50/50 — nichts Besseres belegt, nicht
+„belegt richtig“ (Burghof & Prothmann 2009; Vorbehalt Franz & Regele 2016).
+Zwischenwerte wie 60/40 sind bewusst verworfen (Parametersuche). Volle
+Begründung mit Quellen: Methodik-Seite. Damit die Mischung sichtbar bleibt,
+führt jeder Titel **zusätzlich beide Teil-Ränge** (`rank_12_1`, `rank_52w`) —
+auf der Karte als „3. von 470“; zählt die 52W-Nähe nicht, steht dort „nur
+Info, zählt nicht im Score“.
 
 Dazu je Markt eine **Trend-Ampel** (Moskowitz/Ooi/Pedersen 2012): brachte
 der Index über zwölf Monate **weniger als der Geldmarkt**, erscheint eine
