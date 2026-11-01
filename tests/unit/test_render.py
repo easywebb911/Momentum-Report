@@ -7,6 +7,7 @@ misst im echten Browser; hier wird der Inhalt geprueft.
 from __future__ import annotations
 
 import datetime as _dt
+import json
 import math
 import re
 from pathlib import Path
@@ -805,7 +806,7 @@ def _evaluation(*, index_vergleich: dict | None = "weglassen") -> dict:
     return ev
 
 
-def test_evaluation_seite_zeigt_top5_index_und_differenz():
+def test_evaluation_seite_zeigt_top5_index_und_differenz(tmp_path):
     ev = _evaluation(
         index_vergleich={
             "index_ticker": "^SP500TR",
@@ -817,7 +818,7 @@ def test_evaluation_seite_zeigt_top5_index_und_differenz():
             "differenz": 0.03,
         }
     )
-    html = render_evaluation({"us": [ev]})
+    html = render_evaluation({"us": [ev]}, ranking_root=tmp_path)
     assert "Top-5 (gleichgewichtet): +8,0&nbsp;%" in html.replace(NBSP, "&nbsp;")
     assert "Index (S&amp;P 500): +5,0&nbsp;%" in html.replace(NBSP, "&nbsp;")
     assert "Differenz: +3,0&nbsp;Pp" in html.replace(NBSP, "&nbsp;")
@@ -827,7 +828,7 @@ def test_evaluation_seite_zeigt_top5_index_und_differenz():
     assert "Erfolgsnachweis" in html  # steht im Pflicht-Hinweis, nicht als Lob
 
 
-def test_evaluation_seite_zeigt_luecke_wenn_index_fehlt():
+def test_evaluation_seite_zeigt_luecke_wenn_index_fehlt(tmp_path):
     ev = _evaluation(
         index_vergleich={
             "index_ticker": "^SP500TR",
@@ -839,32 +840,136 @@ def test_evaluation_seite_zeigt_luecke_wenn_index_fehlt():
             "differenz": None,
         }
     )
-    html = render_evaluation({"us": [ev]})
+    html = render_evaluation({"us": [ev]}, ranking_root=tmp_path)
     assert "Index-Vergleich nicht verfügbar (Datenlücke)." in html
     assert "eval-index--leer" in html
 
 
-def test_evaluation_seite_vertraegt_aelteren_rueckblick_ohne_index_vergleich():
+def test_evaluation_seite_vertraegt_aelteren_rueckblick_ohne_index_vergleich(tmp_path):
     """Rueckwaertskompatibilitaet: ein vor dieser Aenderung geschriebener
     Rueckblick (schema 1) hat gar kein `index_vergleich`-Feld -- das darf
     nicht abstuerzen, sondern zeigt denselben Luecken-Hinweis."""
     ev = _evaluation(index_vergleich="weglassen")
     assert "index_vergleich" not in ev
-    html = render_evaluation({"us": [ev]})
+    html = render_evaluation({"us": [ev]}, ranking_root=tmp_path)
     assert "Index-Vergleich nicht verfügbar (Datenlücke)." in html
 
 
-def test_evaluation_hinweis_nennt_den_benchmark_vorbehalt():
-    html = render_evaluation({"us": [_evaluation(index_vergleich="weglassen")]})
+def test_evaluation_hinweis_nennt_den_benchmark_vorbehalt(tmp_path):
+    html = render_evaluation({"us": [_evaluation(index_vergleich="weglassen")]}, ranking_root=tmp_path)
     assert "kein Erfolgsnachweis" in html
     assert "nur zusätzliche Einordnung" in html
 
 
-def test_gesamtrueckblick_steht_vor_monatsrueckblick():
+def test_gesamtrueckblick_steht_vor_monatsrueckblick(tmp_path):
     """Reihenfolge-Tausch (reine Anzeige): Gesamtrückblick zuerst, dann
     Monatsrückblick, dann Details je Monat -- in genau dieser Abfolge."""
-    html = render_evaluation({"us": [_evaluation(index_vergleich="weglassen")]})
+    html = render_evaluation({"us": [_evaluation(index_vergleich="weglassen")]}, ranking_root=tmp_path)
     pos_gesamt = html.index("<h2>Gesamtrückblick</h2>")
     pos_monat = html.index("<h2>Monatsrückblick</h2>")
     pos_details = html.index("<h2>Details je Monat</h2>")
     assert pos_gesamt < pos_monat < pos_details
+
+
+# --------------------------------------------------------------------------
+# Methodenwechsel (Gewichts-Fahrplan, PR #83/#84): Gesamtrueckblick zaehlt
+# verschiedene Regeln nie zusammen -- Anlass: US ab Ranking-Monat 2026-11
+# 100/0 statt 50/50.
+# --------------------------------------------------------------------------
+
+
+def _schreibe_ranking(root: Path, markt: str, monat: str, *, gewicht_mom: float, gewicht_52w: float) -> None:
+    jahr, mon = (int(x) for x in monat.split("-"))
+    pfad = root / f"{markt}_{jahr:04d}-{mon:02d}.json"
+    pfad.write_text(
+        json.dumps({"methode": {"gewicht_momentum_12_1": gewicht_mom, "gewicht_high_52w": gewicht_52w}}),
+        encoding="utf-8",
+    )
+
+
+def _evaluation_fuer(monat: str, *, positiv: int = 1, negativ: int = 0) -> dict:
+    jahr, mon = (int(x) for x in monat.split("-"))
+    ende_mon, ende_jahr = (mon % 12) + 1, jahr + (1 if mon == 12 else 0)
+    titel = [_eval_titel(f"P{i}", 0.10, "positiv") for i in range(positiv)]
+    titel += [_eval_titel(f"N{i}", -0.10, "negativ") for i in range(negativ)]
+    return {
+        "schema": 2,
+        "markt": "us",
+        "ausgewerteter_monat": monat,
+        "start_stichtag": f"{jahr:04d}-{mon:02d}-28",
+        "end_stichtag": f"{ende_jahr:04d}-{ende_mon:02d}-28",
+        "neutral_schwelle": 0.02,
+        "titel": titel,
+    }
+
+
+def test_methodenwechsel_zaehlt_regeln_getrennt_und_markiert_den_wechsel(tmp_path):
+    """Juli-Oktober 50/50, November 100/0 (realer Fahrplan, siehe
+    config.py). Belegt (Exzellenz-Punkt 1): zwei getrennte Gesamtbloecke,
+    jede Zaehlung nur aus ihren eigenen Monaten, Summe beider Bloecke ==
+    Summe aller fuenf Monate, Methodenwechsel-Hinweis genau am November."""
+    monate_507050 = ["2026-07", "2026-08", "2026-09", "2026-10"]
+    for monat in monate_507050:
+        _schreibe_ranking(tmp_path, "us", monat, gewicht_mom=0.5, gewicht_52w=0.5)
+    _schreibe_ranking(tmp_path, "us", "2026-11", gewicht_mom=1.0, gewicht_52w=0.0)
+
+    evaluations = [_evaluation_fuer(m, positiv=1, negativ=1) for m in monate_507050]
+    evaluations.append(_evaluation_fuer("2026-11", positiv=2, negativ=0))
+
+    html = render_evaluation({"us": evaluations}, ranking_root=tmp_path)
+
+    assert "Rankings Juli bis Oktober 2026 (50/50)" in html
+    assert "ab Ranking November 2026 (nur 12-1-Momentum)" in html
+    assert "Verschiedene Regeln werden nicht zusammengezählt." in html
+    assert "Methodenwechsel: ab hier nur 12-1-Momentum." in html
+
+    # Summe beider Bloecke == Summe aller fuenf Monate: 4 Monate je 1
+    # positiv/1 negativ (= 4/4) + 1 Monat mit 2 positiv/0 negativ -> 6
+    # positiv, 4 negativ insgesamt. Die beiden Bloecke selbst muessen genau
+    # 4/4 (Juli-Oktober) und 2/0 (November) zeigen, nie 6/4 an einer Stelle.
+    pos_gesamt = html.index("<h2>Gesamtrückblick</h2>")
+    pos_monat = html.index("<h2>Monatsrückblick</h2>")
+    gesamt_abschnitt = html[pos_gesamt:pos_monat]
+    assert '<span class="eval-dot" aria-hidden="true"></span>4' in gesamt_abschnitt
+    assert '<span class="eval-dot" aria-hidden="true"></span>2' in gesamt_abschnitt
+    assert "6" not in re.findall(r"aria-label=\"([^\"]*)\"", gesamt_abschnitt)[0]
+    assert "6" not in re.findall(r"aria-label=\"([^\"]*)\"", gesamt_abschnitt)[1]
+
+
+def test_nur_eine_regel_bleibt_unveraendert(tmp_path):
+    """Kennt ein Markt nur eine Regel (heute ueberall der Fall, DE
+    dauerhaft): Darstellung exakt wie vor diesem Umbau, kein Zusatztext --
+    gleich, ob die Regel bekannt (echte Ranking-Datei) oder unbekannt
+    (keine Datei) ist."""
+    monate = ["2026-07", "2026-08"]
+    evaluations = [_evaluation_fuer(m) for m in monate]
+
+    ohne_dateien = tmp_path / "ohne"
+    ohne_dateien.mkdir()
+    html_unbekannt = render_evaluation({"us": evaluations}, ranking_root=ohne_dateien)
+
+    mit_dateien = tmp_path / "mit"
+    mit_dateien.mkdir()
+    for monat in monate:
+        _schreibe_ranking(mit_dateien, "us", monat, gewicht_mom=0.5, gewicht_52w=0.5)
+    html_bekannt = render_evaluation({"us": evaluations}, ranking_root=mit_dateien)
+
+    assert html_unbekannt == html_bekannt
+    assert "Regel unbekannt" not in html_unbekannt
+    assert "Methodenwechsel" not in html_unbekannt
+    assert "Verschiedene Regeln" not in html_unbekannt
+    assert "eval-markt" in html_unbekannt
+
+
+def test_fail_soft_regel_unbekannt_wird_nicht_zusammengezaehlt(tmp_path):
+    """Fehlt die Ranking-Datei fuer EINEN von mehreren Monaten, faellt nur
+    dieser Monat unter "Regel unbekannt" -- ohne mit der bekannten Regel
+    der anderen Monate zusammengezaehlt zu werden."""
+    _schreibe_ranking(tmp_path, "us", "2026-07", gewicht_mom=0.5, gewicht_52w=0.5)
+    _schreibe_ranking(tmp_path, "us", "2026-08", gewicht_mom=0.5, gewicht_52w=0.5)
+    # Fuer 2026-09 bewusst KEINE Ranking-Datei geschrieben.
+    evaluations = [_evaluation_fuer(m) for m in ("2026-07", "2026-08", "2026-09")]
+
+    html = render_evaluation({"us": evaluations}, ranking_root=tmp_path)
+    assert "Regel unbekannt" in html
+    assert "Rankings Juli bis August 2026 (50/50)" in html

@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import datetime as _dt
 import html
+import json
 import math
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from .config import (
     LIQUIDITY_MIN_MEDIAN_TURNOVER,
@@ -28,6 +30,7 @@ from .kursvergleich import TOLERANZ as KV_DE_TOLERANZ
 from .kursvergleich import ZULASS_ABWEICHLER as KV_DE_ZULASS
 from .kursvergleich_us import TOLERANZ as KV_US_TOLERANZ
 from .kursvergleich_us import ZULASS_ABWEICHLER as KV_US_ZULASS
+from .ranking import RANKING_DIR, ranking_path, read_ranking
 from .sources import SCORE_COMPONENT_SOURCES, SOURCES, WEIGHTING_SOURCES, source
 
 Date = _dt.date
@@ -1157,7 +1160,127 @@ def _eval_index_vergleich(evaluation: dict) -> str:
     )
 
 
-def _eval_monat_liste(evaluation: dict, market: Market) -> str:
+# --------------------------------------------------------------------------
+# Methodenwechsel (Gewichts-Fahrplan, PR #83/#84): verschiedene Regeln
+# werden im Gesamtrueckblick NIE zusammengezaehlt -- siehe render_evaluation.
+# --------------------------------------------------------------------------
+
+
+def _eval_regel(
+    market_key: str, ausgewerteter_monat: str, *, ranking_root: Path = RANKING_DIR
+) -> tuple[float, float] | None:
+    """Die tatsaechlich verwendeten Gewichte des Rankings, dessen Top-5
+    hier ausgewertet werden -- NICHT aus config.py (dasselbe Prinzip wie
+    die Karte, siehe _card in PR #84). `ausgewerteter_monat` ist wortgleich
+    der Ranking-Monat: evaluation.build_evaluation() setzt es direkt aus
+    `prev_ranking["ranking_monat"]`, und ranking_path()/evaluation_path()
+    teilen denselben Dateinamen (`{markt}_{jahr}-{monat}.json`) -- die
+    Zuordnung Evaluation -> Ranking ist damit code-belegt, nicht geraten.
+
+    Fail-soft (Bau-Punkt 1 des Auftrags): fehlt die Datei, das Feld, oder
+    ist die Datei nicht lesbar, liefert diese Funktion None. Der Aufrufer
+    behandelt das als eigene, mit keiner anderen Gruppe zusammengezaehlte
+    Gruppe ("Regel unbekannt") -- nie als Abbruch, nie als 50/50 geraten.
+    """
+    jahr, monat = (int(x) for x in ausgewerteter_monat.split("-"))
+    pfad = ranking_path(market_key, jahr, monat, ranking_root)
+    if not pfad.exists():
+        return None
+    try:
+        ranking = read_ranking(pfad)
+    except (OSError, json.JSONDecodeError):
+        return None
+    methode = ranking.get("methode") or {}
+    gewicht_mom = methode.get("gewicht_momentum_12_1")
+    gewicht_52w = methode.get("gewicht_high_52w")
+    if gewicht_mom is None or gewicht_52w is None:
+        return None
+    return (float(gewicht_mom), float(gewicht_52w))
+
+
+def _eval_regel_text(regel: tuple[float, float] | None) -> str:
+    if regel is None:
+        return "Regel unbekannt"
+    gewicht_mom, gewicht_52w = regel
+    if gewicht_52w == 0 and gewicht_mom == 1:
+        return "nur 12-1-Momentum"
+    if gewicht_mom == 0 and gewicht_52w == 1:
+        return "nur 52-Wochen-Hoch"
+    return f"{round(gewicht_mom * 100)}/{round(gewicht_52w * 100)}"
+
+
+def _eval_gruppen(
+    liste: list[dict], market_key: str, *, ranking_root: Path = RANKING_DIR
+) -> list[tuple[tuple[float, float] | None, list[dict]]]:
+    """`liste` chronologisch aufsteigend (siehe render_evaluation). Gruppiert
+    nach der REGEL des jeweils ausgewerteten Rankings, nicht nach Datum oder
+    Uhrzeit (Kriterium 7: rein aus Dateiinhalten) -- "je Regel ein Block"
+    wird hier als "je tatsaechlichem Gewichtspaar ein Block" gelesen, nicht
+    nur als "je zusammenhaengendem Lauf": kehrte eine Regel je spaeter
+    zurueck, wuerde sie wieder in ihre urspruengliche Gruppe fallen, statt
+    eine dritte, identische Gruppe zu bilden. Die Reihenfolge der Gruppen
+    ist die Reihenfolge des ERSTEN Auftretens jeder Regel -- bei der
+    tatsaechlich chronologischen Eingabe automatisch "aelteste Regel
+    zuerst", ohne dass hier irgendetwas sortiert werden muesste."""
+    reihenfolge: list[tuple[float, float] | None] = []
+    eimer: dict[tuple[float, float] | None, list[dict]] = {}
+    for ev in liste:
+        regel = _eval_regel(market_key, ev["ausgewerteter_monat"], ranking_root=ranking_root)
+        if regel not in eimer:
+            eimer[regel] = []
+            reihenfolge.append(regel)
+        eimer[regel].append(ev)
+    return [(regel, eimer[regel]) for regel in reihenfolge]
+
+
+def _eval_monatsspanne(gruppe: list[dict], *, offen: bool) -> str:
+    """Nichts fest geschrieben (Bau-Punkt 2 des Auftrags): die Monatsspanne
+    kommt ausschliesslich aus den `ausgewerteter_monat`-Werten der Gruppe
+    selbst. `offen` heisst: das ist die zuletzt eingefuehrte Regel -- ob
+    weitere Monate darunter noch folgen, ist noch offen, deshalb "ab
+    Ranking ...", nie eine feste Spanne."""
+    erster = gruppe[0]["ausgewerteter_monat"]
+    letzter = gruppe[-1]["ausgewerteter_monat"]
+    if offen:
+        return f"ab Ranking {de_monat(erster)}"
+    if erster == letzter:
+        return f"Ranking {de_monat(erster)}"
+    jahr_von, monat_von = (int(x) for x in erster.split("-"))
+    jahr_bis, _monat_bis = (int(x) for x in letzter.split("-"))
+    if jahr_von == jahr_bis:
+        monat_bis = int(letzter.split("-")[1])
+        return f"Rankings {_MONATSNAMEN[monat_von - 1]} bis {_MONATSNAMEN[monat_bis - 1]} {jahr_bis}"
+    return f"Rankings {de_monat(erster)} bis {de_monat(letzter)}"
+
+
+def _eval_markierungen(
+    gruppen: list[tuple[tuple[float, float] | None, list[dict]]],
+) -> dict[int, tuple[str, str]]:
+    """`id(Auswertung)` -> (Zusatz fuer die Monats-Ueberschrift, fertiger
+    Methodenwechsel-Hinweis als <p>-Element oder beides leer). Liefert ein
+    LEERES dict, wenn der Markt nur eine Regel kennt -- dann bleibt jede
+    Ausgabestelle, die dieses dict befragt, exakt wie vor diesem Umbau
+    (Byte-Identitaet, solange real nur eine Regel vorkommt, siehe PR-Text).
+    """
+    if len(gruppen) <= 1:
+        return {}
+    markierungen: dict[int, tuple[str, str]] = {}
+    for index, (regel, gruppe) in enumerate(gruppen):
+        text = _eval_regel_text(regel)
+        zusatz = f" · {text}"
+        for position, ev in enumerate(gruppe):
+            hinweis = (
+                f'<p class="card-ft">Methodenwechsel: ab hier {e(text)}.</p>'
+                if index > 0 and position == 0
+                else ""
+            )
+            markierungen[id(ev)] = (zusatz, hinweis)
+    return markierungen
+
+
+def _eval_monat_liste(
+    evaluation: dict, market: Market, *, regel_zusatz: str = "", methodenwechsel_hinweis: str = ""
+) -> str:
     """Kein <table>: bei sehr langen Firmennamen oder grosser Textgroesse
     (siehe tests/design, 390px/20px) muss jede Zeile umbrechen koennen,
     statt die Seite seitwaerts scrollen zu lassen -- eine Tabelle mit
@@ -1183,21 +1306,31 @@ def _eval_monat_liste(evaluation: dict, market: Market) -> str:
         → {kurs_end}</span>
     </li>"""
         )
+    hinweis_zeile = f"  {methodenwechsel_hinweis}\n" if methodenwechsel_hinweis else ""
     return f"""<div class="eval-monat">
   <h4><span class="flag" aria-hidden="true">{e(market.flag)}</span>
-    {e(market.name)} — {e(de_monat(evaluation["ausgewerteter_monat"]))}</h4>
-  {_eval_index_vergleich(evaluation)}
+    {e(market.name)} — {e(de_monat(evaluation["ausgewerteter_monat"]))}{regel_zusatz}</h4>
+{hinweis_zeile}  {_eval_index_vergleich(evaluation)}
   <ul class="eval-titelliste">
 {chr(10).join(zeilen)}
   </ul>
 </div>"""
 
 
-def render_evaluation(evaluations: dict[str, list[dict]]) -> str:
+def render_evaluation(
+    evaluations: dict[str, list[dict]], *, ranking_root: Path = RANKING_DIR
+) -> str:
     """`evaluations` bildet market.key auf seine Rueckblicke ab,
     chronologisch AUFSTEIGEND (aeltester Monat zuerst) — siehe
     evaluation.all_evaluations(). Leere oder fehlende Listen sind normal
-    (noch kein Monat abgeschlossen) und ergeben den Leerzustand."""
+    (noch kein Monat abgeschlossen) und ergeben den Leerzustand.
+
+    `ranking_root` ist injizierbar (Test-Naht, wie bei ranking_path() /
+    evaluation_path() selbst) -- OHNE eigenen Wert liest diese Funktion
+    aus dem echten `data/rankings/` (RANKING_DIR), genau wie run.py es
+    beim echten Lauf braucht. Tests geben IMMER ein eigenes, leeres
+    Verzeichnis mit, damit kein Test je die echten Ranking-Dateien dieses
+    Repos mitliest (siehe tests/unit/test_render.py)."""
     body = [
         _head(
             "Evaluation — Momentum-Report",
@@ -1229,24 +1362,51 @@ davon nichts nach und validiert nichts.</p>
         body.append("</main>")
         return "\n".join(body) + _foot()
 
+    gruppen_je_markt = {
+        market.key: _eval_gruppen(evaluations[market.key], market.key, ranking_root=ranking_root)
+        for market in markets_with_data
+    }
+    mehrere_regeln_irgendwo = any(len(g) > 1 for g in gruppen_je_markt.values())
+
     body.append("<h2>Gesamtrückblick</h2>")
-    body.append(
-        '<p class="eval-sub">Kumuliert über alle bisher abgeschlossenen Monate.</p>'
-    )
+    gesamt_sub = "Kumuliert über alle bisher abgeschlossenen Monate."
+    if mehrere_regeln_irgendwo:
+        gesamt_sub += " Verschiedene Regeln werden nicht zusammengezählt."
+    body.append(f'<p class="eval-sub">{gesamt_sub}</p>')
     for market in markets_with_data:
-        liste = evaluations[market.key]
-        gesamt = {k: 0 for k in _EVAL_KLASSEN}
-        for ev in liste:
-            for k, n in _eval_counts(ev["titel"]).items():
-                gesamt[k] += n
-        monate_wort = "Monat" if len(liste) == 1 else "Monate"
-        body.append(
-            f"""<div class="eval-markt">
+        gruppen = gruppen_je_markt[market.key]
+        if len(gruppen) == 1:
+            # Unveraendert gegenueber vor diesem Umbau -- Byte-Identitaet,
+            # solange real nur eine Regel vorkommt (siehe PR-Text).
+            liste = evaluations[market.key]
+            gesamt = {k: 0 for k in _EVAL_KLASSEN}
+            for ev in liste:
+                for k, n in _eval_counts(ev["titel"]).items():
+                    gesamt[k] += n
+            monate_wort = "Monat" if len(liste) == 1 else "Monate"
+            body.append(
+                f"""<div class="eval-markt">
   <h3><span class="flag" aria-hidden="true">{e(market.flag)}</span>
     {e(market.name)} — {len(liste)}{NBSP}{monate_wort}</h3>
   {_eval_bar(gesamt)}
 </div>"""
-        )
+            )
+            continue
+        for index, (regel, gruppe) in enumerate(gruppen):
+            offen = index == len(gruppen) - 1
+            spanne = _eval_monatsspanne(gruppe, offen=offen)
+            regel_text = _eval_regel_text(regel)
+            gesamt = {k: 0 for k in _EVAL_KLASSEN}
+            for ev in gruppe:
+                for k, n in _eval_counts(ev["titel"]).items():
+                    gesamt[k] += n
+            body.append(
+                f"""<div class="eval-markt">
+  <h3><span class="flag" aria-hidden="true">{e(market.flag)}</span>
+    {e(market.name)} — {e(spanne)} ({e(regel_text)})</h3>
+  {_eval_bar(gesamt)}
+</div>"""
+            )
 
     body.append("<h2>Monatsrückblick</h2>")
     body.append(
@@ -1254,18 +1414,26 @@ davon nichts nach und validiert nichts.</p>
     )
     for market in markets_with_data:
         letzter = evaluations[market.key][-1]
+        zusatz, hinweis = _eval_markierungen(gruppen_je_markt[market.key]).get(
+            id(letzter), ("", "")
+        )
+        hinweis_zeile = f"\n  {hinweis}" if hinweis else ""
         body.append(
             f"""<div class="eval-markt">
   <h3><span class="flag" aria-hidden="true">{e(market.flag)}</span>
-    {e(market.name)} — {e(de_monat(letzter["ausgewerteter_monat"]))}</h3>
+    {e(market.name)} — {e(de_monat(letzter["ausgewerteter_monat"]))}{zusatz}</h3>{hinweis_zeile}
   {_eval_bar(_eval_counts(letzter["titel"]))}
 </div>"""
         )
 
     body.append("<h2>Details je Monat</h2>")
     for market in markets_with_data:
+        markierungen = _eval_markierungen(gruppen_je_markt[market.key])
         for ev in reversed(evaluations[market.key]):
-            body.append(_eval_monat_liste(ev, market))
+            zusatz, hinweis = markierungen.get(id(ev), ("", ""))
+            body.append(
+                _eval_monat_liste(ev, market, regel_zusatz=zusatz, methodenwechsel_hinweis=hinweis)
+            )
 
     body.append("</main>")
     return "\n".join(body) + _foot()

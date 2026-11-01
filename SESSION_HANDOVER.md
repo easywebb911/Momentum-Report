@@ -1,5 +1,13 @@
 # Session-Handover — Momentum-Report
 
+**Stand: 01.11.2026, später noch:** PR #84 (Methodik-Seite und Karten
+zeigen den Methodenwechsel) ist **gemergt** (Merge-Commit `022c8ff`).
+PR 3 von 3 (Evaluation: Gesamtrückblick zählt verschiedene Regeln nie
+zusammen, Methodenwechsel-Hinweis) liegt als **PR #85** vor — MANUAL,
+Easy liest vor dem Merge. Damit ist der Methodenwechsel-Umbau (§4
+Punkt 8, §6 Punkt 0) inhaltlich vollständig, fehlt nur noch der Merge
+von PR #85.
+
 **Nachtrag 01.11.2026, später:** PR #83 (Rechnung, Gewichts-Fahrplan)
 ist **gemergt** (Merge-Commit `f5a21b3`). PR 2 von 3 (Methodik-Seite und
 Karten zeigen den Wechsel, neue Quellen, erweiterter Lit-Check in §4
@@ -229,7 +237,8 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #81 | `95596a9`→`0972fe7` | 31.10. | Evaluation-Seite: Gesamtrückblick vor Monatsrückblick (reine Anzeige, Blöcke vertauscht) | SELF |
 | #82 | `1525888`/`ab3f10e`→`4c2a655` | 31.10. | SESSION_HANDOVER.md auf Stand 31.10. nachmittags: Oktober-Stichtag ausgewertet, Wiedervorlagen 30./31.10. geschlossen, Umstellung der geplanten Tasks und Abschaltung der Agenten-Kontrolle dokumentiert | SELF |
 | #83 | `43d3115`/`3b20111`/`6f4f5fc`→`f5a21b3` | 01.11. | **Score-Gewichte je Markt als Fahrplan nach Ranking-Monat** (PR 1 von 3): US ab 2026-11 100/0, bis 2026-10 50/50; DE immer 50/50. Auswahl rein nach Stichtag-Monat, keine Anzeige-/Textänderung. Neue Tests `tests/unit/test_gewichts_fahrplan.py` (DE-Hash byte-genau wie vor dem Umbau, US-Grenze Okt/Nov, Nachholung, Determinismus). Nachtrag im selben PR: Fahrplan-Hilfen in `GESCHUETZTE_SYMBOLE` aufgenommen (§5 Punkt 3, §7.8). Schutz-Sperre erwartet ROT — siehe §4 Punkt 8, §7.6 | MANUAL |
-| #84 | (dieser PR, Merge-Commit folgt) | 01.11. | **PR 2 von 3: Methodenwechsel US auf Methodik-Seite und Karten sichtbar** — Methodik erzeugt die Gewichte je Markt aus dem Fahrplan (beide US-Regeln mit Monat, DE getrennt), Score-Karte mit Begründung (Hou/Xue/Zhang tragend, Barroso/Wang, IMC samt Gegenzahl; DE: Burghof/Prothmann, Vorbehalt Franz/Regele); fünf neue Einträge in `sources.py`; Karte liest `ranking["methode"]` und zeigt bei 52W-Gewicht 0 „nur Info, zählt nicht im Score"; README nachgezogen. Keine Rechenänderung, Schutz-Sperre GRÜN erwartet. Neue Tests `tests/unit/test_methodik_gewichte.py`, 390-px-Test für den Hinweis | MANUAL |
+| #84 | `ff0190d`→`022c8ff` | 01.11. | **PR 2 von 3: Methodenwechsel US auf Methodik-Seite und Karten sichtbar** — Methodik erzeugt die Gewichte je Markt aus dem Fahrplan (beide US-Regeln mit Monat, DE getrennt), Score-Karte mit Begründung (Hou/Xue/Zhang tragend, Barroso/Wang, IMC samt Gegenzahl; DE: Burghof/Prothmann, Vorbehalt Franz/Regele); fünf neue Einträge in `sources.py`; Karte liest `ranking["methode"]` und zeigt bei 52W-Gewicht 0 „nur Info, zählt nicht im Score"; README nachgezogen. Keine Rechenänderung, Schutz-Sperre GRÜN erwartet. Neue Tests `tests/unit/test_methodik_gewichte.py`, 390-px-Test für den Hinweis | MANUAL |
+| #85 | (dieser PR, Merge-Commit folgt) | 01.11. | **PR 3 von 3: Evaluation-Seite zeigt den Methodenwechsel, zählt verschiedene Regeln nie zusammen** — `render_evaluation()` gruppiert den Gesamtrückblick je Markt nach den tatsächlichen Gewichten des zugehörigen Rankings (`methode.gewicht_*`, aus `data/rankings/*.json` gelesen, NICHT aus `config.py` — Zuordnung Evaluation→Ranking ist code-belegt: `ausgewerteter_monat` == `ranking_monat`, gleicher Dateiname). Kennt ein Markt nur eine Regel (heute überall so): Anzeige byte-genau wie vorher (echte `docs/evaluation.html`-Hashes vor/nach identisch, siehe PR-Text). Fehlt die Ranking-Datei/das Feld: fail-soft "Regel unbekannt", nie mit einer bekannten Gruppe zusammengezählt. Monatsrückblick/Details je Monat tragen bei mehreren Regeln eine Kennzeichnung, der erste Monat je neuer Regel einen "Methodenwechsel"-Hinweis. Kein neues Feld in `data/evaluation/*.json`, keine Änderung an `config.py`/`ranking.py`/`scoring.py`/`evaluation.py`-Rechnung/Workflows. Schutz-Sperre GRÜN (lokal geprüft). Neue Tests in `tests/unit/test_render.py` (Methodenwechsel-Gruppierung, Summen-Erhalt, Fail-soft, Byte-Identität bei einer Regel), 390-px-Fixture (`tests/design/conftest.py`) um einen zweiten Block erweitert | MANUAL |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -260,8 +269,8 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **08.11.2026** (Sonntag) <!-- faellig: 2026-11-08 --> | **Lit-Check erstmals über den neuen Weg: direkt an ntfy.sh** (seit 01.11., siehe §4 Punkt 15) — prüfen: kam die Meldung per ntfy an? Bleibt sie aus: Lauf in der Task-Ansicht öffnen (HTTP-Fehler von ntfy.sh, z. B. 429?); Fallback wäre der App-Push. | Die Wiedervorlage vom 01.11. ist erledigt (§10): der Lit-Check lief korrekt, sein App-Push kam aber nicht an — deshalb seither die direkte ntfy-Zustellung, für den Lit-Check noch nicht im echten Sonntagslauf belegt. |
 | **02.11.2026** (Montag) <!-- faellig: 2026-11-02 --> | **Erstes Montags-Lebenszeichen des Wächters über ntfy.sh direkt** (seit 01.11.: montags hörbar, Priorität 3; sonst täglich lautlos, Priorität 1; Befund mit Priorität 3/4; Fallback App-Push) — prüfen: kam es am iPhone hörbar an? Bleibt es aus, ist der Wächter selbst ausgefallen; die Agenten-Kontrolle (PR #79) überwacht ihn seit 31.10. nicht mehr. | Siehe §4 Punkt 15 — das Montags-Lebenszeichen ersetzt die abgeschaltete Agenten-Kontrolle. Beim Test am 01.11. einmal HTTP 429 von ntfy.sh, Wiederholung erfolgreich — ob das im echten Montagslauf wieder auftritt, ist **ungeprüft**. |
 | **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, seit 31.10. Nur-Lesen, seit 01.11. Zustellung direkt an ntfy.sh, Fallback App-Push, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, kam die ntfy-Meldung an, und war sein Befund sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
-| **30.11.2026** (Montag, US-Stichtag) <!-- faellig: 2026-11-30 --> | **Vorher: ist PR #84 (Methodik/Karten) gemergt?** Sonst nennt die Seite den Wechsel nicht, während das erste 100/0-Ranking entsteht. **Erster US-Stichtag mit 100/0 — Gewichte in `data/rankings/us_2026-11.json` prüfen:** `methode.gewicht_momentum_12_1` = 1.0, `methode.gewicht_high_52w` = 0.0, Score = 100 × `perzentil_momentum`; `de_2026-11.json` weiter 0.5/0.5. | Siehe §4 Punkt 8, §7.6 — die Mechanik ist per Test belegt (`tests/unit/test_gewichts_fahrplan.py`), im echten Lauf noch nicht. |
-| **15.12.2026** <!-- faellig: 2026-12-15 --> | **PR 3 Evaluation: Methodenwechsel sichtbar markieren, Gesamtrückblick getrennt nach Regel (vor/ab 2026-11)** — vor dem 31.12. gemergt. | Der erste US-Rückblick nach neuer Regel (ausgewerteter Monat 2026-11) entsteht am Dezember-Stichtag; vorher darf der Gesamtrückblick nicht Nicht-Vergleichbares zusammenzählen. |
+| **30.11.2026** (Montag, US-Stichtag) <!-- faellig: 2026-11-30 --> | **PR #84 (Methodik/Karten) ist gemergt (`022c8ff`) — die Seite nennt den Wechsel bereits.** **Erster US-Stichtag mit 100/0 — Gewichte in `data/rankings/us_2026-11.json` prüfen:** `methode.gewicht_momentum_12_1` = 1.0, `methode.gewicht_high_52w` = 0.0, Score = 100 × `perzentil_momentum`; `de_2026-11.json` weiter 0.5/0.5. **Zusätzlich: ist PR #85 (Evaluation) bis dahin gemergt?** Sonst zählt der Gesamtrückblick November versehentlich mit den Juli-Oktober-Monaten zusammen. | Siehe §4 Punkt 8, §7.6 — die Mechanik ist per Test belegt (`tests/unit/test_gewichts_fahrplan.py`), im echten Lauf noch nicht. |
+| **31.12.2026** (Donnerstag, US-Stichtag, zugleich Dezember-Lauf) <!-- faellig: 2026-12-31 --> | **Erster echter Test der Methodenwechsel-Anzeige auf der Evaluation-Seite** (PR #85) — der Dezember-Lauf erzeugt erstmals den Rückblick auf das November-Ranking (`ausgewerteter_monat` 2026-11, siehe evaluation.py: der Rückblick entsteht als Nebenprodukt des JEWEILS NÄCHSTEN Rankings). Prüfen: zeigt `docs/evaluation.html` für die USA jetzt zwei getrennte Gesamtrückblick-Blöcke ("Rankings Juli bis Oktober 2026 (50/50)" und "ab Ranking November 2026 (nur 12-1-Momentum)"), mit dem "Methodenwechsel"-Hinweis am November-Monat? Bleibt es bei einem einzigen Block oder fehlt der Hinweis: Fehler untersuchen, nicht nur hinnehmen. | Siehe §4 Punkt 8, §6 Punkt 0, PR #85 — bisher nur an synthetischen Daten geprüft, noch nie an einem echten Dezember-Lauf. |
 | **beim nächsten Abbruch** <!-- faellig: offen --> | **Beim nächsten Abbruch "kein Titel mit vollstaendiger Historie" die neue Zahlen-Meldung (PR #80) auswerten und die Yahoo-Adj-Close-Vermutung belegen oder widerlegen.** | Siehe §4 Punkt 16 — die Ursache des 30./31.10.-Vorfalls ist bisher nur vermutet, nicht belegt. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
@@ -472,8 +481,9 @@ in den drei beobachteten Monaten.
 
 **8. Lit-Check 52-Wochen-Hoch bei Large Caps — entschieden 01.11.2026
 (Easy): US 100/0 ab Ranking 2026-11, DE 50/50.** *(Rechnung: PR #83,
-gemergt `f5a21b3`; Methodik/Karten: PR #84; Evaluation = PR 3, Frist in
-§3)*
+gemergt `f5a21b3`; Methodik/Karten: PR #84, gemergt `022c8ff`;
+Evaluation: PR #85, gebaut, Merge bei Easy — damit inhaltlich
+abgeschlossen, Frist zum echten Dezember-Test in §3)*
 
 *Erweiterter Lit-Check 01.11.2026 — Prüfstand je Quelle (gilt für
 `sources.py` und die Methodik-Seite):*
@@ -1106,13 +1116,15 @@ Backlog-Punkt mehr, sondern eine Daueraufgabe — sie steht in den Lessons.
 Ausdrücklich **keine** Zusage, nur die Liste der Dinge, die als Nächstes
 sinnvoll wären — in dieser Reihenfolge:
 
-0. **Methodenwechsel US (Score 100/0 ab Ranking 2026-11) fertigstellen** —
-   PR 1 (Rechnung, Fahrplan) ist PR #83, **gemergt** (`f5a21b3`); **PR 2**
-   (Methodik-Seite und Karten) ist **PR #84**, Merge durch Easy offen —
-   Karte zeigt bei 52W-Gewicht 0 Wert und Rang weiter, mit „nur Info,
-   zählt nicht im Score" (Easys Wahl, Variante b aus der Diagnose); offen
-   bleibt **PR 3** Evaluation (Wechsel markieren, Gesamtrückblick
-   getrennt). Fristen: §3.
+0. **Methodenwechsel US (Score 100/0 ab Ranking 2026-11) — inhaltlich
+   abgeschlossen, Merge von PR #85 offen.** PR 1 (Rechnung, Fahrplan) ist
+   PR #83, **gemergt** (`f5a21b3`); **PR 2** (Methodik-Seite und Karten)
+   ist PR #84, **gemergt** (`022c8ff`) — Karte zeigt bei 52W-Gewicht 0
+   Wert und Rang weiter, mit „nur Info, zählt nicht im Score" (Easys
+   Wahl, Variante b aus der Diagnose); **PR 3** (Evaluation: Gesamtrück-
+   blick zählt verschiedene Regeln nie zusammen, Methodenwechsel-Hinweis
+   am ersten Monat je neuer Regel) ist **PR #85**, gebaut, Merge bei
+   Easy. Fristen zum echten Dezember-Test: §3.
 1. **Ranking-Verlauf** (Herbst, ≥ 4 Stichtage — aktuell 2/4) — Anzeige der
    bisherigen Monats-Ranglisten. Harte Grenze: keine Renditeberechnung,
    keine Trefferquote, keine Performance-Kurve. Das Werkzeug misst keine
@@ -1374,6 +1386,24 @@ Rangfolge nie an — festgehalten in
   fehlendem Feld: Karte exakt wie vorher (byte-gleich belegt; alle
   eingefrorenen Dateien Juli–Oktober tragen das Feld). Die
   390-px-Testseite trägt dafür für die USA 100/0.
+- **Gesamtrückblick auf der Evaluation-Seite (seit PR #85):** gruppiert
+  je Markt nach den tatsächlichen Gewichten des zugehörigen Rankings
+  (`render.py::_eval_regel`, liest `data/rankings/{markt}_{jahr}-
+  {monat}.json` → `methode.gewicht_*`, NICHT `config.py` — dasselbe
+  Prinzip wie die Karte seit PR #84). Zuordnung Evaluation→Ranking ist
+  code-belegt, nicht geraten: `ausgewerteter_monat` ist wortgleich der
+  Ranking-Monat (`evaluation.build_evaluation()` setzt es direkt aus
+  `prev_ranking["ranking_monat"]`), beide Dateien teilen denselben Namen.
+  Kennt ein Markt nur EINE Regel (heute überall, DE dauerhaft): Anzeige
+  byte-gleich wie vor PR #85. Mehrere Regeln: je Regel ein eigener Block
+  ("Rankings Juli bis Oktober 2026 (50/50)" / "ab Ranking November 2026
+  (nur 12-1-Momentum)"), Monatsrückblick/Details tragen eine Kennzeichnung,
+  der erste Monat je neuer Regel einen "Methodenwechsel"-Hinweis
+  (`.card-ft`, keine neue CSS-Klasse). Fehlt die Ranking-Datei/das Feld:
+  fail-soft "Regel unbekannt", nie mit einer bekannten Gruppe
+  zusammengezählt. `render_evaluation()` nimmt dafür ein injizierbares
+  `ranking_root` (Test-Naht, Vorgabe das echte `data/rankings/`) — kein
+  Unit-Test liest dadurch je versehentlich echte Repo-Daten mit.
 - **PWA-Standalone:** kein Browser-Zurück. Jede Unterseite braucht einen
   sichtbaren `← Zurück`-Link, jede Tippfläche ≥ 44 px
   (`max(44px, 2.75rem)`).
@@ -1674,4 +1704,6 @@ hier, damit niemand sie erneut aufmacht.
 | **Evaluation-Seite: Gesamtrückblick vor Monatsrückblick** | #81 | `0972fe7` |
 | **Wiedervorlage 01.11.2026 (erster Lit-Check nach Umstellung) ausgewertet:** Lauf korrekt, App-Push kam nicht an, Bericht von Easy kopiert → seither Zustellung direkt an ntfy.sh; Folge-Prüfung 08.11. in §3 | Easy, 01.11. | siehe §4 Punkt 15 (Nachtrag 01.11.) — Angaben aus Easys Bericht, aus dem Repo nicht belegbar |
 | **Wiedervorlage 25.11.2026 („PR 2 Methodik/Karten gemergt") — gebaut als PR #84**; der Merge selbst liegt bei Easy, deshalb fragt die 30.11.-Zeile in §3 ihn vorher ab | #84 | siehe §2, §6 Punkt 0 |
+| **PR 2 (Methodik/Karten) tatsächlich gemergt** (Merge-Commit `022c8ff`) | #84 | siehe §2, §4 Punkt 8, §6 Punkt 0 |
+| **Wiedervorlage 15.12.2026 („PR 3 Evaluation: Methodenwechsel sichtbar, Gesamtrückblick getrennt nach Regel") — gebaut als PR #85**; der Merge liegt bei Easy, die neue §3-Zeile (31.12.2026) prüft danach den ersten echten Dezember-Lauf | #85 | siehe §2, §4 Punkt 8, §6 Punkt 0 |
 | **Lit-Check 52-Wochen-Hoch entschieden:** US 100/0 ab Ranking 2026-11, DE 50/50 | Easy, 01.11.; Rechnung: #83 | siehe §4 Punkt 8, §7.6 |
