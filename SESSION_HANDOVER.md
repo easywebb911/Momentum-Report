@@ -3,7 +3,7 @@
 **Nachtrag 01.11.2026:** Entscheidung Easy zu den Score-Gewichten —
 **USA ab Ranking-Monat 2026-11: 100 % 12-1-Momentum, 0 % 52-Wochen-Hoch;
 Deutschland unverändert 50/50** (Begründung und Quellen: §4 Punkt 8).
-Gebaut als **Gewichts-Fahrplan je Markt** (PR 1 von 3, MANUAL, dieser PR
+Gebaut als **Gewichts-Fahrplan je Markt** (PR 1 von 3, MANUAL, PR #83
 — siehe §2, §7.6); Methodik/Karten (PR 2) und Evaluation (PR 3) folgen,
 Fristen in §3. Außerdem: die drei geplanten Tasks senden seit 01.11.
 direkt an ntfy.sh (§4 Punkt 15).
@@ -223,7 +223,7 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #80 | `2ef3679`→`569e385` | 31.10. | Abbruchmeldung "kein Titel mit vollstaendiger Historie" nennt jetzt Zahlen je Ausscheidegrund — siehe §4 Punkt 16 | MANUAL |
 | #81 | `95596a9`→`0972fe7` | 31.10. | Evaluation-Seite: Gesamtrückblick vor Monatsrückblick (reine Anzeige, Blöcke vertauscht) | SELF |
 | #82 | `1525888`/`ab3f10e`→`4c2a655` | 31.10. | SESSION_HANDOVER.md auf Stand 31.10. nachmittags: Oktober-Stichtag ausgewertet, Wiedervorlagen 30./31.10. geschlossen, Umstellung der geplanten Tasks und Abschaltung der Agenten-Kontrolle dokumentiert | SELF |
-| (dieser PR) | (Merge-Commit folgt) | 01.11. | **Score-Gewichte je Markt als Fahrplan nach Ranking-Monat** (PR 1 von 3): US ab 2026-11 100/0, bis 2026-10 50/50; DE immer 50/50. Auswahl rein nach Stichtag-Monat, keine Anzeige-/Textänderung. Neue Tests `tests/unit/test_gewichts_fahrplan.py` (DE-Hash byte-genau wie vor dem Umbau, US-Grenze Okt/Nov, Nachholung, Determinismus). Schutz-Sperre erwartet ROT — siehe §4 Punkt 8, §7.6 | MANUAL |
+| #83 | `43d3115` (Inhalt; Merge-Commit folgt) | 01.11. | **Score-Gewichte je Markt als Fahrplan nach Ranking-Monat** (PR 1 von 3): US ab 2026-11 100/0, bis 2026-10 50/50; DE immer 50/50. Auswahl rein nach Stichtag-Monat, keine Anzeige-/Textänderung. Neue Tests `tests/unit/test_gewichts_fahrplan.py` (DE-Hash byte-genau wie vor dem Umbau, US-Grenze Okt/Nov, Nachholung, Determinismus). Schutz-Sperre erwartet ROT — siehe §4 Punkt 8, §7.6 | MANUAL |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -467,7 +467,7 @@ in den drei beobachteten Monaten.
 
 **8. Lit-Check 52-Wochen-Hoch bei Large Caps — entschieden 01.11.2026
 (Easy): US 100/0 ab Ranking 2026-11, DE 50/50.** *(Rechnung gebaut in
-PR 1 von 3, dieser PR; Methodik/Karten = PR 2, Evaluation = PR 3, Fristen
+PR 1 von 3, PR #83; Methodik/Karten = PR 2, Evaluation = PR 3, Fristen
 in §3)*
 
 *Vorgeschichte:* Bis 31.10. stand hier „Konvention gestützt, unverändert"
@@ -1040,7 +1040,7 @@ Ausdrücklich **keine** Zusage, nur die Liste der Dinge, die als Nächstes
 sinnvoll wären — in dieser Reihenfolge:
 
 0. **Methodenwechsel US (Score 100/0 ab Ranking 2026-11) fertigstellen** —
-   PR 1 (Rechnung, Fahrplan) ist dieser PR; offen: **PR 2** Methodik-Seite
+   PR 1 (Rechnung, Fahrplan) ist PR #83; offen: **PR 2** Methodik-Seite
    und Karten (Text je Markt, neue Quellen mit ihren Grenzen; Karte liest
    die Gewichte aus `ranking["methode"]`, nicht aus `config.py`; wie die
    Karte das 52-Wochen-Hoch bei 0 % zeigt, ist Easys Entscheid) und
@@ -1588,4 +1588,4 @@ hier, damit niemand sie erneut aufmacht.
 | **Oktober-Stichtag (30.10.2026) eingefroren**, beide Märkte — nach zwei fail-soft-Abbrüchen per manuellem Lauf 96 | `Momentum-Lauf` Lauf 96 | `8e29c5d`, `data/rankings/*_2026-10.json`, siehe §1, §4 Punkt 16 |
 | **Evaluation-Seite: Gesamtrückblick vor Monatsrückblick** | #81 | `0972fe7` |
 | **Wiedervorlage 01.11.2026 (erster Lit-Check nach Umstellung) ausgewertet:** Lauf korrekt, App-Push kam nicht an, Bericht von Easy kopiert → seither Zustellung direkt an ntfy.sh; Folge-Prüfung 08.11. in §3 | Easy, 01.11. | siehe §4 Punkt 15 (Nachtrag 01.11.) — Angaben aus Easys Bericht, aus dem Repo nicht belegbar |
-| **Lit-Check 52-Wochen-Hoch entschieden:** US 100/0 ab Ranking 2026-11, DE 50/50 | Easy, 01.11.; Rechnung: dieser PR | siehe §4 Punkt 8, §7.6 |
+| **Lit-Check 52-Wochen-Hoch entschieden:** US 100/0 ab Ranking 2026-11, DE 50/50 | Easy, 01.11.; Rechnung: #83 | siehe §4 Punkt 8, §7.6 |
