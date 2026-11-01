@@ -32,6 +32,9 @@ from .scoring import is_finite
 
 Date = _dt.date
 
+# Wie viele der juengsten Tage der Beleg-Zaehler nach aussen meldet.
+VERWORFEN_TAGE_MAX = 3
+
 
 @dataclass
 class FetchStats:
@@ -43,6 +46,26 @@ class FetchStats:
     rows_dropped_nonfinite: int = 0
     empty_tickers: list[str] = field(default_factory=list)
     failed_chunks: list[str] = field(default_factory=list)
+    # BELEG-ZAEHLER (reine Beobachtung, aendert nichts daran, WELCHE Zeilen
+    # verworfen werden): Von den wegen nicht-endlichem Adj Close verworfenen
+    # Zeilen -- wie viele trugen trotzdem einen gueltigen Rohkurs (Close)?
+    # Und an welchen Tagen? Zweck: belegen, ob Yahoo bei der naechtlichen
+    # Verzoegerung die Tageszeile MIT Rohkurs liefert und nur Adj Close
+    # fehlt (Annahme hinter Variante V3 der Stichtags-Pruefung, siehe
+    # SESSION_HANDOVER.md §4 Punkt 16). Es gilt immer:
+    #   rows_dropped_with_close + rows_dropped_without_close
+    #       == rows_dropped_nonfinite
+    rows_dropped_with_close: int = 0
+    rows_dropped_without_close: int = 0
+    # Tag -> Anzahl verworfener Zeilen (= Anzahl Titel, eine Zeile je Titel
+    # und Tag). Vollstaendig im Speicher; nach aussen nur die juengsten
+    # VERWORFEN_TAGE_MAX Tage, damit status.json klein bleibt.
+    dropped_by_day: dict[Date, int] = field(default_factory=dict)
+
+    def dropped_by_day_newest(self) -> dict[str, int]:
+        """Die juengsten VERWORFEN_TAGE_MAX Tage, aufsteigend sortiert."""
+        tage = sorted(self.dropped_by_day)[-VERWORFEN_TAGE_MAX:]
+        return {tag.isoformat(): self.dropped_by_day[tag] for tag in tage}
 
     def as_dict(self) -> dict:
         return {
@@ -52,6 +75,11 @@ class FetchStats:
             "zeilen_verworfen_nicht_endlich": self.rows_dropped_nonfinite,
             "ticker_ohne_daten": sorted(self.empty_tickers),
             "fehlgeschlagene_bloecke": self.failed_chunks,
+            # Additiv (Beleg-Zaehler, siehe oben) -- kein bestehendes Feld
+            # geaendert.
+            "zeilen_verworfen_mit_rohkurs": self.rows_dropped_with_close,
+            "zeilen_verworfen_ohne_rohkurs": self.rows_dropped_without_close,
+            "verworfen_je_tag_juengste": self.dropped_by_day_newest(),
         }
 
 
@@ -180,6 +208,12 @@ def download_prices(
                     series_roh[day] = float(close)
                 if not is_finite(adj) or float(adj) <= 0:
                     stats.rows_dropped_nonfinite += 1
+                    # Beleg-Zaehler: nur zaehlen, nichts anders entscheiden.
+                    if close_valid:
+                        stats.rows_dropped_with_close += 1
+                    else:
+                        stats.rows_dropped_without_close += 1
+                    stats.dropped_by_day[day] = stats.dropped_by_day.get(day, 0) + 1
                     continue
                 # Ab hier unveraendert: series_adj (Score-Pfad) und
                 # series_turnover (Handelbarkeits-Filter, ebenfalls
@@ -195,4 +229,17 @@ def download_prices(
             roh[ticker] = series_roh
 
     stats.delivered = len(adjusted)
+    if stats.rows_dropped_nonfinite:
+        # Eine Zeile im Job-Log je Abruf mit verworfenen Zeilen. Index und
+        # Titel werden getrennt abgerufen (siehe run.py), erscheinen also
+        # als getrennte Zeilen; erkennbar am ersten Ticker und der Anzahl.
+        erster = sorted(set(tickers))[0] if tickers else "-"
+        print(
+            f"[daten] {len(set(tickers))} Titel (ab {erster}): "
+            f"{stats.rows_dropped_nonfinite} Zeilen ohne gueltiges Adj Close "
+            f"verworfen, davon mit Rohkurs {stats.rows_dropped_with_close}, "
+            f"ohne Rohkurs {stats.rows_dropped_without_close}; juengste Tage "
+            f"{stats.dropped_by_day_newest()}",
+            flush=True,
+        )
     return PriceBundle(adjusted=adjusted, turnover=turnover, stats=stats, close=roh)

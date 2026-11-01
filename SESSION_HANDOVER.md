@@ -1,5 +1,13 @@
 # Session-Handover — Momentum-Report
 
+**Nachtrag 01.11.2026, abends:** PR #85 (Evaluation, PR 3 von 3) ist
+**gemergt** (`d457924`) — der Methodenwechsel-Umbau ist vollständig.
+Diagnose zur nächtlichen Kurs-Lücke und zu den Abbrüchen 94/95 liegt vor
+(§4 Punkt 16: Ursache Yahoo-Verzögerung belegt, Lücke „stiller falscher
+Stichtag" in `resolve_asof`, Design V1–V3, Entscheidung Easy: V3 erst
+nach Beleg ab 02.12.). Dazu ein reiner **Beleg-Zähler** in `data.py`
+(dieser PR, siehe §2) — keine Verhaltensänderung.
+
 **Stand: 01.11.2026, später noch:** PR #84 (Methodik-Seite und Karten
 zeigen den Methodenwechsel) ist **gemergt** (Merge-Commit `022c8ff`).
 PR 3 von 3 (Evaluation: Gesamtrückblick zählt verschiedene Regeln nie
@@ -238,7 +246,8 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #82 | `1525888`/`ab3f10e`→`4c2a655` | 31.10. | SESSION_HANDOVER.md auf Stand 31.10. nachmittags: Oktober-Stichtag ausgewertet, Wiedervorlagen 30./31.10. geschlossen, Umstellung der geplanten Tasks und Abschaltung der Agenten-Kontrolle dokumentiert | SELF |
 | #83 | `43d3115`/`3b20111`/`6f4f5fc`→`f5a21b3` | 01.11. | **Score-Gewichte je Markt als Fahrplan nach Ranking-Monat** (PR 1 von 3): US ab 2026-11 100/0, bis 2026-10 50/50; DE immer 50/50. Auswahl rein nach Stichtag-Monat, keine Anzeige-/Textänderung. Neue Tests `tests/unit/test_gewichts_fahrplan.py` (DE-Hash byte-genau wie vor dem Umbau, US-Grenze Okt/Nov, Nachholung, Determinismus). Nachtrag im selben PR: Fahrplan-Hilfen in `GESCHUETZTE_SYMBOLE` aufgenommen (§5 Punkt 3, §7.8). Schutz-Sperre erwartet ROT — siehe §4 Punkt 8, §7.6 | MANUAL |
 | #84 | `ff0190d`→`022c8ff` | 01.11. | **PR 2 von 3: Methodenwechsel US auf Methodik-Seite und Karten sichtbar** — Methodik erzeugt die Gewichte je Markt aus dem Fahrplan (beide US-Regeln mit Monat, DE getrennt), Score-Karte mit Begründung (Hou/Xue/Zhang tragend, Barroso/Wang, IMC samt Gegenzahl; DE: Burghof/Prothmann, Vorbehalt Franz/Regele); fünf neue Einträge in `sources.py`; Karte liest `ranking["methode"]` und zeigt bei 52W-Gewicht 0 „nur Info, zählt nicht im Score"; README nachgezogen. Keine Rechenänderung, Schutz-Sperre GRÜN erwartet. Neue Tests `tests/unit/test_methodik_gewichte.py`, 390-px-Test für den Hinweis | MANUAL |
-| #85 | (dieser PR, Merge-Commit folgt) | 01.11. | **PR 3 von 3: Evaluation-Seite zeigt den Methodenwechsel, zählt verschiedene Regeln nie zusammen** — `render_evaluation()` gruppiert den Gesamtrückblick je Markt nach den tatsächlichen Gewichten des zugehörigen Rankings (`methode.gewicht_*`, aus `data/rankings/*.json` gelesen, NICHT aus `config.py` — Zuordnung Evaluation→Ranking ist code-belegt: `ausgewerteter_monat` == `ranking_monat`, gleicher Dateiname). Kennt ein Markt nur eine Regel (heute überall so): Anzeige byte-genau wie vorher (echte `docs/evaluation.html`-Hashes vor/nach identisch, siehe PR-Text). Fehlt die Ranking-Datei/das Feld: fail-soft "Regel unbekannt", nie mit einer bekannten Gruppe zusammengezählt. Monatsrückblick/Details je Monat tragen bei mehreren Regeln eine Kennzeichnung, der erste Monat je neuer Regel einen "Methodenwechsel"-Hinweis. Kein neues Feld in `data/evaluation/*.json`, keine Änderung an `config.py`/`ranking.py`/`scoring.py`/`evaluation.py`-Rechnung/Workflows. Schutz-Sperre GRÜN (lokal geprüft). Neue Tests in `tests/unit/test_render.py` (Methodenwechsel-Gruppierung, Summen-Erhalt, Fail-soft, Byte-Identität bei einer Regel), 390-px-Fixture (`tests/design/conftest.py`) um einen zweiten Block erweitert | MANUAL |
+| #85 | `7ceee80`/`18bd7bc`→`d457924` | 01.11. | **PR 3 von 3: Evaluation-Seite zeigt den Methodenwechsel, zählt verschiedene Regeln nie zusammen** — `render_evaluation()` gruppiert den Gesamtrückblick je Markt nach den tatsächlichen Gewichten des zugehörigen Rankings (`methode.gewicht_*`, aus `data/rankings/*.json` gelesen, NICHT aus `config.py` — Zuordnung Evaluation→Ranking ist code-belegt: `ausgewerteter_monat` == `ranking_monat`, gleicher Dateiname). Kennt ein Markt nur eine Regel (heute überall so): Anzeige byte-genau wie vorher (echte `docs/evaluation.html`-Hashes vor/nach identisch, siehe PR-Text). Fehlt die Ranking-Datei/das Feld: fail-soft "Regel unbekannt", nie mit einer bekannten Gruppe zusammengezählt. Monatsrückblick/Details je Monat tragen bei mehreren Regeln eine Kennzeichnung, der erste Monat je neuer Regel einen "Methodenwechsel"-Hinweis. Kein neues Feld in `data/evaluation/*.json`, keine Änderung an `config.py`/`ranking.py`/`scoring.py`/`evaluation.py`-Rechnung/Workflows. Schutz-Sperre GRÜN (lokal geprüft). Neue Tests in `tests/unit/test_render.py` (Methodenwechsel-Gruppierung, Summen-Erhalt, Fail-soft, Byte-Identität bei einer Regel), 390-px-Fixture (`tests/design/conftest.py`) um einen zweiten Block erweitert | MANUAL |
+| (dieser PR) | (Merge-Commit folgt) | 01.11. | **Beleg-Zähler in `data.py`, keine Verhaltensänderung:** zählt von den wegen nicht-endlichem Adj Close verworfenen Zeilen, wie viele einen gültigen Rohkurs (Close) trugen und wie viele nicht, und je Tag die Anzahl (jüngste 3 Tage). Additiv in `status.json` → `daten` (`zeilen_verworfen_mit_rohkurs`, `zeilen_verworfen_ohne_rohkurs`, `verworfen_je_tag_juengste`) plus eine Job-Log-Zeile `[daten] …` je Abruf mit verworfenen Zeilen (Index und Titel getrennt). Welche Zeilen verworfen werden, bleibt unverändert; Rankings/Kurse/Seiten mit denselben Eingaben byte-gleich. Schutz-Sperre GRÜN. Tests `tests/unit/test_beleg_zaehler.py`. Zweck: Annahme hinter V3 belegen (§4 Punkt 16) | MANUAL |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -271,7 +280,10 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, seit 31.10. Nur-Lesen, seit 01.11. Zustellung direkt an ntfy.sh, Fallback App-Push, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, kam die ntfy-Meldung an, und war sein Befund sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
 | **30.11.2026** (Montag, US-Stichtag) <!-- faellig: 2026-11-30 --> | **PR #84 (Methodik/Karten) ist gemergt (`022c8ff`) — die Seite nennt den Wechsel bereits.** **Erster US-Stichtag mit 100/0 — Gewichte in `data/rankings/us_2026-11.json` prüfen:** `methode.gewicht_momentum_12_1` = 1.0, `methode.gewicht_high_52w` = 0.0, Score = 100 × `perzentil_momentum`; `de_2026-11.json` weiter 0.5/0.5. **Zusätzlich: ist PR #85 (Evaluation) bis dahin gemergt?** Sonst zählt der Gesamtrückblick November versehentlich mit den Juli-Oktober-Monaten zusammen. | Siehe §4 Punkt 8, §7.6 — die Mechanik ist per Test belegt (`tests/unit/test_gewichts_fahrplan.py`), im echten Lauf noch nicht. |
 | **31.12.2026** (Donnerstag, US-Stichtag, zugleich Dezember-Lauf) <!-- faellig: 2026-12-31 --> | **Erster echter Test der Methodenwechsel-Anzeige auf der Evaluation-Seite** (PR #85) — der Dezember-Lauf erzeugt erstmals den Rückblick auf das November-Ranking (`ausgewerteter_monat` 2026-11, siehe evaluation.py: der Rückblick entsteht als Nebenprodukt des JEWEILS NÄCHSTEN Rankings). Prüfen: zeigt `docs/evaluation.html` für die USA jetzt zwei getrennte Gesamtrückblick-Blöcke ("Rankings Juli bis Oktober 2026 (50/50)" und "ab Ranking November 2026 (nur 12-1-Momentum)"), mit dem "Methodenwechsel"-Hinweis am November-Monat? Bleibt es bei einem einzigen Block oder fehlt der Hinweis: Fehler untersuchen, nicht nur hinnehmen. | Siehe §4 Punkt 8, §6 Punkt 0, PR #85 — bisher nur an synthetischen Daten geprüft, noch nie an einem echten Dezember-Lauf. |
-| **beim nächsten Abbruch** <!-- faellig: offen --> | **Beim nächsten Abbruch "kein Titel mit vollstaendiger Historie" die neue Zahlen-Meldung (PR #80) auswerten und die Yahoo-Adj-Close-Vermutung belegen oder widerlegen.** | Siehe §4 Punkt 16 — die Ursache des 30./31.10.-Vorfalls ist bisher nur vermutet, nicht belegt. |
+| **nach 3 Läufen mit dem Beleg-Zähler** (frühestens ca. 05.11.2026) <!-- faellig: 2026-11-05 --> | **Zähler auswerten: ist die Annahme „Rohkurs vorhanden, nur Adj Close fehlt" belegt?** In `data/status.json` → `daten` je Markt `zeilen_verworfen_mit_rohkurs` gegen `zeilen_verworfen_ohne_rohkurs` und `verworfen_je_tag_juengste` lesen (Git-Historie der Datei), dazu die Job-Log-Zeilen `[daten] …`. Erwartung bei einem nächtlichen Lauf: verworfen = 5 je Markt, davon **mit Rohkurs 5**, jüngster Tag = Vortag. | Grundlage für die Entscheidung, ob V3 (§4 Punkt 16) wie entworfen gebaut werden kann. Zeigt `ohne Rohkurs`, trägt V3s Rohkurs-Teil nicht — dann bleibt nur die Werktags-Wartezeit (V2). |
+| **01.12.2026, 09:30 UTC** <!-- faellig: 2026-12-01 --> | **Stichtagslauf November von Hand starten** (Actions → Momentum-Lauf → Run workflow) und danach den Stichtag **30.11.** in `data/rankings/us_2026-11.json` UND `de_2026-11.json` prüfen (`stichtag` = `2026-11-30`). Ist er falsch (z. B. 27.11.): Datei über den bekannten Korrekturweg (§10, „Korrekturweg + Determinismus live bewiesen") löschen und neu bauen. | Diagnose §4 Punkt 16: der planmäßige Lauf (≈ 01.12. 00–02 UTC) bricht sehr wahrscheinlich ab (Adj Close des 30.11. fehlt noch); DE-Daten erfahrungsgemäß erst ab ≈ 09:15 UTC vollständig. Restrisiko „stiller falscher Stichtag", wenn dem Index der 30.11. fehlt. |
+| **ab 02.12.2026** <!-- faellig: 2026-12-02 --> | **V3 bauen** (Stichtags-Vollständigkeitsprüfung, §4 Punkt 16) — nur, wenn der Beleg-Zähler die Rohkurs-Annahme bestätigt hat; sonst Entwurf anpassen. MANUAL, Lauf-Pfad (`run.py:process_market`, neue Prüffunktion in `ranking.py` + `GESCHUETZTE_SYMBOLE`). Merge vor dem Januar-Stichtag (29.01.2027). | Entscheidung Easy, 01.11.2026. |
+| **beim nächsten Abbruch** <!-- faellig: offen --> | **Beim nächsten Abbruch "kein Titel mit vollstaendiger Historie" die Zahlen-Meldung (PR #80) und die neuen Beleg-Zähler (`[daten]`-Zeile) auswerten.** | Ursache inzwischen per Diagnose belegt (§4 Punkt 16); die Meldung bestätigt sie im Einzelfall. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
 Stichtag selbst (samt Überschuss-Ampel-Realprobe), der erste Vergleich
@@ -1018,8 +1030,55 @@ Task-Sitzung kopiert. Quelle aller Angaben dieses Nachtrags: Easys
 Task-Einstellungen und Bericht — aus diesem Repo nicht belegbar.
 
 **16. Oktober-Stichtag-Vorfall 30./31.10.2026 — zwei Abbrüche,
-Ursache ungeprüft/vermutet, Gegenmaßnahme in PR #80.** *(siehe §3,
-Wiedervorlage offen)*
+Ursache seit der Diagnose vom 01.11. belegt (Yahoo-Verzögerung), Lücke
+„stiller falscher Stichtag" erkannt, Prüfung V3 entworfen.** *(siehe §3:
+Beleg-Zähler auswerten, 01.12. Handlauf, ab 02.12. V3 bauen)*
+
+*Diagnose 01.11.2026 (read-only), Ergebnis:*
+- **Ursache belegt, nicht mehr nur vermutet:** Yahoo liefert den
+  bereinigten Kurs (Adj Close) des jüngsten Handelstags verspätet; die
+  Zeile wird in `data.py` (Prüfung „Adj Close nicht endlich") gewollt
+  verworfen. Beleg: in **jedem** Anzeige-Lauf seit 26.09. gilt
+  `zeilen_verworfen_nicht_endlich = 5` (eine Zeile je Top-5-Titel) genau
+  dann, wenn `kurse_vom` einen Handelstag zurückliegt, und `= 0` genau
+  dann, wenn es aktuell ist (Git-Historie `data/status.json`). DE liegt
+  schon seit August bei jedem Lauf nach ≈ 22:00 UTC zurück; US seit
+  **Lauf 67 (25.09., erster Start nach Mitternacht UTC)** fast immer.
+  Kein Code-, Versions- oder Cron-Wechsel am Startpunkt
+  (`lauf.yml` Cron unverändert, `yfinance==0.2.65` seit `8f277cc`).
+  Sichtbar wurde es, weil GitHub die geplanten Läufe 2–5 Std. nach
+  21:45 UTC startet.
+- **Zeitfenster laut Läufen 94–96:** US-Adj-Close des 30.10. fehlte um
+  01:02 UTC, war um 08:07 UTC da; DE fehlte um 08:07 UTC, war um 09:14
+  UTC da. *Ungeprüft:* ob es an der Uhrzeit oder am Mitternachtswechsel
+  hängt — nicht sauber trennbar.
+- **Lauf 71 (01.10., September-Stichtag)** scheiterte an etwas anderem
+  (Yahoo-Rate-Limit beim Index, `YFRateLimitError`, Run `36798080643`),
+  gerettet durch den manuellen Lauf 72.
+- **Mechanik:** der Stichtag kommt aus der Index-Reihe (`resolve_asof`);
+  fehlt **allen Titeln** der Tag, scheitert je Titel die 52W-Nähe an
+  „kein Kurs am Stichtag" → „kein Titel mit vollstaendiger Historie"
+  (laut, nichts eingefroren — so in 94/95). **Lücke:** fehlt dem
+  **Index** der letzte Tag, nimmt `resolve_asof` still den Vortag —
+  ein falscher Stichtag würde ohne Alarm eingefroren (bisher nie
+  beobachtet).
+- **Design (Varianten):** V1 Rohkurs-Abgleich (Index oder ≥ 50 % der
+  Titel mit Rohkurs nach dem Index-Stichtag → zurückhalten; am Stichtag
+  mehr als max(3, 2 %) Titel mit Rohkurs, aber ohne Adj Close →
+  zurückhalten); V2 Werktags-Wartezeit (nur Wochentage, keine
+  Feiertagsliste); **V3 = V1 plus höchstens ein Werktag Wartezeit, wenn
+  ein Kalender-Werktag ganz ohne Spur ist.** Für alle: zurückhalten nur
+  verhindern, nie einen anderen Stichtag wählen; nach 3 Werktagen
+  „unvollständig" lauter Abbruch (bestehender Alarm). Durchgespielt u. a.
+  DE 24./31.12., US Memorial Day 31.05.2027, Thanksgiving/27.11.,
+  Karfreitag am Monatsende.
+- **Entscheidung Easy (01.11.2026):** **V3**, gebaut **erst nach Beleg
+  ab 02.12.**; vorher nur der Beleg-Zähler (dieser PR), weil V3 auf der
+  **ungeprüften Annahme** beruht, dass Yahoo die verspätete Zeile MIT
+  Rohkurs liefert. Für den 30.11.: manueller Lauf am 01.12. ab 09:30 UTC
+  plus Stichtag-Prüfung (§3).
+
+*Vorgeschichte (Stand 31.10., unverändert belassen):*
 
 Vier Läufe, alle per `gh api`/Job-Log gegengeprüft:
 - **Lauf 93** (planmäßig, 30.10.2026, 01:20 UTC, Actions-Run
@@ -1048,7 +1107,8 @@ Vier Läufe, alle per `gh api`/Job-Log gegengeprüft:
   einzige Historie-Lücke mehr**, belegt per `git show origin/main:
   data/rankings/de_2026-10.json`).
 
-**Ursache ungeprüft, eine Vermutung, mit Indiz:** Yahoo liefert `Adj
+**Ursache (Stand 31.10.: ungeprüft, eine Vermutung, mit Indiz — seit
+01.11. belegt, siehe oben):** Yahoo liefert `Adj
 Close` für den letzten Handelstag mutmaßlich verspätet (derselbe
 Mechanismus wie beim 31.08.2026-Vorfall, §4 Punkt 2 — dort betraf es
 den seither entkoppelten Kursvergleichspfad, der Score-Pfad bleibt
@@ -1101,6 +1161,14 @@ Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
    `tests/unit/test_schutz_sperre.py::test_aenderung_an_pruefe_gewichtspaar_wird_erkannt`
    (eine abgeschwächte Summenprüfung wird jetzt als Berührung gemeldet;
    mit der alten Liste wäre das Ergebnis leer, also grün gewesen).
+4. **Absturzstelle in `run.py:process_market` bei leerem `new_ranking`**
+   (gefunden in der Design-Diagnose 01.11.2026): nach dem Monats-Loop
+   folgt `current = new_ranking; top = current["top"]` (`run.py:372–373`).
+   Heute unerreichbar (jeder Monat im Loop wird entweder geschrieben oder
+   der Lauf bricht laut ab). **Wird aber erreichbar**, sobald eine
+   Prüfung Monate still zurückhält (V3, §4 Punkt 16) — dann braucht es
+   einen Rückfall auf `latest_ranking` wie im Anzeige-Zweig. Geschützte
+   Zone (`process_market`), MANUAL; gehört in den V3-PR, nicht separat.
 
 Erledigt und deshalb nicht mehr aufgeführt: Punkt „Testkontext auf
 default-deny umstellen" (#40, siehe §10), die Kosmetik-Punkte (tote
