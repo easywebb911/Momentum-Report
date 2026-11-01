@@ -20,8 +20,6 @@ from .config import (
     REPO_SLUG,
     TOP_N,
     WORKFLOW_LAUF,
-    WEIGHT_HIGH_52W,
-    WEIGHT_MOMENTUM_12_1,
     Market,
 )
 from .konfluenz import ELLIOTT_SEITE
@@ -30,7 +28,7 @@ from .kursvergleich import TOLERANZ as KV_DE_TOLERANZ
 from .kursvergleich import ZULASS_ABWEICHLER as KV_DE_ZULASS
 from .kursvergleich_us import TOLERANZ as KV_US_TOLERANZ
 from .kursvergleich_us import ZULASS_ABWEICHLER as KV_US_ZULASS
-from .sources import SCORE_COMPONENT_SOURCES, SOURCES, source
+from .sources import SCORE_COMPONENT_SOURCES, SOURCES, WEIGHTING_SOURCES, source
 
 Date = _dt.date
 
@@ -624,10 +622,24 @@ def _card(row: dict, view: MarketView) -> str:
     mom = row["momentum_12_1"]
     mom_class = "pos" if mom > 0 else ("neg" if mom < 0 else "")
     # Die beiden Teil-Raenge. Sie stehen hier, damit die Mischung SICHTBAR
-    # ist: bei Gleichgewichtung kann ein Titel vorn liegen, weil er in einer
-    # Zutat sehr stark und in der anderen nur mittelmaessig ist. Das gehoert
-    # auf die Karte, nicht in eine Fussnote.
+    # ist: bei einer Mischung (z. B. 50/50) kann ein Titel vorn liegen, weil
+    # er in einer Zutat sehr stark und in der anderen nur mittelmaessig ist.
+    # Das gehoert auf die Karte, nicht in eine Fussnote.
     bewertet = view.ranking["abdeckung"]["bewertet"]
+    # Die Gewichte kommen aus der RANKING-DATEI (methode.gewicht_*), nie aus
+    # config.py: die Karte zeigt so die Regel, mit der GENAU dieses Ranking
+    # gerechnet wurde -- das Oktober-Ranking im November bleibt 50/50, auch
+    # wenn der Fahrplan fuer November schon 100/0 sagt. Zaehlt die
+    # 52W-Naehe nicht (Gewicht 0), bleiben Wert und Rang sichtbar, mit
+    # Hinweis. Fehlt das Feld (aeltere oder Test-Datei), fail-soft: kein
+    # Hinweis, Karte wie bisher.
+    gewicht_52w = (view.ranking.get("methode") or {}).get("gewicht_high_52w")
+    hinweis_52w = (
+        '\n        <p class="card-ft card-ft--nur-info">52W-Hoch-Nähe: nur Info, '
+        "zählt nicht im Score.</p>"
+        if gewicht_52w == 0
+        else ""
+    )
     # Beschreibung aus der Meta-Datei. Fehlt sie oder der Eintrag, steht
     # ein Gedankenstrich -- der Lauf scheitert daran NIE (siehe meta.py).
     beschreibung = view.meta.get(row["ticker"], {})
@@ -693,7 +705,7 @@ def _card(row: dict, view: MarketView) -> str:
             <span class="m-val">{row["rank_52w"]}.{NBSP}von{NBSP}{bewertet}</span>
             <span class="m-lbl">Rang 52W-Hoch-Nähe</span>
           </div>
-        </div>
+        </div>{hinweis_52w}
         <p class="card-ft card-ft--stichtag">Kurs vom {de_daymonth(stichtag)}, <strong>eingefroren</strong>
            — Basis für dieses Ranking: <strong>{stichtag_kurs_text}</strong>.</p>
       </article>"""
@@ -1259,7 +1271,96 @@ davon nichts nach und validiert nichts.</p>
     return "\n".join(body) + _foot()
 
 
+# --------------------------------------------------------------------------
+# GEWICHTE JE MARKT -- erzeugt aus config.Market.gewichts_fahrplan.
+#
+# Die Methodik-Seite wird bei JEDEM Tageslauf neu geschrieben. Deshalb
+# beschreibt sie nicht "die heute gueltige" Regel, sondern den ganzen
+# Fahrplan mit Monatsangaben -- so stimmt der Text an jedem Tag, vor und
+# nach einem Wechsel. Nur der Fahrplan geht ein, nie Datum oder Uhr.
+# --------------------------------------------------------------------------
+
+
+def _prozent(gewicht: float) -> int:
+    return int(round(gewicht * 100))
+
+
+def _fahrplan_abschnitte(market: Market) -> list[tuple[str, float, float]]:
+    """[(Zeitraum, Gewicht 12-1, Gewicht 52W)] je Fahrplan-Eintrag.
+
+    Zeitraum ist "" bei nur einem Eintrag (die Regel gilt immer), sonst
+    "bis Ranking <Monat Jahr>" fuer den ersten und "ab Ranking <Monat Jahr>"
+    fuer jeden weiteren Eintrag.
+    """
+    plan = market.gewichts_fahrplan
+    if len(plan) == 1:
+        return [("", plan[0].momentum_12_1, plan[0].high_52w)]
+    out = []
+    for i, eintrag in enumerate(plan):
+        if i == 0:
+            jahr, monat = plan[1].ab
+            monat -= 1
+            if monat == 0:
+                jahr, monat = jahr - 1, 12
+            zeitraum = f"bis Ranking {_MONATSNAMEN[monat - 1]} {jahr}"
+        else:
+            jahr, monat = eintrag.ab
+            zeitraum = f"ab Ranking {_MONATSNAMEN[monat - 1]} {jahr}"
+        out.append((zeitraum, eintrag.momentum_12_1, eintrag.high_52w))
+    return out
+
+
+def gewichte_je_markt_text(market: Market) -> str:
+    """"USA: bis Ranking Oktober 2026 50/50, ab Ranking November 2026 100/0"."""
+    teile = [
+        f"{zeitraum + ' ' if zeitraum else ''}{_prozent(m)}/{_prozent(h)}"
+        for zeitraum, m, h in _fahrplan_abschnitte(market)
+    ]
+    return f"{market.name}: " + ", ".join(teile)
+
+
+def _gewicht_einer_zutat_html(index: int) -> str:
+    """Gewicht EINER Zutat je Markt (index 1 = 12-1, 2 = 52W-Naehe)."""
+    zeilen = []
+    for market in MARKETS:
+        teile = []
+        for zeitraum, m, h in _fahrplan_abschnitte(market):
+            gewicht = m if index == 1 else h
+            if gewicht == 0:
+                text = (
+                    f"zählt {zeitraum} nicht mehr im Score, wird nur noch angezeigt"
+                    if zeitraum.startswith("ab ")
+                    else f"{zeitraum + ': ' if zeitraum else ''}zählt nicht im Score, "
+                    "wird nur angezeigt"
+                )
+            else:
+                text = f"{zeitraum + ' ' if zeitraum else ''}{_prozent(gewicht)}{NBSP}%"
+            teile.append(text)
+        zeilen.append(f"<li><strong>{e(market.name)}:</strong> {e(', '.join(teile))}</li>")
+    return '<ul class="nolist gewichte">' + "".join(zeilen) + "</ul>"
+
+
+def _score_formeln_html() -> str:
+    """Die Score-Formel je Markt und Zeitraum, aus dem Fahrplan."""
+    zeilen = []
+    for market in MARKETS:
+        for zeitraum, m, h in _fahrplan_abschnitte(market):
+            terme = []
+            if m:
+                terme.append(f"{_prozent(m)} × Perzentil(12-1-Momentum)")
+            if h:
+                terme.append(f"{_prozent(h)} × Perzentil(52-Wochen-Hoch-Nähe)")
+            wann = f" {zeitraum}" if zeitraum else ""
+            zeilen.append(
+                f'<p class="formula">{e(market.name)}{e(wann)}: Score = '
+                + "<br>+ ".join(e(t) for t in terme)
+                + "</p>"
+            )
+    return "\n".join(zeilen)
+
+
 def render_methodik() -> str:
+    us_wechsel = _fahrplan_abschnitte(MARKETS_BY_KEY["us"])[-1][0]
     body = [
         _head("Methodik — Momentum-Report", "Jede Zutat mit Primaerquelle."),
         _header("Wie gerechnet wird — und was bewusst fehlt", zurueck=True),
@@ -1279,10 +1380,16 @@ Score.</p>""",
 Zahl auf der Übersicht ernst nimmt. Jede hat eine Quelle.</p>""",
         _honesty_block(),
         "<h2>Die zwei Zutaten des Scores</h2>",
+        f"""<p class="lead">Wie viel jede Zutat zählt, ist je Markt festgelegt
+und gilt jeweils ab einem bestimmten Ranking-Monat:</p>
+<ul class="nolist gewichte">{"".join(
+            f"<li>{e(gewichte_je_markt_text(m))}</li>" for m in MARKETS
+        )}</ul>""",
         _method_card(
-            f"1. 12-1-Momentum (Gewicht {int(WEIGHT_MOMENTUM_12_1 * 100)} %)",
+            "1. 12-1-Momentum",
             SCORE_COMPONENT_SOURCES["momentum_12_1"],
-            """<p>Wir schauen, wie stark eine Aktie in einem Fenster von rund einem
+            "<p>Gewicht im Score:</p>" + _gewicht_einer_zutat_html(1)
+            + """<p>Wir schauen, wie stark eine Aktie in einem Fenster von rund einem
 Jahr gestiegen ist — und lassen dabei den <strong>jüngsten Monat bewusst
 weg</strong>.</p>
 <p class="formula">Kurs am letzten Handelstag des <em>vorletzten</em> Monats
@@ -1295,9 +1402,10 @@ deshalb gehört das Auslassen zur belegten Rezeptur.</p>
 Aktiensplits sind eingerechnet, weil die Studien Gesamtrenditen messen.</p>""",
         ),
         _method_card(
-            f"2. Nähe zum 52-Wochen-Hoch (Gewicht {int(WEIGHT_HIGH_52W * 100)} %)",
+            "2. Nähe zum 52-Wochen-Hoch",
             SCORE_COMPONENT_SOURCES["high_52w"],
-            """<p>Wie nah notiert die Aktie heute an ihrem höchsten Stand des
+            "<p>Gewicht im Score:</p>" + _gewicht_einer_zutat_html(2)
+            + """<p>Wie nah notiert die Aktie heute an ihrem höchsten Stand des
 letzten Jahres?</p>
 <p class="formula">Kurs am Stichtag ÷ höchster Tages-Schlusskurs der letzten
 52 Wochen</p>
@@ -1315,30 +1423,64 @@ unberührt bliebe.</p>""",
         ),
         _method_card(
             "So entsteht der Score von 0 bis 100",
-            ("within_market",),
+            ("within_market",) + WEIGHTING_SOURCES,
             f"""<p>Beide Zutaten werden je Markt in eine Rangreihe gebracht. Der
 schwächste Titel bekommt 0, der stärkste 1, alle anderen liegen gleichmäßig
-dazwischen (Perzentil-Rang).</p>
-<p class="formula">Score = {int(WEIGHT_MOMENTUM_12_1 * 100)} × Perzentil(12-1-Momentum)
-+ {int(WEIGHT_HIGH_52W * 100)} × Perzentil(52-Wochen-Hoch-Nähe)</p>
-<p><strong>Beide Zutaten zählen gleich viel.</strong> Das ist eine bewusste
-Entscheidung, und sie hat einen Grund: Die Forschung liefert
-<em>kein</em> Mischverhältnis für diese beiden Größen. Sie untersucht sie als
-zwei getrennte Verfahren und vergleicht sie miteinander — in der Arbeit von
-George &amp; Hwang war für den US-Markt sogar die Nähe zum 52-Wochen-Hoch die
-stärkere der beiden. Wo Arbeiten mehrere solcher Größen zusammenfassen,
-gewichten sie üblicherweise gleich.</p>
-<p>Jedes andere Verhältnis wäre also eine Zahl, die niemand belegt hat. Wenn
-man nicht weiß, welche Zutat wie viel wiegen sollte, ist Gleichgewichtung die
-ehrliche Wahl — sie behauptet nichts.</p>
+dazwischen (Perzentil-Rang). Daraus entsteht der Score — je Markt mit
+seinen eigenen Gewichten:</p>
+{_score_formeln_html()}
+<p><strong>Warum die Gewichte je Markt verschieden sind.</strong> Die
+Forschung liefert <em>kein</em> belegtes Mischverhältnis für diese beiden
+Größen. Sie untersucht sie als zwei getrennte Verfahren — und je nach Markt
+und Größe der Unternehmen fällt der Vergleich verschieden aus.</p>
+<p><strong>USA, {e(us_wechsel)}: nur noch 12-1-Momentum.</strong> Hou, Xue
+&amp; Zhang (2020) haben sehr viele bekannte Börsen-Effekte nachgerechnet,
+und zwar so, dass große Unternehmen das Ergebnis bestimmen — so wie im
+S&amp;P&nbsp;500 hier. Dort blieb von der Nähe zum
+52-Wochen-Hoch nichts Belastbares übrig: 0,13&nbsp;% pro Monat, mit einem
+t-Wert von 0,38 (der t-Wert misst, wie deutlich ein Ergebnis über dem
+Zufall liegt; ab etwa 2 gilt es als belastbar). Das Momentum über elf
+Monate kam auf
+1,16&nbsp;% pro Monat bei einem t-Wert von 3,99. Das ist ein Durchschnitt
+über Jahrzehnte — seit 2000 ist der Effekt deutlich kleiner, siehe
+<a href="#ehrlich-gesagt">Ehrlich gesagt</a>. In dieselbe Richtung weist ein
+noch nicht begutachtetes Arbeitspapier von Barroso &amp; Wang: Außer bei
+kleinen Werten ist das Momentum der stärkere Effekt, und im Durchschnitt
+schließt es den 52-Wochen-Hoch-Effekt mit ein. Wo das 52-Wochen-Hoch
+stärker ist, liegt das also an kleinen Werten — und solche kommen im
+S&amp;P&nbsp;500 kaum vor.</p>
+<p><strong>Die Gegenzahl gehört dazu.</strong> Eine Studie eines
+Vermögensverwalters (IMC, 2026, nicht begutachtet, Eigeninteresse möglich)
+fand für große US-Werte über 1988–2025 die Mischung aus beiden Zutaten
+leicht <em>besser</em> als reines Momentum: eine IR von 0,24 gegen 0,20
+(IR = Mehrertrag je Einheit Abweichungsrisiko). Im Teilzeitraum 2006–2025
+war es umgekehrt: 0,07 gegen 0,11. Gemessen wurde mit sechs Monaten
+Haltedauer, und ob die Unterschiede Zufall sein können, wurde nicht
+geprüft. Die Lage ist also nicht eindeutig — die begutachtete Nachrechnung
+findet bei großen US-Werten aber keinen belastbaren 52-Wochen-Hoch-Effekt.</p>
+<p><strong>Deutschland: weiter 50/50 — weil nichts Besseres belegt ist,
+nicht weil 50/50 als richtig belegt wäre.</strong> Für Deutschland zeigt die
+Forschung eher in die andere Richtung: Burghof &amp; Prothmann fanden für
+alle in Deutschland gehandelten Aktien (1980–2008), dass die Nähe zum
+52-Wochen-Hoch die künftige Entwicklung besser vorhersagte als das
+Momentum. Ein Mischverhältnis liefert auch diese Arbeit nicht; die Mischung
+zu gleichen Teilen behauptet keins. Ein ehrlicher Vorbehalt für den
+deutschen Markt insgesamt: Franz &amp; Regele fanden für 1988–2015 eine
+Momentum-Prämie nur im SDAX, nicht in DAX und MDAX — aus diesen beiden
+Indizes kommt der größte Teil des Universums hier.</p>
+<p><strong>Zwischenwerte wie 60/40 sind bewusst verworfen.</strong> Ein
+solches Verhältnis wäre eine Zahl, die man so lange dreht, bis die
+Vergangenheit gut aussieht (Parametersuche) — belegt wäre sie nicht.</p>
 <p>Damit man sieht, woher der Score kommt, zeigt jede Karte
 <strong>zusätzlich beide Teil-Ränge</strong> („3. von 470"). So erkennt man
-sofort, ob ein Titel in beiden Zutaten stark ist oder nur in einer.</p>
+sofort, ob ein Titel in beiden Zutaten stark ist oder nur in einer. Zählt
+eine Zutat in einem Markt nicht mit, bleibt sie auf der Karte sichtbar und
+ist als „nur Info" gekennzeichnet.</p>
 <p>Wichtig: Die Ränge werden <strong>immer nur innerhalb eines Marktes</strong>
 gebildet — US-Titel gegen US-Titel, deutsche gegen deutsche. Nie gemischt.
 Bei exakt gleichem Wert entscheidet die alphabetische Reihenfolge des Tickers;
-dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar. Bei
-Gleichgewichtung kommt das häufiger vor als vorher — zwei Titel mit
+dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar. Bei einer
+Mischung zu gleichen Teilen kommt das häufiger vor — zwei Titel mit
 spiegelbildlichen Teil-Rängen landen exakt gleichauf. Auch dann entscheidet
 allein das Alphabet, nie der Zufall — ein rein technischer Tie-Breaker ohne
 inhaltliche Bedeutung, kein Vorteil für früh im Alphabet stehende Ticker.</p>""",

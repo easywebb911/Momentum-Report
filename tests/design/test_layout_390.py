@@ -120,6 +120,40 @@ def test_die_teil_raenge_stehen_auf_der_karte(oeffne):
         assert kachel["breite"] >= 150, kachel
 
 
+@pytest.mark.parametrize("schriftgroesse", [15, 16, 20])
+def test_der_nur_info_hinweis_steht_lesbar_auf_den_us_karten(oeffne, schriftgroesse):
+    """US-Testseite traegt 100/0: jede US-Karte zeigt den Hinweis unter den
+    Teil-Raengen, innerhalb der Karte, ohne Ueberlauf; DE-Karten (50/50)
+    zeigen ihn nicht."""
+    page = oeffne("index.html", schriftgroesse=schriftgroesse)
+    befund = page.evaluate(
+        """() => [...document.querySelectorAll('.card')].map(karte => {
+             const h = karte.querySelector('.card-ft--nur-info');
+             const rang = karte.querySelector('.metrics--rang');
+             if (!h) return {markt: karte.className, hinweis: null};
+             const kr = karte.getBoundingClientRect();
+             const hr = h.getBoundingClientRect();
+             return {
+               markt: karte.className,
+               hinweis: h.textContent.trim(),
+               sichtbar: hr.height > 0,
+               in_karte: hr.left >= kr.left - 0.5 && hr.right <= kr.right + 0.5,
+               unter_raengen: hr.top >= rang.getBoundingClientRect().bottom - 0.5,
+               ueberlauf: h.scrollWidth > h.clientWidth + 1,
+             };
+           })"""
+    )
+    us = [k for k in befund if "card--us" in k["markt"]]
+    de = [k for k in befund if "card--de" in k["markt"]]
+    assert us and de
+    for karte in us:
+        assert karte["hinweis"] == "52W-Hoch-Nähe: nur Info, zählt nicht im Score.", karte
+        assert karte["sichtbar"] and karte["in_karte"] and karte["unter_raengen"], karte
+        assert karte["ueberlauf"] is False, karte
+    for karte in de:
+        assert karte["hinweis"] is None, karte
+
+
 @pytest.mark.parametrize("schriftgroesse", [16, 20])
 def test_der_eingefrorene_stichtag_kurs_ist_lesbar_und_bricht_nicht_um(oeffne, schriftgroesse):
     """Transparenz-Zusatz: der Stichtag-Kurs steht als eigener Satz unter

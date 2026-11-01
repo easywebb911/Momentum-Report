@@ -304,16 +304,17 @@ def test_die_teil_raenge_zaehlen_gegen_die_bewerteten_titel():
     assert f"3.{NBSP}von{NBSP}500" not in html
 
 
-def test_die_methodik_erklaert_die_gleichgewichtung():
+def test_die_methodik_erklaert_die_gewichte_je_markt():
+    """Seit PR #84: Gewichte je Markt aus dem Fahrplan statt "gleich viel".
+    Ausfuehrlich in tests/unit/test_methodik_gewichte.py."""
     html = render_methodik()
-    assert "Beide Zutaten zählen gleich viel" in html
-    assert "kein" in html and "Mischverhältnis" in html
-    assert "George &amp; Hwang" in html
-    assert "Gleichgewichtung die" in html
+    assert "Beide Zutaten zählen gleich viel" not in html
+    assert "kein</em> belegtes Mischverhältnis" in html
+    assert "George &amp; Hwang" in html  # Quelle der Zutat bleibt
     assert "Teil-Ränge" in html
-    assert "Gewicht 50 %" in html
     assert "50 × Perzentil(12-1-Momentum)" in html
     assert "50 × Perzentil(52-Wochen-Hoch-Nähe)" in html
+    assert "100 × Perzentil(12-1-Momentum)" in html
 
 
 def test_handelbarkeits_filter_methodik_praezisiert_die_rangwirkung():

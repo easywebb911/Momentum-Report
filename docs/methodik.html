@@ -141,9 +141,12 @@ Zahl auf der Übersicht ernst nimmt. Jede hat eine Quelle.</p>
   </ul>
 </section>
 <h2>Die zwei Zutaten des Scores</h2>
+<p class="lead">Wie viel jede Zutat zählt, ist je Markt festgelegt
+und gilt jeweils ab einem bestimmten Ranking-Monat:</p>
+<ul class="nolist gewichte"><li>USA: bis Ranking Oktober 2026 50/50, ab Ranking November 2026 100/0</li><li>Deutschland: 50/50</li></ul>
 <article class="card mcard">
-  <h3>1. 12-1-Momentum (Gewicht 50 %)</h3>
-  <p>Wir schauen, wie stark eine Aktie in einem Fenster von rund einem
+  <h3>1. 12-1-Momentum</h3>
+  <p>Gewicht im Score:</p><ul class="nolist gewichte"><li><strong>USA:</strong> bis Ranking Oktober 2026 50 %, ab Ranking November 2026 100 %</li><li><strong>Deutschland:</strong> 50 %</li></ul><p>Wir schauen, wie stark eine Aktie in einem Fenster von rund einem
 Jahr gestiegen ist — und lassen dabei den <strong>jüngsten Monat bewusst
 weg</strong>.</p>
 <p class="formula">Kurs am letzten Handelstag des <em>vorletzten</em> Monats
@@ -157,8 +160,8 @@ Aktiensplits sind eingerechnet, weil die Studien Gesamtrenditen messen.</p>
   <ul class="src-list"><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Aktien, die in den vergangenen rund zwoelf Monaten am staerksten gestiegen sind, liefen im Durchschnitt der Folgemonate weiter besser als die schwaechsten. Gemessen wird die Rendite vom Ende des Monats vor zwoelf Monaten bis zum Ende des VORLETZTEN Monats.</li><li>Jegadeesh (1990): „Evidence of Predictable Behavior of Security Returns“, <em>The Journal of Finance</em>. Auf Sicht eines einzelnen Monats kehren sich Kursbewegungen im Mittel um. Deshalb laesst die Standard-Rezeptur den juengsten Monat bewusst aus dem Messfenster heraus -- dieser uebersprungene Monat ist Teil der belegten Methode, keine Option.</li><li>Jegadeesh &amp; Titman (1993): „Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency“, <em>The Journal of Finance</em>. Gemessen wurden Gesamtrenditen inklusive Dividenden. Deshalb rechnet dieses Tool ausschliesslich mit dividenden- und split-bereinigten Kursen.</li></ul>
 </article>
 <article class="card mcard">
-  <h3>2. Nähe zum 52-Wochen-Hoch (Gewicht 50 %)</h3>
-  <p>Wie nah notiert die Aktie heute an ihrem höchsten Stand des
+  <h3>2. Nähe zum 52-Wochen-Hoch</h3>
+  <p>Gewicht im Score:</p><ul class="nolist gewichte"><li><strong>USA:</strong> bis Ranking Oktober 2026 50 %, zählt ab Ranking November 2026 nicht mehr im Score, wird nur noch angezeigt</li><li><strong>Deutschland:</strong> 50 %</li></ul><p>Wie nah notiert die Aktie heute an ihrem höchsten Stand des
 letzten Jahres?</p>
 <p class="formula">Kurs am Stichtag ÷ höchster Tages-Schlusskurs der letzten
 52 Wochen</p>
@@ -179,31 +182,67 @@ unberührt bliebe.</p>
   <h3>So entsteht der Score von 0 bis 100</h3>
   <p>Beide Zutaten werden je Markt in eine Rangreihe gebracht. Der
 schwächste Titel bekommt 0, der stärkste 1, alle anderen liegen gleichmäßig
-dazwischen (Perzentil-Rang).</p>
-<p class="formula">Score = 50 × Perzentil(12-1-Momentum)
-+ 50 × Perzentil(52-Wochen-Hoch-Nähe)</p>
-<p><strong>Beide Zutaten zählen gleich viel.</strong> Das ist eine bewusste
-Entscheidung, und sie hat einen Grund: Die Forschung liefert
-<em>kein</em> Mischverhältnis für diese beiden Größen. Sie untersucht sie als
-zwei getrennte Verfahren und vergleicht sie miteinander — in der Arbeit von
-George &amp; Hwang war für den US-Markt sogar die Nähe zum 52-Wochen-Hoch die
-stärkere der beiden. Wo Arbeiten mehrere solcher Größen zusammenfassen,
-gewichten sie üblicherweise gleich.</p>
-<p>Jedes andere Verhältnis wäre also eine Zahl, die niemand belegt hat. Wenn
-man nicht weiß, welche Zutat wie viel wiegen sollte, ist Gleichgewichtung die
-ehrliche Wahl — sie behauptet nichts.</p>
+dazwischen (Perzentil-Rang). Daraus entsteht der Score — je Markt mit
+seinen eigenen Gewichten:</p>
+<p class="formula">USA bis Ranking Oktober 2026: Score = 50 × Perzentil(12-1-Momentum)<br>+ 50 × Perzentil(52-Wochen-Hoch-Nähe)</p>
+<p class="formula">USA ab Ranking November 2026: Score = 100 × Perzentil(12-1-Momentum)</p>
+<p class="formula">Deutschland: Score = 50 × Perzentil(12-1-Momentum)<br>+ 50 × Perzentil(52-Wochen-Hoch-Nähe)</p>
+<p><strong>Warum die Gewichte je Markt verschieden sind.</strong> Die
+Forschung liefert <em>kein</em> belegtes Mischverhältnis für diese beiden
+Größen. Sie untersucht sie als zwei getrennte Verfahren — und je nach Markt
+und Größe der Unternehmen fällt der Vergleich verschieden aus.</p>
+<p><strong>USA, ab Ranking November 2026: nur noch 12-1-Momentum.</strong> Hou, Xue
+&amp; Zhang (2020) haben sehr viele bekannte Börsen-Effekte nachgerechnet,
+und zwar so, dass große Unternehmen das Ergebnis bestimmen — so wie im
+S&amp;P&nbsp;500 hier. Dort blieb von der Nähe zum
+52-Wochen-Hoch nichts Belastbares übrig: 0,13&nbsp;% pro Monat, mit einem
+t-Wert von 0,38 (der t-Wert misst, wie deutlich ein Ergebnis über dem
+Zufall liegt; ab etwa 2 gilt es als belastbar). Das Momentum über elf
+Monate kam auf
+1,16&nbsp;% pro Monat bei einem t-Wert von 3,99. Das ist ein Durchschnitt
+über Jahrzehnte — seit 2000 ist der Effekt deutlich kleiner, siehe
+<a href="#ehrlich-gesagt">Ehrlich gesagt</a>. In dieselbe Richtung weist ein
+noch nicht begutachtetes Arbeitspapier von Barroso &amp; Wang: Außer bei
+kleinen Werten ist das Momentum der stärkere Effekt, und im Durchschnitt
+schließt es den 52-Wochen-Hoch-Effekt mit ein. Wo das 52-Wochen-Hoch
+stärker ist, liegt das also an kleinen Werten — und solche kommen im
+S&amp;P&nbsp;500 kaum vor.</p>
+<p><strong>Die Gegenzahl gehört dazu.</strong> Eine Studie eines
+Vermögensverwalters (IMC, 2026, nicht begutachtet, Eigeninteresse möglich)
+fand für große US-Werte über 1988–2025 die Mischung aus beiden Zutaten
+leicht <em>besser</em> als reines Momentum: eine IR von 0,24 gegen 0,20
+(IR = Mehrertrag je Einheit Abweichungsrisiko). Im Teilzeitraum 2006–2025
+war es umgekehrt: 0,07 gegen 0,11. Gemessen wurde mit sechs Monaten
+Haltedauer, und ob die Unterschiede Zufall sein können, wurde nicht
+geprüft. Die Lage ist also nicht eindeutig — die begutachtete Nachrechnung
+findet bei großen US-Werten aber keinen belastbaren 52-Wochen-Hoch-Effekt.</p>
+<p><strong>Deutschland: weiter 50/50 — weil nichts Besseres belegt ist,
+nicht weil 50/50 als richtig belegt wäre.</strong> Für Deutschland zeigt die
+Forschung eher in die andere Richtung: Burghof &amp; Prothmann fanden für
+alle in Deutschland gehandelten Aktien (1980–2008), dass die Nähe zum
+52-Wochen-Hoch die künftige Entwicklung besser vorhersagte als das
+Momentum. Ein Mischverhältnis liefert auch diese Arbeit nicht; die Mischung
+zu gleichen Teilen behauptet keins. Ein ehrlicher Vorbehalt für den
+deutschen Markt insgesamt: Franz &amp; Regele fanden für 1988–2015 eine
+Momentum-Prämie nur im SDAX, nicht in DAX und MDAX — aus diesen beiden
+Indizes kommt der größte Teil des Universums hier.</p>
+<p><strong>Zwischenwerte wie 60/40 sind bewusst verworfen.</strong> Ein
+solches Verhältnis wäre eine Zahl, die man so lange dreht, bis die
+Vergangenheit gut aussieht (Parametersuche) — belegt wäre sie nicht.</p>
 <p>Damit man sieht, woher der Score kommt, zeigt jede Karte
 <strong>zusätzlich beide Teil-Ränge</strong> („3. von 470"). So erkennt man
-sofort, ob ein Titel in beiden Zutaten stark ist oder nur in einer.</p>
+sofort, ob ein Titel in beiden Zutaten stark ist oder nur in einer. Zählt
+eine Zutat in einem Markt nicht mit, bleibt sie auf der Karte sichtbar und
+ist als „nur Info" gekennzeichnet.</p>
 <p>Wichtig: Die Ränge werden <strong>immer nur innerhalb eines Marktes</strong>
 gebildet — US-Titel gegen US-Titel, deutsche gegen deutsche. Nie gemischt.
 Bei exakt gleichem Wert entscheidet die alphabetische Reihenfolge des Tickers;
-dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar. Bei
-Gleichgewichtung kommt das häufiger vor als vorher — zwei Titel mit
+dadurch ist die Rangliste bei jedem Lauf identisch reproduzierbar. Bei einer
+Mischung zu gleichen Teilen kommt das häufiger vor — zwei Titel mit
 spiegelbildlichen Teil-Rängen landen exakt gleichauf. Auch dann entscheidet
 allein das Alphabet, nie der Zufall — ein rein technischer Tie-Breaker ohne
 inhaltliche Bedeutung, kein Vorteil für früh im Alphabet stehende Ticker.</p>
-  <ul class="src-list"><li>Rouwenhorst (1998): „International Momentum Strategies“, <em>The Journal of Finance</em>. Der Effekt wurde je Markt gegen die Titel DESSELBEN Marktes gemessen. Deshalb werden Perzentil-Raenge hier ausschliesslich innerhalb eines Marktes gebildet und nie ueber Maerkte gemischt.</li></ul>
+  <ul class="src-list"><li>Rouwenhorst (1998): „International Momentum Strategies“, <em>The Journal of Finance</em>. Der Effekt wurde je Markt gegen die Titel DESSELBEN Marktes gemessen. Deshalb werden Perzentil-Raenge hier ausschliesslich innerhalb eines Marktes gebildet und nie ueber Maerkte gemischt.</li><li>Hou, Xue &amp; Zhang (2020): „Replicating Anomalies“, <em>The Review of Financial Studies 33(5), S. 2019–2133</em>. Nachgerechnet so, dass große Firmen das Ergebnis bestimmen (NYSE-Grenzen, wertgewichtet), ein Monat Haltedauer: Nähe zum 52-Wochen-Hoch 0,13 % pro Monat (t-Wert 0,38, nicht von null unterscheidbar), Momentum über elf Monate (dort &quot;R11&quot;) 1,16 % pro Monat (t-Wert 3,99).</li><li>Barroso &amp; Wang (2021): „What explains price momentum and 52-week high momentum when they really work?“, <em>Arbeitspapier, EFMA-Jahrestagung 2021 Leeds (nicht begutachtet)</em>. Hauptstichprobe 07/1972–12/2019: Außer bei kleinen Werten ist das Kurs-Momentum der stärkere Effekt; im Durchschnitt schließt es den 52-Wochen-Hoch-Effekt vollständig mit ein.</li><li>The Informed Momentum Company (IMC) (2026): „Buy High, Sell Higher — Evaluating the 52-week high as a momentum signal“, <em>Studie eines Vermögensverwalters (nicht begutachtet, Eigeninteresse möglich)</em>. Große US-Werte, sechs Monate Haltedauer: über 06/1988–12/2025 war die Mischung aus beiden Zutaten leicht besser als reines Momentum (IR 0,24 gegen 0,20), im Teilzeitraum 06/2006–12/2025 umgekehrt (0,07 gegen 0,11). Ob die Unterschiede Zufall sein können, wurde nicht geprüft.</li><li>Burghof &amp; Prothmann (2009): „Can Stock Price Momentum Be Explained by Anchoring?“, <em>The International Journal of Business and Finance Research 3(2), S. 47–69</em>. Alle in Deutschland gehandelten Aktien, 1980–2008: Die Nähe zum 52-Wochen-Hoch sagte die künftige Entwicklung besser voraus als das Momentum.</li><li>Franz &amp; Regele (2016): „Beating the DAX, MDAX, and SDAX: investment strategies in Germany“, <em>Financial Markets and Portfolio Management 30(2), S. 161–204</em>. 1988–2015: Eine Momentum-Prämie zeigte sich nur im SDAX, nicht in DAX und MDAX.</li></ul>
 </article>
 <article class="card mcard">
   <h3>Warum nur fünf Titel — und was das kostet</h3>

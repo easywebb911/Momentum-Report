@@ -49,7 +49,9 @@ def test_methodik_seite_nennt_keine_unbekannte_quelle():
     """Gegenrichtung: keine Autorennennung auf der Seite ohne Eintrag im Code."""
     bekannt = {q.authors for q in SOURCES.values()}
     # Autorennamen, die auf der Seite auftauchen duerften
-    for name in ("Jegadeesh", "George", "Hwang", "Rouwenhorst", "Moskowitz", "Asness", "Chui", "Fama"):
+    for name in ("Jegadeesh", "George", "Hwang", "Rouwenhorst", "Moskowitz", "Asness", "Chui", "Fama",
+                 "Hou", "Xue", "Zhang", "Barroso", "Wang", "Informed Momentum", "Burghof",
+                 "Prothmann", "Franz", "Regele", "Gupta", "Liu"):
         if name in METHODIK:
             assert any(name in autoren for autoren in bekannt), name
 
