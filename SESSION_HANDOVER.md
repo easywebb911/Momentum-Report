@@ -6,7 +6,7 @@ Diagnose zur nächtlichen Kurs-Lücke und zu den Abbrüchen 94/95 liegt vor
 (§4 Punkt 16: Ursache Yahoo-Verzögerung belegt, Lücke „stiller falscher
 Stichtag" in `resolve_asof`, Design V1–V3, Entscheidung Easy: V3 erst
 nach Beleg ab 02.12.). Dazu ein reiner **Beleg-Zähler** in `data.py`
-(dieser PR, siehe §2) — keine Verhaltensänderung.
+(PR #86, siehe §2) — keine Verhaltensänderung.
 
 **Stand: 01.11.2026, später noch:** PR #84 (Methodik-Seite und Karten
 zeigen den Methodenwechsel) ist **gemergt** (Merge-Commit `022c8ff`).
@@ -247,7 +247,7 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #83 | `43d3115`/`3b20111`/`6f4f5fc`→`f5a21b3` | 01.11. | **Score-Gewichte je Markt als Fahrplan nach Ranking-Monat** (PR 1 von 3): US ab 2026-11 100/0, bis 2026-10 50/50; DE immer 50/50. Auswahl rein nach Stichtag-Monat, keine Anzeige-/Textänderung. Neue Tests `tests/unit/test_gewichts_fahrplan.py` (DE-Hash byte-genau wie vor dem Umbau, US-Grenze Okt/Nov, Nachholung, Determinismus). Nachtrag im selben PR: Fahrplan-Hilfen in `GESCHUETZTE_SYMBOLE` aufgenommen (§5 Punkt 3, §7.8). Schutz-Sperre erwartet ROT — siehe §4 Punkt 8, §7.6 | MANUAL |
 | #84 | `ff0190d`→`022c8ff` | 01.11. | **PR 2 von 3: Methodenwechsel US auf Methodik-Seite und Karten sichtbar** — Methodik erzeugt die Gewichte je Markt aus dem Fahrplan (beide US-Regeln mit Monat, DE getrennt), Score-Karte mit Begründung (Hou/Xue/Zhang tragend, Barroso/Wang, IMC samt Gegenzahl; DE: Burghof/Prothmann, Vorbehalt Franz/Regele); fünf neue Einträge in `sources.py`; Karte liest `ranking["methode"]` und zeigt bei 52W-Gewicht 0 „nur Info, zählt nicht im Score"; README nachgezogen. Keine Rechenänderung, Schutz-Sperre GRÜN erwartet. Neue Tests `tests/unit/test_methodik_gewichte.py`, 390-px-Test für den Hinweis | MANUAL |
 | #85 | `7ceee80`/`18bd7bc`→`d457924` | 01.11. | **PR 3 von 3: Evaluation-Seite zeigt den Methodenwechsel, zählt verschiedene Regeln nie zusammen** — `render_evaluation()` gruppiert den Gesamtrückblick je Markt nach den tatsächlichen Gewichten des zugehörigen Rankings (`methode.gewicht_*`, aus `data/rankings/*.json` gelesen, NICHT aus `config.py` — Zuordnung Evaluation→Ranking ist code-belegt: `ausgewerteter_monat` == `ranking_monat`, gleicher Dateiname). Kennt ein Markt nur eine Regel (heute überall so): Anzeige byte-genau wie vorher (echte `docs/evaluation.html`-Hashes vor/nach identisch, siehe PR-Text). Fehlt die Ranking-Datei/das Feld: fail-soft "Regel unbekannt", nie mit einer bekannten Gruppe zusammengezählt. Monatsrückblick/Details je Monat tragen bei mehreren Regeln eine Kennzeichnung, der erste Monat je neuer Regel einen "Methodenwechsel"-Hinweis. Kein neues Feld in `data/evaluation/*.json`, keine Änderung an `config.py`/`ranking.py`/`scoring.py`/`evaluation.py`-Rechnung/Workflows. Schutz-Sperre GRÜN (lokal geprüft). Neue Tests in `tests/unit/test_render.py` (Methodenwechsel-Gruppierung, Summen-Erhalt, Fail-soft, Byte-Identität bei einer Regel), 390-px-Fixture (`tests/design/conftest.py`) um einen zweiten Block erweitert | MANUAL |
-| (dieser PR) | (Merge-Commit folgt) | 01.11. | **Beleg-Zähler in `data.py`, keine Verhaltensänderung:** zählt von den wegen nicht-endlichem Adj Close verworfenen Zeilen, wie viele einen gültigen Rohkurs (Close) trugen und wie viele nicht, und je Tag die Anzahl (jüngste 3 Tage). Additiv in `status.json` → `daten` (`zeilen_verworfen_mit_rohkurs`, `zeilen_verworfen_ohne_rohkurs`, `verworfen_je_tag_juengste`) plus eine Job-Log-Zeile `[daten] …` je Abruf mit verworfenen Zeilen (Index und Titel getrennt). Welche Zeilen verworfen werden, bleibt unverändert; Rankings/Kurse/Seiten mit denselben Eingaben byte-gleich. Schutz-Sperre GRÜN. Tests `tests/unit/test_beleg_zaehler.py`. Zweck: Annahme hinter V3 belegen (§4 Punkt 16) | MANUAL |
+| #86 | `82549b0` (Merge-Commit folgt) | 01.11. | **Beleg-Zähler in `data.py`, keine Verhaltensänderung:** zählt von den wegen nicht-endlichem Adj Close verworfenen Zeilen, wie viele einen gültigen Rohkurs (Close) trugen und wie viele nicht, und je Tag die Anzahl (jüngste 3 Tage). Additiv in `status.json` → `daten` (`zeilen_verworfen_mit_rohkurs`, `zeilen_verworfen_ohne_rohkurs`, `verworfen_je_tag_juengste`) plus eine Job-Log-Zeile `[daten] …` je Abruf mit verworfenen Zeilen (Index und Titel getrennt). Welche Zeilen verworfen werden, bleibt unverändert; Rankings/Kurse/Seiten mit denselben Eingaben byte-gleich. Schutz-Sperre GRÜN. Tests `tests/unit/test_beleg_zaehler.py`. Zweck: Annahme hinter V3 belegen (§4 Punkt 16) | MANUAL |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -1073,7 +1073,7 @@ Beleg-Zähler auswerten, 01.12. Handlauf, ab 02.12. V3 bauen)*
   DE 24./31.12., US Memorial Day 31.05.2027, Thanksgiving/27.11.,
   Karfreitag am Monatsende.
 - **Entscheidung Easy (01.11.2026):** **V3**, gebaut **erst nach Beleg
-  ab 02.12.**; vorher nur der Beleg-Zähler (dieser PR), weil V3 auf der
+  ab 02.12.**; vorher nur der Beleg-Zähler (PR #86), weil V3 auf der
   **ungeprüften Annahme** beruht, dass Yahoo die verspätete Zeile MIT
   Rohkurs liefert. Für den 30.11.: manueller Lauf am 01.12. ab 09:30 UTC
   plus Stichtag-Prüfung (§3).
