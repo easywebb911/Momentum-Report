@@ -1,6 +1,14 @@
 # Session-Handover — Momentum-Report
 
-**Stand: 31.10.2026, nachmittags**, nach PR #81 (Evaluation-Seite:
+**Nachtrag 01.11.2026:** Entscheidung Easy zu den Score-Gewichten —
+**USA ab Ranking-Monat 2026-11: 100 % 12-1-Momentum, 0 % 52-Wochen-Hoch;
+Deutschland unverändert 50/50** (Begründung und Quellen: §4 Punkt 8).
+Gebaut als **Gewichts-Fahrplan je Markt** (PR 1 von 3, MANUAL, dieser PR
+— siehe §2, §7.6); Methodik/Karten (PR 2) und Evaluation (PR 3) folgen,
+Fristen in §3. Außerdem: die drei geplanten Tasks senden seit 01.11.
+direkt an ntfy.sh (§4 Punkt 15).
+
+**Stand davor: 31.10.2026, nachmittags**, nach PR #81 (Evaluation-Seite:
 Gesamtrückblick vor Monatsrückblick — **gemergt**, Merge-Commit
 `0972fe7`, 31.10.2026 10:58 UTC) und der **Umstellung der drei geplanten
 Claude-Tasks auf Nur-Lesen + App-Push samt Abschaltung der
@@ -62,6 +70,7 @@ einmal real bestätigt wirksam.
 | GitHub Pages | **aktiv** seit 02.08., deployt bei jedem Push auf `main` | Workflow `pages-build-deployment`, angelegt 02.08.2026 16:11 — Zähler und letzter Lauf in Actions |
 | Momentum-Lauf | läuft werktäglich, **vier Fehlschläge insgesamt**, alle fail-soft (nichts veröffentlicht, nichts eingefroren) | Run 1 (02.08.2026, Datumsformat-Bruch iShares, §8 Lesson 3) — **kein** „Lauf 1"-Commit, Zählung beginnt bei „Lauf 2" (`07cbedd`). Lauf 71 (01.10.2026, 00:49 UTC, Yahoo-Rate-Limit auf `^SP500TR`, Actions-Run `36798080643`), noch am selben Tag per manuellem Dispatch nachgeholt (Lauf 72, Actions-Run `36927209332`), siehe §4 Punkt 5. Lauf 94 und Lauf 95 (31.10.2026, Actions-Runs `41153318736`/`41183266440`, „kein Titel mit vollstaendiger Historie"), per manuellem Lauf 96 nachgeholt (Actions-Run `41187870579`, Commit `8e29c5d`), siehe §4 Punkt 16. Sonst durchgehend grün. |
 | Ranking | eingefroren zum **30.10.2026** (vierter scharfer Stichtag), beide Märkte — Juli-/August-/September-Stand bleiben parallel als eigene, nie überschriebene Dateien stehen; geschrieben von Lauf 96 (manueller Nachlauf, siehe Zeile oben), nicht vom planmäßigen Lauf | `data/rankings/us_2026-10.json`, `de_2026-10.json` (und weiterhin `*_2026-09.json`, `*_2026-08.json`, `*_2026-07.json`) |
+| Score-Gewichte | **je Markt und Ranking-Monat** (Fahrplan, seit 01.11.2026 im Code): US bis 2026-10 50/50, **ab 2026-11 100/0**; DE immer 50/50. Alle eingefrorenen Rankings Juli–Oktober tragen 0.5/0.5. Erstes echtes 100/0-Ranking: US-Stichtag 30.11.2026 (**noch nicht eingetreten**) | `config.py` (`gewichts_fahrplan`), `data/rankings/*.json` → `methode`, §7.6 |
 | US-Top-5 (Okt.) | TRGP, APA, XOM, VTRS, DVN — 496 von 503 im Universum bewertet; **4 von 5 im Sektor Energy** (Sektor-Hinweis aus PR #72 erscheint auf der Seite) | `us_2026-10.json` → `top`, `abdeckung`; Kursvergleich `ok` (SXR8, 492 verglichen, 0 über Toleranz); Hinweis in `docs/index.html` (`sektor-hinweis`) |
 | DE-Top-5 (Okt.) | DHL.DE, EVK.DE, BAYN.DE, DB1.DE, DHER.DE — 81 von 102 im Universum bewertet (21 am Handelbarkeits-Filter) | `de_2026-10.json` → `top`, `abdeckung`; Kursvergleich `ok` (100 verglichen, 0 über Toleranz) |
 | Überschuss-Ampel | weiterhin live, keine Warnung in beiden Märkten | US: Rendite +12,11 %, Geldmarkt (`^IRX`) **+3,69 %**, Überschuss **+8,41 %**. DE: Rendite +7,76 %, Geldmarkt (€STR/EZB) **+2,06 %**, Überschuss **+5,70 %**. Beide `trend_ampel` in den Oktober-Rankings |
@@ -213,7 +222,8 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #73 | `5e932e3`→`4000b68` | 19.10. | Stichtag-Schutz vergleicht vollen Zeitpunkt statt nur Uhrzeit (Fund: Mitternachts-Rutsch am Monatsende hielt den Stichtag fälschlich für "zu früh") — siehe §4 Punkt 13 | MANUAL |
 | #80 | `2ef3679`→`569e385` | 31.10. | Abbruchmeldung "kein Titel mit vollstaendiger Historie" nennt jetzt Zahlen je Ausscheidegrund — siehe §4 Punkt 16 | MANUAL |
 | #81 | `95596a9`→`0972fe7` | 31.10. | Evaluation-Seite: Gesamtrückblick vor Monatsrückblick (reine Anzeige, Blöcke vertauscht) | SELF |
-| #82 | (dieser PR, Merge-Commit folgt) | 31.10. | SESSION_HANDOVER.md auf Stand 31.10. nachmittags: Oktober-Stichtag ausgewertet, Wiedervorlagen 30./31.10. geschlossen, Umstellung der geplanten Tasks und Abschaltung der Agenten-Kontrolle dokumentiert | SELF |
+| #82 | `1525888`/`ab3f10e`→`4c2a655` | 31.10. | SESSION_HANDOVER.md auf Stand 31.10. nachmittags: Oktober-Stichtag ausgewertet, Wiedervorlagen 30./31.10. geschlossen, Umstellung der geplanten Tasks und Abschaltung der Agenten-Kontrolle dokumentiert | SELF |
+| (dieser PR) | (Merge-Commit folgt) | 01.11. | **Score-Gewichte je Markt als Fahrplan nach Ranking-Monat** (PR 1 von 3): US ab 2026-11 100/0, bis 2026-10 50/50; DE immer 50/50. Auswahl rein nach Stichtag-Monat, keine Anzeige-/Textänderung. Neue Tests `tests/unit/test_gewichts_fahrplan.py` (DE-Hash byte-genau wie vor dem Umbau, US-Grenze Okt/Nov, Nachholung, Determinismus). Schutz-Sperre erwartet ROT — siehe §4 Punkt 8, §7.6 | MANUAL |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -241,9 +251,12 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **03.11.2026** (mit dem Monatsrundgang) <!-- faellig: 2026-11-03 --> | **Ranking-Verlauf — jetzt entscheidungsreif.** Entscheiden, ob die Seite eine Historie zeigt. | Seit dem Oktober-Stichtag liegen **4 Stichtage** vor (Juli, August, September, Oktober — `data/rankings/`), die frühere Bedingung „≥ 4 Stichtage" ist erfüllt. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). Easys Entscheid. |
 | **offen, keine Frist** <!-- faellig: offen --> | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 | **ca. 10 Handelstage nach Merge von PR #74** <!-- faellig: offen --> | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
-| **01.11.2026** <!-- faellig: 2026-11-01 --> | **Erster Lauf eines umgestellten Tasks: Lit-Check** (sonntags 09:56 Berlin-Zeit) — prüfen: kam die Meldung als **Push über die Claude-App** an? Bleibt sie aus: Mitteilungen der Claude-App am iPhone erlaubt? Sonst den Lauf in der Task-Ansicht öffnen und „Push fehlgeschlagen" suchen. | Siehe §4 Punkt 15, Umstellung vom 31.10.2026 — Zustellweg App-Push ist bisher nur aus dem Wächter-Lauf vom 31.10. bekannt (Easy erhielt dort einen App-Push), für die neuen Aufgabentexte noch nicht belegt. |
-| **02.11.2026** (Montag) <!-- faellig: 2026-11-02 --> | **Erstes Montags-Lebenszeichen des umgestellten Wächters** („Momentum-Waechter OK TT.MM." per App-Push, sofern kein Befund) — prüfen: kam es? Bleibt es aus, ist der Wächter selbst ausgefallen; die Agenten-Kontrolle (PR #79) überwacht ihn seit 31.10. nicht mehr. | Siehe §4 Punkt 15 — das Montags-Lebenszeichen ersetzt die abgeschaltete Agenten-Kontrolle. |
-| **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, seit 31.10. Nur-Lesen + App-Push, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, kam der App-Push an, und war sein Befund sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
+| **08.11.2026** (Sonntag) <!-- faellig: 2026-11-08 --> | **Lit-Check erstmals über den neuen Weg: direkt an ntfy.sh** (seit 01.11., siehe §4 Punkt 15) — prüfen: kam die Meldung per ntfy an? Bleibt sie aus: Lauf in der Task-Ansicht öffnen (HTTP-Fehler von ntfy.sh, z. B. 429?); Fallback wäre der App-Push. | Die Wiedervorlage vom 01.11. ist erledigt (§10): der Lit-Check lief korrekt, sein App-Push kam aber nicht an — deshalb seither die direkte ntfy-Zustellung, für den Lit-Check noch nicht im echten Sonntagslauf belegt. |
+| **02.11.2026** (Montag) <!-- faellig: 2026-11-02 --> | **Erstes Montags-Lebenszeichen des Wächters über ntfy.sh direkt** (seit 01.11.: montags hörbar, Priorität 3; sonst täglich lautlos, Priorität 1; Befund mit Priorität 3/4; Fallback App-Push) — prüfen: kam es am iPhone hörbar an? Bleibt es aus, ist der Wächter selbst ausgefallen; die Agenten-Kontrolle (PR #79) überwacht ihn seit 31.10. nicht mehr. | Siehe §4 Punkt 15 — das Montags-Lebenszeichen ersetzt die abgeschaltete Agenten-Kontrolle. Beim Test am 01.11. einmal HTTP 429 von ntfy.sh, Wiederholung erfolgreich — ob das im echten Montagslauf wieder auftritt, ist **ungeprüft**. |
+| **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, seit 31.10. Nur-Lesen, seit 01.11. Zustellung direkt an ntfy.sh, Fallback App-Push, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, kam die ntfy-Meldung an, und war sein Befund sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
+| **25.11.2026** <!-- faellig: 2026-11-25 --> | **PR 2 (Methodik-Seite/Karten zum Methodenwechsel US) gemergt.** Danach bis zum Stichtag nichts mehr am Lauf-Pfad ändern. | Die Methodik-Seite wird bei JEDEM Tageslauf neu erzeugt — ihr Text muss den Wechsel „ab Ranking November 2026" nennen, bevor das erste 100/0-Ranking entsteht. Siehe §4 Punkt 8. |
+| **30.11.2026** (Montag, US-Stichtag) <!-- faellig: 2026-11-30 --> | **Erster US-Stichtag mit 100/0 — Gewichte in `data/rankings/us_2026-11.json` prüfen:** `methode.gewicht_momentum_12_1` = 1.0, `methode.gewicht_high_52w` = 0.0, Score = 100 × `perzentil_momentum`; `de_2026-11.json` weiter 0.5/0.5. | Siehe §4 Punkt 8, §7.6 — die Mechanik ist per Test belegt (`tests/unit/test_gewichts_fahrplan.py`), im echten Lauf noch nicht. |
+| **15.12.2026** <!-- faellig: 2026-12-15 --> | **PR 3 Evaluation: Methodenwechsel sichtbar markieren, Gesamtrückblick getrennt nach Regel (vor/ab 2026-11)** — vor dem 31.12. gemergt. | Der erste US-Rückblick nach neuer Regel (ausgewerteter Monat 2026-11) entsteht am Dezember-Stichtag; vorher darf der Gesamtrückblick nicht Nicht-Vergleichbares zusammenzählen. |
 | **beim nächsten Abbruch** <!-- faellig: offen --> | **Beim nächsten Abbruch "kein Titel mit vollstaendiger Historie" die neue Zahlen-Meldung (PR #80) auswerten und die Yahoo-Adj-Close-Vermutung belegen oder widerlegen.** | Siehe §4 Punkt 16 — die Ursache des 30./31.10.-Vorfalls ist bisher nur vermutet, nicht belegt. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
@@ -452,19 +465,57 @@ in den Score aufgenommen, kein Bau geplant** — die Literatur selbst
 (Höhe der Rendite, Nähe zum Hoch), nicht nur die schwache Trennschärfe
 in den drei beobachteten Monaten.
 
-**8. Lit-Check 52-Wochen-Hoch bei Large Caps — Konvention gestützt,
-unverändert.** *(dokumentiert, nichts zu tun)*
+**8. Lit-Check 52-Wochen-Hoch bei Large Caps — entschieden 01.11.2026
+(Easy): US 100/0 ab Ranking 2026-11, DE 50/50.** *(Rechnung gebaut in
+PR 1 von 3, dieser PR; Methodik/Karten = PR 2, Evaluation = PR 3, Fristen
+in §3)*
 
-Barroso/Wang (2021) — **nur aus zweiter Hand gesehen, im Original noch
-nicht nachgelesen, hier ausdrücklich als solcher markiert** — deutet
-laut dieser Zweitquelle darauf hin, dass der George/Hwang-(2004)-Befund
-zum 52-Wochen-Hoch möglicherweise auf kleinere Aktien beschränkt ist und
-bei Large Caps schwächer ausfallen könnte. Das Universum dieses Projekts
-(S&P 500, DAX/MDAX/TecDAX) besteht überwiegend aus Large/Mid Caps. Diese
-Zweitquelle **widerspricht der bestehenden 50/50-Gewichtung nicht**,
-sondern ist allenfalls ein Grund, sie nicht noch höher zu gewichten —
-die Konvention bleibt unverändert (siehe §7.6). Wiedervorlage nur, falls
-das Original gelesen und ein abweichender Befund bestätigt wird.
+*Vorgeschichte:* Bis 31.10. stand hier „Konvention gestützt, unverändert"
+— Barroso/Wang (2021) war damals nur aus zweiter Hand bekannt.
+
+*Jetzt im Original gelesen (Angabe Easy, Deep-Lit-Check 01.11.2026):*
+Pedro Barroso, Haoxu Wang: „What explains price momentum and 52-week high
+momentum when they really work?" — **Arbeitspapier** (nicht
+begutachtet), EFMA-Fassung Februar 2021. Kernaussagen: „except for small
+caps, price momentum is a stronger anomaly than 52-week high"; Momentum
+„fully subsumes 52-week high momentum unconditionally"; **bedingt** (nach
+ruhigen Marktphasen) wirkt das 52-Wochen-Hoch eigenständig.
+
+*Weitere Quellen desselben Lit-Checks, jeweils mit ihrer Grenze:*
+- **IMC, „Buy High, Sell Higher" (2026)** — Studie eines
+  **Fondsanbieters** (Eigeninteresse möglich, nicht begutachtet): US Large
+  Caps 2006–2025, die Mischung war schwächer als reines Momentum
+  (Information Ratio — Mehrertrag je Einheit Abweichungsrisiko — 0,07 vs.
+  0,11).
+- **Burghof/Prothmann (2009)** — Deutschland 1980–2008: das
+  52-Wochen-Hoch **dominiert** Momentum.
+- **Franz/Regele (2016)** — reines Momentum wirkte in Deutschland nur im
+  SDAX, nicht in DAX/MDAX.
+- **Liu/Liu/Ma (2011)** — 52-Wochen-Hoch-Effekt in 18 von 20 Ländern,
+  **nach Handelskosten meist nicht signifikant**.
+- **Byun/Jeon (2023)** — das 52-Wochen-Hoch dämpft Momentum-Crashs, vor
+  allem auf der Short-Seite (Leerverkäufe) — für dieses long-only-
+  Werkzeug (nur Kauf-Seite) kaum relevant.
+
+*Gemeinsamer Einwand:* Die Belege FÜR das 52-Wochen-Hoch stützen sich
+stark auf kleine Werte; das Universum hier (S&P 500, DAX/MDAX/TecDAX)
+besteht überwiegend aus Large/Mid Caps.
+
+*Entscheidung:* **USA** ab Ranking-Monat 2026-11 100 % Perzentil
+12-1-Momentum, 0 % 52-Wochen-Hoch. **Deutschland** unverändert 50/50 —
+ehrlich formuliert: **„nichts Besseres belegt"**, nicht „belegt
+richtig"; die deutschen Arbeiten sprechen eher für das 52-Wochen-Hoch,
+liefern aber ebenfalls kein Mischverhältnis. **Zwischenwerte (60/40
+usw.) ausdrücklich verworfen** — das wäre Parametersuche. Eingefrorene
+Rankings Juli–Oktober bleiben unverändert (50/50).
+
+*Umsetzung (PR 1 von 3):* `config.Market.gewichts_fahrplan` +
+`Market.gewichte_fuer(jahr, monat)`; `build_ranking` wählt rein nach dem
+Monat des Stichtags (asof), nie nach dem Lauf-Datum — ein im November
+nachgeholtes Oktober-Ranking rechnet 50/50. Die Ranking-Datei trägt die
+tatsächlich verwendeten Gewichte in den vorhandenen Feldern
+`methode.gewicht_*` (kein neues Feld, Schema-Zahl unverändert 2). Belegt
+durch `tests/unit/test_gewichts_fahrplan.py`.
 
 **9. MNST-Split-Vorfall (US 2026-08) — Ursache geklärt, Ranking bleibt
 eingefroren, Split-Wächter gebaut (PR #70).** *(dokumentiert + behoben
@@ -873,6 +924,21 @@ die alten Aufgabentexte stehen sinngemäß oben in diesem Punkt und lassen
 sich per `update_trigger` zurückspielen — sinnvoll erst, wenn die Tasks
 tatsächlich Repo-Zugriff bekommen.
 
+**Nachtrag 01.11.2026 (Entscheidung Easy) — Zustellung direkt an
+ntfy.sh:** Die drei geplanten Tasks senden ihre Meldungen jetzt **direkt
+an ntfy.sh**; das Thema steht im Aufgabentext. *Risiko, bewusst
+akzeptiert:* wer den Aufgabentext sieht, kennt das Thema und könnte
+mitlesen oder Meldungen einschleusen. *Rückweg:* Thema in der ntfy-App
+wechseln (und im Aufgabentext nachziehen). **Wächter:** täglich lautlos
+(Priorität 1), montags hörbar (Priorität 3), bei Befund Priorität 3 bzw.
+4; Fallback App-Push, falls ntfy.sh nicht annimmt. Beim Test am 01.11.
+einmal **HTTP 429** (zu viele Anfragen) von ntfy.sh — vermutlich wegen
+der geteilten Cloud-Adresse (**ungeprüft**); die Wiederholung war
+erfolgreich. **Lit-Check 01.11.:** lief korrekt, sein Push kam aber
+**nicht** an (damals noch App-Push-Weg); Easy hat den Bericht aus der
+Task-Sitzung kopiert. Quelle aller Angaben dieses Nachtrags: Easys
+Task-Einstellungen und Bericht — aus diesem Repo nicht belegbar.
+
 **16. Oktober-Stichtag-Vorfall 30./31.10.2026 — zwei Abbrüche,
 Ursache ungeprüft/vermutet, Gegenmaßnahme in PR #80.** *(siehe §3,
 Wiedervorlage offen)*
@@ -949,6 +1015,15 @@ Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
    zurückgebaut**~~ — **erledigt durch PR #67 (06.10.2026, siehe §2,
    §10).** Datei und Eintrag im geschlossenen Workflow-Set
    (`tests/unit/test_workflow_hygiene.py`) sind entfernt.
+3. **Schutz-Sperre kennt die neuen Fahrplan-Hilfen in `config.py` noch
+   nicht** (seit PR 1 Gewichts-Fahrplan, 01.11.2026): die Fahrplan-WERTE
+   stehen in `MARKETS` und die Auswahl `gewichte_fuer` in `Market` —
+   beides geschützt. **Nicht** in `GESCHUETZTE_SYMBOLE` stehen dagegen
+   `GewichtsEintrag`, `FAHRPLAN_BEGINN` und `_pruefe_gewichtspaar`: eine
+   Änderung nur dort (z. B. eine abgeschwächte Summenprüfung) bliebe grün.
+   Nachtragen heißt `schutz_sperre.py` und seine Tests ändern (beides
+   selbst geschützt → MANUAL, Ampel rot). Bewusst nicht in PR 1, um ihn
+   schmal zu halten — Easys Entscheid, ob als eigener kleiner PR.
 
 Erledigt und deshalb nicht mehr aufgeführt: Punkt „Testkontext auf
 default-deny umstellen" (#40, siehe §10), die Kosmetik-Punkte (tote
@@ -964,6 +1039,13 @@ Backlog-Punkt mehr, sondern eine Daueraufgabe — sie steht in den Lessons.
 Ausdrücklich **keine** Zusage, nur die Liste der Dinge, die als Nächstes
 sinnvoll wären — in dieser Reihenfolge:
 
+0. **Methodenwechsel US (Score 100/0 ab Ranking 2026-11) fertigstellen** —
+   PR 1 (Rechnung, Fahrplan) ist dieser PR; offen: **PR 2** Methodik-Seite
+   und Karten (Text je Markt, neue Quellen mit ihren Grenzen; Karte liest
+   die Gewichte aus `ranking["methode"]`, nicht aus `config.py`; wie die
+   Karte das 52-Wochen-Hoch bei 0 % zeigt, ist Easys Entscheid) und
+   **PR 3** Evaluation (Wechsel markieren, Gesamtrückblick getrennt).
+   Fristen: §3.
 1. **Ranking-Verlauf** (Herbst, ≥ 4 Stichtage — aktuell 2/4) — Anzeige der
    bisherigen Monats-Ranglisten. Harte Grenze: keine Renditeberechnung,
    keine Trefferquote, keine Performance-Kurve. Das Werkzeug misst keine
@@ -1170,6 +1252,26 @@ Moskowitz (2016), Jegadeesh & Titman (2023), Fama & French (2012), Asness
 
 ### 7.6 Die Score-Formel
 
+**Seit 01.11.2026 je Markt und je Ranking-Monat (Gewichts-Fahrplan):**
+`Score 0–100 = 100 × (w₁ × Perzentil(12-1) + w₂ × Perzentil(52W-Nähe))`,
+mit (w₁, w₂) aus `config.Market.gewichts_fahrplan`, gewählt **rein nach
+dem Monat des Stichtags** (`Market.gewichte_fuer`, aufgerufen in
+`ranking.build_ranking`) — nie nach dem Lauf-Datum:
+
+| Markt | Ranking-Monat | w₁ (12-1) | w₂ (52W) |
+|---|---|---|---|
+| USA | bis einschl. 2026-10 | 0,5 | 0,5 |
+| USA | ab 2026-11 | 1,0 | 0,0 |
+| Deutschland | immer | 0,5 | 0,5 |
+
+Die 50/50-Einträge sind die Konstanten `WEIGHT_MOMENTUM_12_1`/
+`WEIGHT_HIGH_52W` selbst (dieselben Gleitkommazahlen wie vorher; DE-
+Ranglisten per Hash byte-genau gleich, `tests/unit/test_gewichts_fahrplan.py`).
+Jede Ranking-Datei trägt die tatsächlich verwendeten Gewichte in
+`methode.gewicht_momentum_12_1`/`gewicht_high_52w`. Begründung: §4 Punkt 8.
+Die Anzeige (Methodik-Seite, Karten) beschreibt bis PR 2 noch 50/50.
+
+Bis 31.10.2026 (und für DE weiterhin) also:
 `Score 0–100 = 50 × Perzentil(12-1) + 50 × Perzentil(52W-Nähe)`,
 Perzentile **immer nur innerhalb eines Marktes**, Gleichstände deterministisch
 (höherer Score zuerst, dann Ticker A→Z; seit PR #57 auf der Methodik-Seite
@@ -1283,7 +1385,11 @@ CODEOWNERS existiert in diesem Repo nicht.
 `MOMENTUM_LOOKBACK_MONTHS`, `MOMENTUM_SKIP_MONTHS`,
 `HIGH_52W_WINDOW_DAYS`, `LIQUIDITY_MIN_MEDIAN_TURNOVER`,
 `LIQUIDITY_WINDOW_MONTHS`, `MIN_UNIVERSE_COVERAGE`, `TOP_N`,
-`HISTORY_DAYS`, `Market`, `MARKETS`, `_check_weights_are_backed`);
+`HISTORY_DAYS`, `Market`, `MARKETS`, `_check_weights_are_backed` — seit
+dem Gewichts-Fahrplan stehen dessen Werte in `MARKETS` und die Auswahl
+`gewichte_fuer` in `Market`, beides damit geschützt; die Hilfen
+`GewichtsEintrag`, `FAHRPLAN_BEGINN`, `_pruefe_gewichtspaar` dagegen
+**noch nicht**, siehe §5 Punkt 3);
 `ranking.py` (`is_last_weekday_of_month`, `due_months`, `resolve_asof`,
 `_juengster_werktag`, `zu_frueh_fuer_stichtag`, `median_turnover`,
 `build_ranking`); `konfluenz.py` (`elliott_long`, `konfluenz`,
@@ -1481,3 +1587,5 @@ hier, damit niemand sie erneut aufmacht.
 | **Sektor-Hinweis am ersten echten Stichtag (30.10.) sichtbar:** „Sektor-Häufung: 4 von 5 Top-5-Werten liegen im Sektor Energy." (US); DE ohne Hinweis | #72 | `docs/index.html` (`p.sektor-hinweis`) nach Lauf 96 |
 | **Oktober-Stichtag (30.10.2026) eingefroren**, beide Märkte — nach zwei fail-soft-Abbrüchen per manuellem Lauf 96 | `Momentum-Lauf` Lauf 96 | `8e29c5d`, `data/rankings/*_2026-10.json`, siehe §1, §4 Punkt 16 |
 | **Evaluation-Seite: Gesamtrückblick vor Monatsrückblick** | #81 | `0972fe7` |
+| **Wiedervorlage 01.11.2026 (erster Lit-Check nach Umstellung) ausgewertet:** Lauf korrekt, App-Push kam nicht an, Bericht von Easy kopiert → seither Zustellung direkt an ntfy.sh; Folge-Prüfung 08.11. in §3 | Easy, 01.11. | siehe §4 Punkt 15 (Nachtrag 01.11.) — Angaben aus Easys Bericht, aus dem Repo nicht belegbar |
+| **Lit-Check 52-Wochen-Hoch entschieden:** US 100/0 ab Ranking 2026-11, DE 50/50 | Easy, 01.11.; Rechnung: dieser PR | siehe §4 Punkt 8, §7.6 |
