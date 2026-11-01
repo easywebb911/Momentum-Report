@@ -317,7 +317,25 @@ def seite(tmp_path_factory):
         ],
         "de": [],
     }
-    (ziel / "evaluation.html").write_text(render_evaluation(evaluations), encoding="utf-8")
+    # Methodenwechsel (Gewichts-Fahrplan, PR #83/#84/#85): die US-Testseite
+    # traegt fuer 2026-06 noch 50/50, fuer 2026-07 bereits 100/0 -- damit
+    # messen ALLE 390-px-Tests fuer evaluation.html automatisch auch den
+    # zweiten Gesamtrueckblick-Block und den Methodenwechsel-Hinweis mit,
+    # ohne eine zweite Seite zu bauen (dasselbe Prinzip wie oben bei der
+    # US-Karte auf index.html).
+    eval_ranking_root = ziel / "eval-rankings"
+    eval_ranking_root.mkdir(exist_ok=True)
+    (eval_ranking_root / "us_2026-06.json").write_text(
+        json.dumps({"methode": {"gewicht_momentum_12_1": 0.5, "gewicht_high_52w": 0.5}}),
+        encoding="utf-8",
+    )
+    (eval_ranking_root / "us_2026-07.json").write_text(
+        json.dumps({"methode": {"gewicht_momentum_12_1": 1.0, "gewicht_high_52w": 0.0}}),
+        encoding="utf-8",
+    )
+    (ziel / "evaluation.html").write_text(
+        render_evaluation(evaluations, ranking_root=eval_ranking_root), encoding="utf-8"
+    )
     (ziel / "data").mkdir(exist_ok=True)
     (ziel / "data" / "top5.json").write_text(
         json.dumps(TOP5, ensure_ascii=False), encoding="utf-8"
