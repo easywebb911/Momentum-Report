@@ -146,20 +146,25 @@ def ordinal_ranks(values: Mapping[str, float]) -> dict[str, int]:
     return {ticker: n - i for i, (ticker, _) in enumerate(ordered)}
 
 
-def combined_score(pct_momentum: float, pct_high_52w: float) -> float:
-    """Endscore 0..100 = 50 x Perzentil(12-1) + 50 x Perzentil(52W-Naehe).
+def combined_score(
+    pct_momentum: float,
+    pct_high_52w: float,
+    w_momentum: float = WEIGHT_MOMENTUM_12_1,
+    w_high_52w: float = WEIGHT_HIGH_52W,
+) -> float:
+    """Endscore 0..100 = 100 x (w1 x Perzentil(12-1) + w2 x Perzentil(52W-Naehe)).
 
-    GLEICHGEWICHTET, und das ist eine Aussage: Die Literatur liefert KEIN
-    Mischverhaeltnis fuer diese beiden Zutaten -- sie vergleicht sie als
-    getrennte Strategien. Gleichgewichtung ist die Konvention der
-    Komposit-Arbeiten und zugleich die einzige Wahl, die nichts behauptet,
-    was nicht belegt ist. Die Gewichte stehen als benannte Konstanten an
-    genau einer Stelle (config.WEIGHT_*), samt Begruendung.
+    Ohne Gewichts-Argumente GLEICHGEWICHTET (config.WEIGHT_*, 50/50) -- die
+    Konvention der Komposit-Arbeiten, die bei fehlendem belegtem
+    Mischverhaeltnis nichts behauptet. Welche Gewichte ein Markt in einem
+    Ranking-Monat tatsaechlich verwendet, steht im Gewichts-Fahrplan des
+    Marktes (config.Market.gewichts_fahrplan); build_ranking reicht sie
+    hier hinein. Die Formel selbst ist fuer jedes Gewichtspaar dieselbe.
 
     Belege: momentum_12_1, high_52w, within_market.
     """
     return SCORE_SCALE * (
-        WEIGHT_MOMENTUM_12_1 * pct_momentum + WEIGHT_HIGH_52W * pct_high_52w
+        w_momentum * pct_momentum + w_high_52w * pct_high_52w
     )
 
 

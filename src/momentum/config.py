@@ -81,6 +81,41 @@ DOWNLOAD_BACKOFF_SECONDS = 5
 MIN_UNIVERSE_COVERAGE = 0.90
 
 
+# --- Gewichts-Fahrplan je Markt -------------------------------------------
+# Die Score-Gewichte gelten JE MARKT und JE RANKING-MONAT. Ein Fahrplan ist
+# eine aufsteigende Folge von Eintraegen "ab Ranking-Monat X gelten diese
+# Gewichte"; es gilt der juengste Eintrag, dessen Beginn nicht nach dem
+# Ranking-Monat liegt. Ausgewaehlt wird AUSSCHLIESSLICH nach dem Monat des
+# Stichtags (asof) -- NIE nach dem Lauf-Datum. Ein im November nachgeholtes
+# Oktober-Ranking rechnet deshalb mit den Oktober-Gewichten, und der
+# Merge-Zeitpunkt einer Fahrplan-Aenderung spielt fuer die Rechnung keine
+# Rolle.
+#
+# Der erste Eintrag jedes Fahrplans beginnt bei FAHRPLAN_BEGINN ("von
+# Anfang an") -- damit gibt es fuer JEDEN Monat genau einen gueltigen
+# Eintrag, nie eine Luecke, die still auf einen Ersatzwert fallen muesste.
+#
+# Entscheidung Easy, 01.11.2026 (Begruendung und Quellen samt ihrer
+# Grenzen: SESSION_HANDOVER.md §4 Punkt 8):
+#   USA: bis einschliesslich Ranking 2026-10 50/50, ab Ranking 2026-11
+#        100 % 12-1-Momentum, 0 % 52-Wochen-Hoch.
+#   Deutschland: unveraendert 50/50, ohne Wechsel.
+# Keine Zwischenwerte (60/40 o. ae.) -- ausdruecklich als Parametersuche
+# verworfen. Die 50/50-Eintraege verwenden die Konstanten WEIGHT_* oben
+# selbst, damit DE und die US-Monate bis 2026-10 mit exakt denselben
+# Gleitkommazahlen rechnen wie vor der Einfuehrung des Fahrplans.
+FAHRPLAN_BEGINN: tuple[int, int] = (1, 1)
+
+
+@dataclass(frozen=True)
+class GewichtsEintrag:
+    """Ab Ranking-Monat `ab` (Jahr, Monat) gelten diese beiden Gewichte."""
+
+    ab: tuple[int, int]
+    momentum_12_1: float
+    high_52w: float
+
+
 @dataclass(frozen=True)
 class Market:
     key: str
@@ -101,6 +136,22 @@ class Market:
     # einfrieren wuerde (realer Fall: Lauf 48, 31.08.2026 08:46 UTC,
     # DE-Kurs nachweislich untertaegig -- siehe SESSION_HANDOVER.md).
     stichtag_lauf_nicht_vor_utc: _dt.time
+    # Score-Gewichte je Ranking-Monat -- siehe "Gewichts-Fahrplan" oben.
+    # Bewusst OHNE Vorgabewert: jeder Markt nennt seinen Fahrplan selbst.
+    gewichts_fahrplan: tuple[GewichtsEintrag, ...]
+
+    def gewichte_fuer(self, year: int, month: int) -> tuple[float, float]:
+        """(Gewicht 12-1, Gewicht 52W-Naehe) fuer den Ranking-Monat year-month.
+
+        Rein aus (year, month) -- kein Zugriff auf Uhr oder Lauf-Datum.
+        """
+        gueltig = [g for g in self.gewichts_fahrplan if g.ab <= (year, month)]
+        if not gueltig:
+            raise RuntimeError(
+                f"{self.key}: kein Gewichts-Eintrag fuer {year:04d}-{month:02d}"
+            )
+        eintrag = gueltig[-1]
+        return eintrag.momentum_12_1, eintrag.high_52w
 
 
 MARKETS: tuple[Market, ...] = (
@@ -124,6 +175,10 @@ MARKETS: tuple[Market, ...] = (
         # konservativer als noetig, aber nie zu frueh -- unkritisch, da nur
         # den seltenen, verfrueht ausgeloesten Lauf betrifft.
         stichtag_lauf_nicht_vor_utc=_dt.time(21, 0),
+        gewichts_fahrplan=(
+            GewichtsEintrag(FAHRPLAN_BEGINN, WEIGHT_MOMENTUM_12_1, WEIGHT_HIGH_52W),
+            GewichtsEintrag((2026, 11), 1.0, 0.0),
+        ),
     ),
     Market(
         key="de",
@@ -138,25 +193,66 @@ MARKETS: tuple[Market, ...] = (
         # Jahreszeit 15:30 (MESZ, Sommer) oder 16:30 (MEZ, Winter). Wie bei
         # den USA die SPAETERE (Winter-)Zeit als Schwelle.
         stichtag_lauf_nicht_vor_utc=_dt.time(16, 30),
+        gewichts_fahrplan=(
+            GewichtsEintrag(FAHRPLAN_BEGINN, WEIGHT_MOMENTUM_12_1, WEIGHT_HIGH_52W),
+        ),
     ),
 )
 
 MARKETS_BY_KEY = {m.key: m for m in MARKETS}
 
 
-def _check_weights_are_backed() -> None:
-    """Jede gewichtete Komponente braucht Belege -- sonst Importfehler."""
-    weighted = {"momentum_12_1": WEIGHT_MOMENTUM_12_1, "high_52w": WEIGHT_HIGH_52W}
+def _pruefe_gewichtspaar(wo: str, w_momentum: float, w_high_52w: float) -> None:
+    """Ein Gewichtspaar: Belege fuer jede Komponente mit Gewicht > 0, beide
+    Gewichte in [0, 1], Summe 1. Gewicht 0 ist zulaessig (die Komponente
+    zaehlt dann nicht und braucht fuer dieses Paar keinen Beleg)."""
+    weighted = {"momentum_12_1": w_momentum, "high_52w": w_high_52w}
     missing = [k for k, w in weighted.items() if w and k not in SCORE_COMPONENT_SOURCES]
     if missing:
         raise RuntimeError(
-            "Score-Komponente ohne Primaerquelle: "
+            f"{wo}: Score-Komponente ohne Primaerquelle: "
             + ", ".join(missing)
             + " -- Eintrag in sources.SCORE_COMPONENT_SOURCES fehlt."
         )
-    total = round(WEIGHT_MOMENTUM_12_1 + WEIGHT_HIGH_52W, 10)
+    ausserhalb = [k for k, w in weighted.items() if not 0.0 <= w <= 1.0]
+    if ausserhalb:
+        raise RuntimeError(f"{wo}: Gewicht ausserhalb [0, 1]: {', '.join(ausserhalb)}")
+    total = round(w_momentum + w_high_52w, 10)
     if total != 1.0:
-        raise RuntimeError(f"Score-Gewichte summieren auf {total}, erwartet 1.0")
+        raise RuntimeError(f"{wo}: Score-Gewichte summieren auf {total}, erwartet 1.0")
+
+
+def _check_weights_are_backed() -> None:
+    """Jede gewichtete Komponente braucht Belege -- sonst Importfehler.
+
+    Geprueft werden die Standard-Konstanten UND jeder Eintrag jedes
+    Markt-Fahrplans; dazu die Form des Fahrplans selbst (nicht leer, erster
+    Eintrag ab FAHRPLAN_BEGINN, Beginn-Monate streng aufsteigend und
+    gueltig).
+    """
+    _pruefe_gewichtspaar("Standard", WEIGHT_MOMENTUM_12_1, WEIGHT_HIGH_52W)
+    for market in MARKETS:
+        plan = market.gewichts_fahrplan
+        if not plan:
+            raise RuntimeError(f"{market.key}: Gewichts-Fahrplan ist leer")
+        if plan[0].ab != FAHRPLAN_BEGINN:
+            raise RuntimeError(
+                f"{market.key}: erster Fahrplan-Eintrag muss ab {FAHRPLAN_BEGINN} gelten"
+            )
+        for vorher, nachher in zip(plan, plan[1:]):
+            if not vorher.ab < nachher.ab:
+                raise RuntimeError(
+                    f"{market.key}: Fahrplan nicht streng aufsteigend "
+                    f"({vorher.ab} vor {nachher.ab})"
+                )
+        for eintrag in plan:
+            if not 1 <= eintrag.ab[1] <= 12:
+                raise RuntimeError(f"{market.key}: ungueltiger Monat in {eintrag.ab}")
+            _pruefe_gewichtspaar(
+                f"{market.key} ab {eintrag.ab[0]:04d}-{eintrag.ab[1]:02d}",
+                eintrag.momentum_12_1,
+                eintrag.high_52w,
+            )
 
 
 _check_weights_are_backed()

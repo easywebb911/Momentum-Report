@@ -173,6 +173,12 @@ GESCHUETZTE_SYMBOLE: dict[str, frozenset[str]] = {
             "Market",
             "MARKETS",
             "_check_weights_are_backed",
+            # Gewichts-Fahrplan (PR #83): Werte stehen in MARKETS, Auswahl
+            # in Market.gewichte_fuer -- beides oben schon geschuetzt.
+            # Diese drei Hilfen tragen Form und Pruefung des Fahrplans.
+            "GewichtsEintrag",
+            "FAHRPLAN_BEGINN",
+            "_pruefe_gewichtspaar",
         }
     ),
     "src/momentum/ranking.py": frozenset(

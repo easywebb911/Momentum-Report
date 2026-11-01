@@ -23,8 +23,6 @@ from .config import (
     MIN_UNIVERSE_COVERAGE,
     SCHEMA_VERSION,
     TOP_N,
-    WEIGHT_HIGH_52W,
-    WEIGHT_MOMENTUM_12_1,
     Market,
 )
 from .data import PriceBundle
@@ -210,9 +208,16 @@ def build_ranking(
       1. Handelbarkeits-Filter (Liquiditaet) -- reduziert nur die Auswahl
       2. Kennzahlen je Titel (12-1, 52W-Naehe)
       3. Perzentil-Raenge NUR innerhalb dieses Marktes (Beleg within_market)
-      4. Score = gleichgewichtetes Mittel beider Perzentile (50/50),
-         Sortierung mit deterministischem Gleichstandsbruch
+      4. Score = gewichtetes Mittel beider Perzentile; die Gewichte kommen
+         aus dem Gewichts-Fahrplan des Marktes fuer den Monat des
+         Stichtags `asof` (config.Market.gewichte_fuer) -- NIE aus dem
+         Lauf-Datum. Sortierung mit deterministischem Gleichstandsbruch
     """
+    # Gewichte dieses Ranking-Monats, rein aus asof (siehe config.py,
+    # "Gewichts-Fahrplan"). Dieselben zwei Zahlen gehen in den Score UND
+    # in "methode" -- die Datei traegt so die tatsaechlich verwendeten
+    # Gewichte ihres Monats, nicht die eines anderen.
+    w_momentum, w_high_52w = market.gewichte_fuer(asof.year, asof.month)
     universe_tickers = list(universe.tickers)
     delivered = [t for t in universe_tickers if t in bundle.adjusted]
     coverage = len(delivered) / len(universe_tickers)
@@ -274,8 +279,8 @@ def build_ranking(
     pct_mom = percentile_ranks(momentum)
     pct_high = percentile_ranks(high52)
     # Zusaetzlich die Platzziffern je Zutat. Sie gehen NICHT in die Rechnung
-    # ein -- sie machen sichtbar, woher der Endscore kommt. Bei 50/50 ist
-    # genau das die interessante Information: ein Titel kann vorn stehen,
+    # ein -- sie machen sichtbar, woher der Endscore kommt. Bei einer
+    # Mischung (z. B. 50/50) ist genau das die interessante Information: ein Titel kann vorn stehen,
     # weil er in einer Zutat sehr stark und in der anderen mittelmaessig
     # ist. Das soll man sehen, statt es glauben zu muessen.
     rang_mom = ordinal_ranks(momentum)
@@ -283,7 +288,7 @@ def build_ranking(
 
     rows = []
     for ticker in momentum:
-        score = combined_score(pct_mom[ticker], pct_high[ticker])
+        score = combined_score(pct_mom[ticker], pct_high[ticker], w_momentum, w_high_52w)
         rows.append(
             {
                 "ticker": ticker,
@@ -324,8 +329,8 @@ def build_ranking(
             "titel_gesamt": len(universe_tickers),
         },
         "methode": {
-            "gewicht_momentum_12_1": WEIGHT_MOMENTUM_12_1,
-            "gewicht_high_52w": WEIGHT_HIGH_52W,
+            "gewicht_momentum_12_1": w_momentum,
+            "gewicht_high_52w": w_high_52w,
             "liquiditaets_schwelle": LIQUIDITY_MIN_MEDIAN_TURNOVER,
             "liquiditaets_fenster_monate": LIQUIDITY_WINDOW_MONTHS,
         },
