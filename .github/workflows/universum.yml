@@ -43,16 +43,19 @@ jobs:
       MOMENTUM_URL_DAX: ${{ inputs.url_dax }}
       MOMENTUM_URL_MDAX: ${{ inputs.url_mdax }}
       MOMENTUM_URL_TECDAX: ${{ inputs.url_tecdax }}
+      # Auch die Markt-Auswahl nur ueber env:, nie per ${{ }} im Shell-Text
+      # (Injektion, SESSION_HANDOVER.md §4 Punkt 14c); im Skript geprueft.
+      EINGABE_MARKT: ${{ inputs.markt }}
 
     steps:
       - name: Quelltext holen
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Python einrichten
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -65,7 +68,15 @@ jobs:
       # Bricht von sich aus ab, wenn die Anzahl unplausibel ist oder die
       # Kurspruefung zu viele Titel aussortiert. Dann wird NICHTS geschrieben.
       - name: Listen erzeugen und gegen die Kursquelle pruefen
-        run: python tools/build_universe.py ${{ inputs.markt }}
+        run: |
+          case "${EINGABE_MARKT}" in
+            beide|us|de) ;;
+            *)
+              echo "::error title=Ungueltiger Markt::Eingabe 'markt' muss beide, us oder de sein."
+              exit 1
+              ;;
+          esac
+          python tools/build_universe.py "${EINGABE_MARKT}"
 
       - name: Ergebnis pruefen (Platzhalter muss weg sein)
         if: always()
@@ -97,7 +108,7 @@ jobs:
             echo "Keine Aenderung am Universum."
             exit 0
           fi
-          git commit -m "Universum aktualisiert (${{ inputs.markt }}, Lauf ${{ github.run_number }})"
+          git commit -m "Universum aktualisiert (${EINGABE_MARKT}, Lauf ${{ github.run_number }})"
 
           for i in 1 2 3 4 5; do
             # Ausgabe unterdrueckt: "no rebase in progress" ist der Normalfall.

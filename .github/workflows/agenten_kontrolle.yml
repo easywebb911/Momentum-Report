@@ -50,12 +50,12 @@ jobs:
       # einfuehrt (Anlaufschutz, siehe agenten_kontrolle.py), ein flacher
       # Checkout haette diesen Commit nicht zuverlaessig verfuegbar.
       - name: Quelltext holen
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Python einrichten
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 

@@ -67,13 +67,13 @@ jobs:
       # sonst arbeitet ein manuell gestarteter Lauf auf altem Stand und
       # sein Push kollidiert garantiert.
       - name: Quelltext holen
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Python einrichten
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -100,14 +100,40 @@ jobs:
             echo "NTFY_TOPIC ist gesetzt."
           fi
 
+      # Die Dispatch-Eingaben kommen NUR ueber env: in den Schritt, nie per
+      # ${{ }} in den Shell-Text -- sonst wuerde ein Wert wie
+      # "2026-11-03; echo X" als Befehl ausgefuehrt (Injektion, siehe
+      # SESSION_HANDOVER.md §4 Punkt 14c). `datum` wird vor Gebrauch streng
+      # geprueft: leer oder JJJJ-MM-TT, sonst Abbruch. Bei planmaessigen
+      # Laeufen (schedule) sind alle vier leer -> Aufruf wie bisher ohne
+      # Zusaetze.
       - name: Analyse
         id: analyse
+        env:
+          EINGABE_DATUM: ${{ inputs.datum }}
+          EINGABE_OHNE_PUSH: ${{ inputs.ohne_push }}
+          EINGABE_TESTPUSH: ${{ inputs.testpush }}
+          EINGABE_OHNE_KURSVERGLEICH: ${{ inputs.ohne_kursvergleich }}
         run: |
-          python -m momentum.run \
-            ${{ inputs.datum && format('--today {0}', inputs.datum) || '' }} \
-            ${{ inputs.ohne_push && '--no-push' || '' }} \
-            ${{ inputs.testpush && '--testpush' || '' }} \
-            ${{ inputs.ohne_kursvergleich && '--ohne-kursvergleich' || '' }}
+          set -eu
+          zusaetze=()
+          if [ -n "${EINGABE_DATUM}" ]; then
+            if [[ ! "${EINGABE_DATUM}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+              echo "::error title=Ungueltiges Datum::Eingabe 'datum' muss leer oder JJJJ-MM-TT sein. Lauf abgebrochen, nichts gerechnet."
+              exit 1
+            fi
+            zusaetze+=(--today "${EINGABE_DATUM}")
+          fi
+          if [ "${EINGABE_OHNE_PUSH}" = "true" ]; then
+            zusaetze+=(--no-push)
+          fi
+          if [ "${EINGABE_TESTPUSH}" = "true" ]; then
+            zusaetze+=(--testpush)
+          fi
+          if [ "${EINGABE_OHNE_KURSVERGLEICH}" = "true" ]; then
+            zusaetze+=(--ohne-kursvergleich)
+          fi
+          python -m momentum.run ${zusaetze[@]+"${zusaetze[@]}"}
 
       # --------------------------------------------------------------
       # Ergebnisse zurueckschreiben. Nur auf main, und mit
