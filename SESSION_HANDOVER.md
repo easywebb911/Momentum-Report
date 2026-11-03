@@ -285,7 +285,6 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **offen, keine Frist** <!-- faellig: offen --> | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 | **ca. 10 Handelstage nach Merge von PR #74** <!-- faellig: offen --> | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
 | **08.11.2026** (Sonntag) <!-- faellig: 2026-11-08 --> | **Lit-Check erstmals über den neuen Weg: direkt an ntfy.sh** (seit 01.11., siehe §4 Punkt 15) — prüfen: kam die Meldung per ntfy an? Bleibt sie aus: Lauf in der Task-Ansicht öffnen (HTTP-Fehler von ntfy.sh, z. B. 429?); Fallback wäre der App-Push. | Die Wiedervorlage vom 01.11. ist erledigt (§10): der Lit-Check lief korrekt, sein App-Push kam aber nicht an — deshalb seither die direkte ntfy-Zustellung, für den Lit-Check noch nicht im echten Sonntagslauf belegt. |
-| **02.11.2026** (Montag) <!-- faellig: 2026-11-02 --> | **Erstes Montags-Lebenszeichen des Wächters über ntfy.sh direkt** (seit 01.11.: montags hörbar, Priorität 3; sonst täglich lautlos, Priorität 1; Befund mit Priorität 3/4; Fallback App-Push) — prüfen: kam es am iPhone hörbar an? Bleibt es aus, ist der Wächter selbst ausgefallen; die Agenten-Kontrolle (PR #79) überwacht ihn seit 31.10. nicht mehr. | Siehe §4 Punkt 15 — das Montags-Lebenszeichen ersetzt die abgeschaltete Agenten-Kontrolle. Beim Test am 01.11. einmal HTTP 429 von ntfy.sh, Wiederholung erfolgreich — ob das im echten Montagslauf wieder auftritt, ist **ungeprüft**. |
 | **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, seit 31.10. Nur-Lesen, seit 01.11. Zustellung direkt an ntfy.sh, Fallback App-Push, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, kam die ntfy-Meldung an, und war sein Befund sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
 | **30.11.2026** (Montag, US-Stichtag) <!-- faellig: 2026-11-30 --> | **PR #84 (Methodik/Karten) ist gemergt (`022c8ff`) — die Seite nennt den Wechsel bereits.** **Erster US-Stichtag mit 100/0 — Gewichte in `data/rankings/us_2026-11.json` prüfen:** `methode.gewicht_momentum_12_1` = 1.0, `methode.gewicht_high_52w` = 0.0, Score = 100 × `perzentil_momentum`; `de_2026-11.json` weiter 0.5/0.5. **Zusätzlich: ist PR #85 (Evaluation) bis dahin gemergt?** Sonst zählt der Gesamtrückblick November versehentlich mit den Juli-Oktober-Monaten zusammen. | Siehe §4 Punkt 8, §7.6 — die Mechanik ist per Test belegt (`tests/unit/test_gewichts_fahrplan.py`), im echten Lauf noch nicht. |
 | **31.12.2026** (Donnerstag, US-Stichtag, zugleich Dezember-Lauf) <!-- faellig: 2026-12-31 --> | **Erster echter Test der Methodenwechsel-Anzeige auf der Evaluation-Seite** (PR #85) — der Dezember-Lauf erzeugt erstmals den Rückblick auf das November-Ranking (`ausgewerteter_monat` 2026-11, siehe evaluation.py: der Rückblick entsteht als Nebenprodukt des JEWEILS NÄCHSTEN Rankings). Prüfen: zeigt `docs/evaluation.html` für die USA jetzt zwei getrennte Gesamtrückblick-Blöcke ("Rankings Juli bis Oktober 2026 (50/50)" und "ab Ranking November 2026 (nur 12-1-Momentum)"), mit dem "Methodenwechsel"-Hinweis am November-Monat? Bleibt es bei einem einzigen Block oder fehlt der Hinweis: Fehler untersuchen, nicht nur hinnehmen. | Siehe §4 Punkt 8, §6 Punkt 0, PR #85 — bisher nur an synthetischen Daten geprüft, noch nie an einem echten Dezember-Lauf. |
@@ -967,8 +966,8 @@ verworfen, davon **0 mit / 5 ohne Rohkurs**, alle am **02.11.**; **US**
 einem einzigen Messpunkt**; für US liegt noch kein Fall vor. Folge,
 falls sich das bestätigt: der Rohkurs-Teil von V3 erkennt die
 DE-Verzögerung nicht, es bleibt nur die Werktags-Wartezeit (V2-Anteil).
-Nebenbefund: DE `kurse_vom` stand damit auf 30.10. — zwei Handelstage
-zurück (Fr 30.10. → Mo 02.11. fehlte).
+Nebenbefund: DE `kurse_vom` stand damit auf 30.10. — einen Handelstag
+zurück (Mo 02.11. fehlte) — das bekannte Muster.
 
 *Vorgeschichte (Stand 31.10., unverändert belassen):*
 
@@ -1036,11 +1035,8 @@ Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
 1. **`Node.js 20 is deprecated`-Warnung** in jedem Lauf — **Teil
    `actions/checkout`/`actions/setup-python` erledigt mit dem Merge von PR
    #87** (`checkout@v5`, `setup-python@v6`, je 16 Stellen in 15 Dateien).
-   **Rest offen:** `actions/upload-artifact@v4` und
-   `actions/download-artifact@v4` in `vertrag.yml` lösen die Warnung
-   ebenfalls aus (belegt im Job-Log Run `41073466086`, Jobs `vertrag`
-   und `agent-datumsformat`); bewusst nicht in PR #87, weil nicht
-   beauftragt. Ursprünglicher Text: **jetzt fällig**
+   Der Rest (Artefakt-Actions in `vertrag.yml`) steht jetzt als eigener
+   Punkt 5 unten. Ursprünglicher Text: **jetzt fällig**
    (die ursprüngliche Rücksicht „nicht vor dem 31.08." ist mit dem
    31.08. selbst erledigt): `actions/checkout@v4` und
    `actions/setup-python@v5` auf aktuelle Fassungen heben. Betrifft
@@ -1068,6 +1064,12 @@ Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
    Prüfung Monate still zurückhält (V3, §4 Punkt 16) — dann braucht es
    einen Rückfall auf `latest_ranking` wie im Anzeige-Zweig. Geschützte
    Zone (`process_market`), MANUAL; gehört in den V3-PR, nicht separat.
+5. **Node-20-Warnung durch `actions/upload-artifact@v4` und
+   `actions/download-artifact@v4` in `vertrag.yml`** *(offen)* — belegt
+   im Job-Log Run `41073466086` (Jobs `vertrag` und
+   `agent-datumsformat`); bewusst nicht in PR #87, weil nicht beauftragt.
+   **Vor der Umstellung die Änderungen der neuen Major-Versionen prüfen.**
+   Geschützte Zone (`.github/workflows/`), MANUAL.
 
 Erledigt und deshalb nicht mehr aufgeführt: Punkt „Testkontext auf
 default-deny umstellen" (#40, siehe §10), die Kosmetik-Punkte (tote
@@ -1671,6 +1673,7 @@ hier, damit niemand sie erneut aufmacht.
 | **Sektor-Hinweis am ersten echten Stichtag (30.10.) sichtbar:** „Sektor-Häufung: 4 von 5 Top-5-Werten liegen im Sektor Energy." (US); DE ohne Hinweis | #72 | `docs/index.html` (`p.sektor-hinweis`) nach Lauf 96 |
 | **Oktober-Stichtag (30.10.2026) eingefroren**, beide Märkte — nach zwei fail-soft-Abbrüchen per manuellem Lauf 96 | `Momentum-Lauf` Lauf 96 | `8e29c5d`, `data/rankings/*_2026-10.json`, siehe §1, §4 Punkt 16 |
 | **Evaluation-Seite: Gesamtrückblick vor Monatsrückblick** | #81 | `0972fe7` |
+| **Wiedervorlage 02.11.2026 (erstes Montags-Lebenszeichen des Wächters über ntfy.sh direkt):** Lebenszeichen kam am 02.11. am iPhone an | Easy, Angabe vom 03.11. | aus dem Repo nicht belegbar, siehe §4 Punkt 15 |
 | **Ranking-Verlauf entschieden: nicht bauen** (ehem. Wiedervorlage 03.11., Roadmap §6 Punkt 1) — geringer Nutzen für die Kaufentscheidung, mischt seit November zwei Regeln; jederzeit neu aufnehmbar | Easy, 03.11.2026 | siehe §6 Punkt 1 |
 | **Wiedervorlage 01.11.2026 (erster Lit-Check nach Umstellung) ausgewertet:** Lauf korrekt, App-Push kam nicht an, Bericht von Easy kopiert → seither Zustellung direkt an ntfy.sh; Folge-Prüfung 08.11. in §3 | Easy, 01.11. | siehe §4 Punkt 15 (Nachtrag 01.11.) — Angaben aus Easys Bericht, aus dem Repo nicht belegbar |
 | **Wiedervorlage 25.11.2026 („PR 2 Methodik/Karten gemergt") — gebaut als PR #84**; der Merge selbst liegt bei Easy, deshalb fragt die 30.11.-Zeile in §3 ihn vorher ab | #84 | siehe §2, §6 Punkt 0 |
