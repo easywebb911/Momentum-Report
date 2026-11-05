@@ -287,9 +287,8 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | **08.11.2026** (Sonntag) <!-- faellig: 2026-11-08 --> | **Lit-Check erstmals über den neuen Weg: direkt an ntfy.sh** (seit 01.11., siehe §4 Punkt 15) — prüfen: kam die Meldung per ntfy an? Bleibt sie aus: Lauf in der Task-Ansicht öffnen (HTTP-Fehler von ntfy.sh, z. B. 429?); Fallback wäre der App-Push. | Die Wiedervorlage vom 01.11. ist erledigt (§10): der Lit-Check lief korrekt, sein App-Push kam aber nicht an — deshalb seither die direkte ntfy-Zustellung, für den Lit-Check noch nicht im echten Sonntagslauf belegt. |
 | **30.11.2026** (Montag, US-Stichtag) <!-- faellig: 2026-11-30 --> | **PR #84 (Methodik/Karten) ist gemergt (`022c8ff`) — die Seite nennt den Wechsel bereits.** **Erster US-Stichtag mit 100/0 — Gewichte in `data/rankings/us_2026-11.json` prüfen:** `methode.gewicht_momentum_12_1` = 1.0, `methode.gewicht_high_52w` = 0.0, Score = 100 × `perzentil_momentum`; `de_2026-11.json` weiter 0.5/0.5. **Zusätzlich: ist PR #85 (Evaluation) bis dahin gemergt?** Sonst zählt der Gesamtrückblick November versehentlich mit den Juli-Oktober-Monaten zusammen. | Siehe §4 Punkt 8, §7.6 — die Mechanik ist per Test belegt (`tests/unit/test_gewichts_fahrplan.py`), im echten Lauf noch nicht. |
 | **31.12.2026** (Donnerstag, US-Stichtag, zugleich Dezember-Lauf) <!-- faellig: 2026-12-31 --> | **Erster echter Test der Methodenwechsel-Anzeige auf der Evaluation-Seite** (PR #85) — der Dezember-Lauf erzeugt erstmals den Rückblick auf das November-Ranking (`ausgewerteter_monat` 2026-11, siehe evaluation.py: der Rückblick entsteht als Nebenprodukt des JEWEILS NÄCHSTEN Rankings). Prüfen: zeigt `docs/evaluation.html` für die USA jetzt zwei getrennte Gesamtrückblick-Blöcke ("Rankings Juli bis Oktober 2026 (50/50)" und "ab Ranking November 2026 (nur 12-1-Momentum)"), mit dem "Methodenwechsel"-Hinweis am November-Monat? Bleibt es bei einem einzigen Block oder fehlt der Hinweis: Fehler untersuchen, nicht nur hinnehmen. | Siehe §4 Punkt 8, §6 Punkt 0, PR #85 — bisher nur an synthetischen Daten geprüft, noch nie an einem echten Dezember-Lauf. |
-| **nach 3 Läufen mit dem Beleg-Zähler** (frühestens ca. 05.11.2026) <!-- faellig: 2026-11-05 --> | **Zähler auswerten: ist die Annahme „Rohkurs vorhanden, nur Adj Close fehlt" belegt?** In `data/status.json` → `daten` je Markt `zeilen_verworfen_mit_rohkurs` gegen `zeilen_verworfen_ohne_rohkurs` und `verworfen_je_tag_juengste` lesen (Git-Historie der Datei), dazu die Job-Log-Zeilen `[daten] …` — **auch die Index-Zeilen** (`[daten] 1 Titel (ab ^SP500TR/^GDAXI)`) der Stichtags-Läufe auswerten: der Fall „stiller falscher Stichtag" hängt am Index, nicht an den Titeln (Index-Abrufe gibt es nur in Stichtags-Läufen). Erster Messpunkt (Lauf 97): DE 0 mit / 5 ohne Rohkurs, siehe §4 Punkt 16. Erwartung bei einem nächtlichen Lauf: verworfen = 5 je Markt, davon **mit Rohkurs 5**, jüngster Tag = Vortag. | Grundlage für die Entscheidung, ob V3 (§4 Punkt 16) wie entworfen gebaut werden kann. Zeigt `ohne Rohkurs`, trägt V3s Rohkurs-Teil nicht — dann bleibt nur die Werktags-Wartezeit (V2). |
 | **01.12.2026, 09:30 UTC** <!-- faellig: 2026-12-01 --> | **Stichtagslauf November von Hand starten** (Actions → Momentum-Lauf → Run workflow) und danach den Stichtag **30.11.** in `data/rankings/us_2026-11.json` UND `de_2026-11.json` prüfen (`stichtag` = `2026-11-30`). Ist er falsch (z. B. 27.11.): Datei über den bekannten Korrekturweg (§10, „Korrekturweg + Determinismus live bewiesen") löschen und neu bauen. | Diagnose §4 Punkt 16: der planmäßige Lauf (≈ 01.12. 00–02 UTC) bricht sehr wahrscheinlich ab (Adj Close des 30.11. fehlt noch); DE-Daten erfahrungsgemäß erst ab ≈ 09:15 UTC vollständig. Restrisiko „stiller falscher Stichtag", wenn dem Index der 30.11. fehlt. |
-| **ab 02.12.2026** <!-- faellig: 2026-12-02 --> | **V3 bauen** (Stichtags-Vollständigkeitsprüfung, §4 Punkt 16) — nur, wenn der Beleg-Zähler die Rohkurs-Annahme bestätigt hat; sonst Entwurf anpassen. MANUAL, Lauf-Pfad (`run.py:process_market`, neue Prüffunktion in `ranking.py` + `GESCHUETZTE_SYMBOLE`). Merge vor dem Januar-Stichtag (29.01.2027). | Entscheidung Easy, 01.11.2026. |
+| **ab 02.12.2026** <!-- faellig: 2026-12-02 --> | **ab 02.12.: V2 bauen (Entwurf siehe §4 Punkt 16)** (Stichtags-Vollständigkeitsprüfung) — nur, wenn der Beleg-Zähler die Rohkurs-Annahme bestätigt hat; sonst Entwurf anpassen. MANUAL, Lauf-Pfad (`run.py:process_market`, neue Prüffunktion in `ranking.py` + `GESCHUETZTE_SYMBOLE`). Merge vor dem Januar-Stichtag (29.01.2027). | Entscheidung Easy, 01.11.2026. |
 | **beim nächsten Abbruch** <!-- faellig: offen --> | **Beim nächsten Abbruch "kein Titel mit vollstaendiger Historie" die Zahlen-Meldung (PR #80) und die neuen Beleg-Zähler (`[daten]`-Zeile) auswerten.** | Ursache inzwischen per Diagnose belegt (§4 Punkt 16); die Meldung bestätigt sie im Einzelfall. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
@@ -967,6 +966,21 @@ falls sich das bestätigt: der Rohkurs-Teil von V3 erkennt die
 DE-Verzögerung nicht, es bleibt nur die Werktags-Wartezeit (V2-Anteil).
 Nebenbefund: DE `kurse_vom` stand damit auf 30.10. — einen Handelstag
 zurück (Mo 02.11. fehlte) — das bekannte Muster.
+
+*Auswertung 05.11.2026 (Läufe 97/98/99, `32221f7`, `ec8ba91`,
+`d6618ef`):* in 5 von 6 Markt-Läufen je 5 Zeilen des Vortags verworfen,
+alle **ohne** Rohkurs (0 mit); vollständig nur US im Lauf 97 (Handelstag
+02.11.). Die Annahme hinter V3 ist damit widerlegt. Grenze: der Zähler
+sieht nur die 5 Anzeige-Titel, nicht den Index und keinen Stichtagslauf.
+
+**Entscheidung Easy (05.11.2026): V2 statt V3** — Werktags-Wartezeit,
+kalenderbasiert (nur Wochentage, keine Feiertagsliste); greift auch,
+wenn dem **Index** der letzte Tag fehlt (der stille-Stichtag-Fall).
+**Bau ab 02.12.** (nach dem November-Stichtag), **Merge-Ziel vor dem
+31.12.2026** (DE-Feiertagsfall: Xetra 24./31.12. zu). Im selben Bau:
+die Absturzstelle `run.py:372` bei leerem `new_ranking` (§5 Punkt 4)
+und der Alarm ab Werktag 3 („bleibt dauerhaft unvollständig" → lauter
+Abbruch). Ersetzt die Entscheidung vom 01.11. (V3) oben.
 
 *Vorgeschichte (Stand 31.10., unverändert belassen):*
 
@@ -1672,6 +1686,7 @@ hier, damit niemand sie erneut aufmacht.
 | **Sektor-Hinweis am ersten echten Stichtag (30.10.) sichtbar:** „Sektor-Häufung: 4 von 5 Top-5-Werten liegen im Sektor Energy." (US); DE ohne Hinweis | #72 | `docs/index.html` (`p.sektor-hinweis`) nach Lauf 96 |
 | **Oktober-Stichtag (30.10.2026) eingefroren**, beide Märkte — nach zwei fail-soft-Abbrüchen per manuellem Lauf 96 | `Momentum-Lauf` Lauf 96 | `8e29c5d`, `data/rankings/*_2026-10.json`, siehe §1, §4 Punkt 16 |
 | **Evaluation-Seite: Gesamtrückblick vor Monatsrückblick** | #81 | `0972fe7` |
+| **Wiedervorlage 05.11.2026 (Beleg-Zähler auswerten):** Läufe 97/98/99 (`32221f7`, `ec8ba91`, `d6618ef`): in 5 von 6 Markt-Läufen je 5 Zeilen des Vortags verworfen, alle **ohne** Rohkurs (0 mit); vollständig nur US im Lauf 97 vom 03.11. (Handelstag 02.11.). **Annahme hinter V3 widerlegt.** Grenze: der Zähler sieht nur die 5 Anzeige-Titel, nicht den Index und keinen Stichtagslauf | Auswertung 05.11.2026 | `data/status.json` → `daten` der drei Commits; siehe §4 Punkt 16 |
 | **Wiedervorlage 03.11.2026 (erster Monatsrundgang):** Rundgang lief am 03.11., Meldung kam per ntfy an, Befund sachlich korrekt (Läufe, Oktober-Ranking, erster Zählerwert, fällige Punkte); Grenze: sieht keine Workflow-Logs | Easy, Angabe vom 03.11. | aus dem Repo nicht belegbar, siehe §4 Punkt 15 |
 | **Wiedervorlage 02.11.2026 (erstes Montags-Lebenszeichen des Wächters über ntfy.sh direkt):** Lebenszeichen kam am 02.11. am iPhone an | Easy, Angabe vom 03.11. | aus dem Repo nicht belegbar, siehe §4 Punkt 15 |
 | **Ranking-Verlauf entschieden: nicht bauen** (ehem. Wiedervorlage 03.11., Roadmap §6 Punkt 1) — geringer Nutzen für die Kaufentscheidung, mischt seit November zwei Regeln; jederzeit neu aufnehmbar | Easy, 03.11.2026 | siehe §6 Punkt 1 |
