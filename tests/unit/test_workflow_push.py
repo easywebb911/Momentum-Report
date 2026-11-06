@@ -188,7 +188,12 @@ def test_der_schalter_erreicht_das_programm():
     ]
     assert len(analyse) == 1
     skript = analyse[0]["run"]
-    assert "inputs.testpush" in skript
+    # Seit dem Injektions-Fix (SESSION_HANDOVER.md §4 Punkt 14c) kommt die
+    # Eingabe ueber env: in den Schritt, NICHT mehr per ${{ }} in den
+    # Shell-Text. Der Draht ist also: Feld -> env -> Skript-Variable.
+    assert analyse[0]["env"]["EINGABE_TESTPUSH"] == "${{ inputs.testpush }}"
+    assert "inputs." not in skript
+    assert "EINGABE_TESTPUSH" in skript
     assert "--testpush" in skript
     # Der normale Lauf bleibt unangetastet: die Probe kommt ZUSAETZLICH.
     assert "python -m momentum.run" in skript

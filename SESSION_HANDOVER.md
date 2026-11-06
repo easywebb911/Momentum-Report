@@ -1,5 +1,14 @@
 # Session-Handover — Momentum-Report
 
+**Nachtrag 03.11.2026:** PR #86 (Beleg-Zähler) gemergt (`5f6ccd8`).
+Erster Messpunkt (Lauf 97): DE 0 mit / 5 ohne Rohkurs — V3-Annahme für DE
+widerlegt (1 Messpunkt, §4 Punkt 16). PR #87 (Workflow-Hygiene:
+Injektions-Fix §4 Punkt 14c, Node-24-Actions §5 Punkt 1) liegt vor —
+MANUAL, Merge durch Easy nach der Zähler-Auswertung am 05.11. Handover
+aufgeräumt: Ranking-Verlauf entschieden (nicht bauen), §4 Punkte 2, 5,
+7, 9, 11, 12 geschlossen (Volltext in §10), 6 und 10 bewusst offen
+gelassen, 1, 3, 14d, 14e geparkt.
+
 **Nachtrag 01.11.2026, abends:** PR #85 (Evaluation, PR 3 von 3) ist
 **gemergt** (`d457924`) — der Methodenwechsel-Umbau ist vollständig.
 Diagnose zur nächtlichen Kurs-Lücke und zu den Abbrüchen 94/95 liegt vor
@@ -247,7 +256,8 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #83 | `43d3115`/`3b20111`/`6f4f5fc`→`f5a21b3` | 01.11. | **Score-Gewichte je Markt als Fahrplan nach Ranking-Monat** (PR 1 von 3): US ab 2026-11 100/0, bis 2026-10 50/50; DE immer 50/50. Auswahl rein nach Stichtag-Monat, keine Anzeige-/Textänderung. Neue Tests `tests/unit/test_gewichts_fahrplan.py` (DE-Hash byte-genau wie vor dem Umbau, US-Grenze Okt/Nov, Nachholung, Determinismus). Nachtrag im selben PR: Fahrplan-Hilfen in `GESCHUETZTE_SYMBOLE` aufgenommen (§5 Punkt 3, §7.8). Schutz-Sperre erwartet ROT — siehe §4 Punkt 8, §7.6 | MANUAL |
 | #84 | `ff0190d`→`022c8ff` | 01.11. | **PR 2 von 3: Methodenwechsel US auf Methodik-Seite und Karten sichtbar** — Methodik erzeugt die Gewichte je Markt aus dem Fahrplan (beide US-Regeln mit Monat, DE getrennt), Score-Karte mit Begründung (Hou/Xue/Zhang tragend, Barroso/Wang, IMC samt Gegenzahl; DE: Burghof/Prothmann, Vorbehalt Franz/Regele); fünf neue Einträge in `sources.py`; Karte liest `ranking["methode"]` und zeigt bei 52W-Gewicht 0 „nur Info, zählt nicht im Score"; README nachgezogen. Keine Rechenänderung, Schutz-Sperre GRÜN erwartet. Neue Tests `tests/unit/test_methodik_gewichte.py`, 390-px-Test für den Hinweis | MANUAL |
 | #85 | `7ceee80`/`18bd7bc`→`d457924` | 01.11. | **PR 3 von 3: Evaluation-Seite zeigt den Methodenwechsel, zählt verschiedene Regeln nie zusammen** — `render_evaluation()` gruppiert den Gesamtrückblick je Markt nach den tatsächlichen Gewichten des zugehörigen Rankings (`methode.gewicht_*`, aus `data/rankings/*.json` gelesen, NICHT aus `config.py` — Zuordnung Evaluation→Ranking ist code-belegt: `ausgewerteter_monat` == `ranking_monat`, gleicher Dateiname). Kennt ein Markt nur eine Regel (heute überall so): Anzeige byte-genau wie vorher (echte `docs/evaluation.html`-Hashes vor/nach identisch, siehe PR-Text). Fehlt die Ranking-Datei/das Feld: fail-soft "Regel unbekannt", nie mit einer bekannten Gruppe zusammengezählt. Monatsrückblick/Details je Monat tragen bei mehreren Regeln eine Kennzeichnung, der erste Monat je neuer Regel einen "Methodenwechsel"-Hinweis. Kein neues Feld in `data/evaluation/*.json`, keine Änderung an `config.py`/`ranking.py`/`scoring.py`/`evaluation.py`-Rechnung/Workflows. Schutz-Sperre GRÜN (lokal geprüft). Neue Tests in `tests/unit/test_render.py` (Methodenwechsel-Gruppierung, Summen-Erhalt, Fail-soft, Byte-Identität bei einer Regel), 390-px-Fixture (`tests/design/conftest.py`) um einen zweiten Block erweitert | MANUAL |
-| #86 | `82549b0` (Merge-Commit folgt) | 01.11. | **Beleg-Zähler in `data.py`, keine Verhaltensänderung:** zählt von den wegen nicht-endlichem Adj Close verworfenen Zeilen, wie viele einen gültigen Rohkurs (Close) trugen und wie viele nicht, und je Tag die Anzahl (jüngste 3 Tage). Additiv in `status.json` → `daten` (`zeilen_verworfen_mit_rohkurs`, `zeilen_verworfen_ohne_rohkurs`, `verworfen_je_tag_juengste`) plus eine Job-Log-Zeile `[daten] …` je Abruf mit verworfenen Zeilen (Index und Titel getrennt). Welche Zeilen verworfen werden, bleibt unverändert; Rankings/Kurse/Seiten mit denselben Eingaben byte-gleich. Schutz-Sperre GRÜN. Tests `tests/unit/test_beleg_zaehler.py`. Zweck: Annahme hinter V3 belegen (§4 Punkt 16) | MANUAL |
+| #86 | `82549b0`/`251a107`→`5f6ccd8` | 01.11. | **Beleg-Zähler in `data.py`, keine Verhaltensänderung:** zählt von den wegen nicht-endlichem Adj Close verworfenen Zeilen, wie viele einen gültigen Rohkurs (Close) trugen und wie viele nicht, und je Tag die Anzahl (jüngste 3 Tage). Additiv in `status.json` → `daten` (`zeilen_verworfen_mit_rohkurs`, `zeilen_verworfen_ohne_rohkurs`, `verworfen_je_tag_juengste`) plus eine Job-Log-Zeile `[daten] …` je Abruf mit verworfenen Zeilen (Index und Titel getrennt). Welche Zeilen verworfen werden, bleibt unverändert; Rankings/Kurse/Seiten mit denselben Eingaben byte-gleich. Schutz-Sperre GRÜN. Tests `tests/unit/test_beleg_zaehler.py`. Zweck: Annahme hinter V3 belegen (§4 Punkt 16) | MANUAL |
+| #87 | (dieser PR, Merge-Commit folgt) | 03.11. | **Workflow-Hygiene:** Dispatch-Eingaben von `lauf.yml` (datum, ohne_push, testpush, ohne_kursvergleich) und `universum.yml` (markt) nur noch über `env:`, `datum` streng geprüft; `vertrag.yml` nutzt `$GITHUB_EVENT_NAME` statt `${{ github.event_name }}`; `actions/checkout@v4→v5`, `actions/setup-python@v5→v6` überall (Node 24). Keine Cron-, Rechte- oder Job-Änderung. Neuer Test `tests/unit/test_workflow_injektion.py` (statisch über alle Workflows + echte Ausführung mit bösartigem `datum`). Schließt §4 Punkt 14c, §5 Punkt 1 zum größten Teil. Dazu Handover-Aufräumen (§3/§4/§6/§10). Schutz-Sperre erwartet ROT (Workflow-Ordner) | MANUAL |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -272,17 +282,13 @@ nicht im Originaltext vorgefunden. Rückwirkend nicht mehr korrigierbar
 | Wann | Was | Warum |
 |---|---|---|
 | **laufend, montags** <!-- faellig: offen --> | `Datenquelle prüfen` läuft gegen Yahoo. | Schlägt sie fehl, ist die Kursquelle das Problem, nicht der Code. |
-| **03.11.2026** (mit dem Monatsrundgang) <!-- faellig: 2026-11-03 --> | **Ranking-Verlauf — jetzt entscheidungsreif.** Entscheiden, ob die Seite eine Historie zeigt. | Seit dem Oktober-Stichtag liegen **4 Stichtage** vor (Juli, August, September, Oktober — `data/rankings/`), die frühere Bedingung „≥ 4 Stichtage" ist erfüllt. Achtung: eine Verlaufs-Anzeige darf keine Trefferquote implizieren — das Werkzeug misst keine Performance (siehe §6, Roadmap). Easys Entscheid. |
 | **offen, keine Frist** <!-- faellig: offen --> | **Reparatur-Agent, weitere Ausbaustufen?** PR #49 deckt genau eine von sieben real aufgetretenen Fehlerklassen ab (Datumsformat-Drift bei iShares) — bewusst schmal, siehe §4 Punkt 3. Ob und welche Fehlerklasse als Nächstes drankommt, ist **Easys Entscheid**, keine automatische Fortsetzung. | Diagnose vor PR #49 (siehe Session-Historie) hat sechs weitere Fehlerklassen benannt, von denen die meisten Domänenurteil brauchen und deshalb nicht sicher automatisierbar sind. |
 | **ca. 10 Handelstage nach Merge von PR #74** <!-- faellig: offen --> | **Daten-Abdeckungs-Wächter: Schwellen/Fenster gegen eine echte Baseline prüfen** (`FENSTER_STUNDEN_KURSABRUF`, `PRAKTISCH_KEINE_ANTEIL`, `FENSTER_TAGE_KURSVERGLEICH`, `MINDEST_BEOBACHTUNGEN`, `UNIVERSUM_WARNSCHWELLE_TAGE`, `ERINNERUNG_TAGE` — alle als „Startwert, Feintuning nach ca. 10 Handelstagen Baseline" markiert). Zählen: wie oft hätte der Wächter in diesem Fenster ausgelöst, und wäre das jeweils ein echter Befund oder ein Fehlalarm gewesen? | Siehe §4 Punkt 14 und `src/momentum/datenabdeckung_waechter.py` — explizit terminierte Wiedervorlage, kein geratener Schwellenwert bleibt unüberprüft. |
 | **08.11.2026** (Sonntag) <!-- faellig: 2026-11-08 --> | **Lit-Check erstmals über den neuen Weg: direkt an ntfy.sh** (seit 01.11., siehe §4 Punkt 15) — prüfen: kam die Meldung per ntfy an? Bleibt sie aus: Lauf in der Task-Ansicht öffnen (HTTP-Fehler von ntfy.sh, z. B. 429?); Fallback wäre der App-Push. | Die Wiedervorlage vom 01.11. ist erledigt (§10): der Lit-Check lief korrekt, sein App-Push kam aber nicht an — deshalb seither die direkte ntfy-Zustellung, für den Lit-Check noch nicht im echten Sonntagslauf belegt. |
-| **02.11.2026** (Montag) <!-- faellig: 2026-11-02 --> | **Erstes Montags-Lebenszeichen des Wächters über ntfy.sh direkt** (seit 01.11.: montags hörbar, Priorität 3; sonst täglich lautlos, Priorität 1; Befund mit Priorität 3/4; Fallback App-Push) — prüfen: kam es am iPhone hörbar an? Bleibt es aus, ist der Wächter selbst ausgefallen; die Agenten-Kontrolle (PR #79) überwacht ihn seit 31.10. nicht mehr. | Siehe §4 Punkt 15 — das Montags-Lebenszeichen ersetzt die abgeschaltete Agenten-Kontrolle. Beim Test am 01.11. einmal HTTP 429 von ntfy.sh, Wiederholung erfolgreich — ob das im echten Montagslauf wieder auftritt, ist **ungeprüft**. |
-| **03.11.2026** <!-- faellig: 2026-11-03 --> | **Erster Monatsrundgang** (geplanter Claude-Task, 3. jedes Monats, 08:32 Berlin-Zeit, seit 31.10. Nur-Lesen, seit 01.11. Zustellung direkt an ntfy.sh, Fallback App-Push, siehe §4 Punkt 15) — prüfen: ist der Task tatsächlich gelaufen, kam die ntfy-Meldung an, und war sein Befund sachlich nachvollziehbar? | Siehe §4 Punkt 15 — Auftrag 5 der Automatisierung vom 24.10.2026. |
 | **30.11.2026** (Montag, US-Stichtag) <!-- faellig: 2026-11-30 --> | **PR #84 (Methodik/Karten) ist gemergt (`022c8ff`) — die Seite nennt den Wechsel bereits.** **Erster US-Stichtag mit 100/0 — Gewichte in `data/rankings/us_2026-11.json` prüfen:** `methode.gewicht_momentum_12_1` = 1.0, `methode.gewicht_high_52w` = 0.0, Score = 100 × `perzentil_momentum`; `de_2026-11.json` weiter 0.5/0.5. **Zusätzlich: ist PR #85 (Evaluation) bis dahin gemergt?** Sonst zählt der Gesamtrückblick November versehentlich mit den Juli-Oktober-Monaten zusammen. | Siehe §4 Punkt 8, §7.6 — die Mechanik ist per Test belegt (`tests/unit/test_gewichts_fahrplan.py`), im echten Lauf noch nicht. |
 | **31.12.2026** (Donnerstag, US-Stichtag, zugleich Dezember-Lauf) <!-- faellig: 2026-12-31 --> | **Erster echter Test der Methodenwechsel-Anzeige auf der Evaluation-Seite** (PR #85) — der Dezember-Lauf erzeugt erstmals den Rückblick auf das November-Ranking (`ausgewerteter_monat` 2026-11, siehe evaluation.py: der Rückblick entsteht als Nebenprodukt des JEWEILS NÄCHSTEN Rankings). Prüfen: zeigt `docs/evaluation.html` für die USA jetzt zwei getrennte Gesamtrückblick-Blöcke ("Rankings Juli bis Oktober 2026 (50/50)" und "ab Ranking November 2026 (nur 12-1-Momentum)"), mit dem "Methodenwechsel"-Hinweis am November-Monat? Bleibt es bei einem einzigen Block oder fehlt der Hinweis: Fehler untersuchen, nicht nur hinnehmen. | Siehe §4 Punkt 8, §6 Punkt 0, PR #85 — bisher nur an synthetischen Daten geprüft, noch nie an einem echten Dezember-Lauf. |
-| **nach 3 Läufen mit dem Beleg-Zähler** (frühestens ca. 05.11.2026) <!-- faellig: 2026-11-05 --> | **Zähler auswerten: ist die Annahme „Rohkurs vorhanden, nur Adj Close fehlt" belegt?** In `data/status.json` → `daten` je Markt `zeilen_verworfen_mit_rohkurs` gegen `zeilen_verworfen_ohne_rohkurs` und `verworfen_je_tag_juengste` lesen (Git-Historie der Datei), dazu die Job-Log-Zeilen `[daten] …`. Erwartung bei einem nächtlichen Lauf: verworfen = 5 je Markt, davon **mit Rohkurs 5**, jüngster Tag = Vortag. | Grundlage für die Entscheidung, ob V3 (§4 Punkt 16) wie entworfen gebaut werden kann. Zeigt `ohne Rohkurs`, trägt V3s Rohkurs-Teil nicht — dann bleibt nur die Werktags-Wartezeit (V2). |
 | **01.12.2026, 09:30 UTC** <!-- faellig: 2026-12-01 --> | **Stichtagslauf November von Hand starten** (Actions → Momentum-Lauf → Run workflow) und danach den Stichtag **30.11.** in `data/rankings/us_2026-11.json` UND `de_2026-11.json` prüfen (`stichtag` = `2026-11-30`). Ist er falsch (z. B. 27.11.): Datei über den bekannten Korrekturweg (§10, „Korrekturweg + Determinismus live bewiesen") löschen und neu bauen. | Diagnose §4 Punkt 16: der planmäßige Lauf (≈ 01.12. 00–02 UTC) bricht sehr wahrscheinlich ab (Adj Close des 30.11. fehlt noch); DE-Daten erfahrungsgemäß erst ab ≈ 09:15 UTC vollständig. Restrisiko „stiller falscher Stichtag", wenn dem Index der 30.11. fehlt. |
-| **ab 02.12.2026** <!-- faellig: 2026-12-02 --> | **V3 bauen** (Stichtags-Vollständigkeitsprüfung, §4 Punkt 16) — nur, wenn der Beleg-Zähler die Rohkurs-Annahme bestätigt hat; sonst Entwurf anpassen. MANUAL, Lauf-Pfad (`run.py:process_market`, neue Prüffunktion in `ranking.py` + `GESCHUETZTE_SYMBOLE`). Merge vor dem Januar-Stichtag (29.01.2027). | Entscheidung Easy, 01.11.2026. |
+| **ab 02.12.2026** <!-- faellig: 2026-12-02 --> | **ab 02.12.: V2 bauen (Entwurf siehe §4 Punkt 16)** (Stichtags-Vollständigkeitsprüfung) — MANUAL, Lauf-Pfad (`run.py:process_market`, neue Prüffunktion in `ranking.py` + `GESCHUETZTE_SYMBOLE`). Merge vor dem 31.12.2026 (DE-Feiertagsfall). | Entscheidung Easy, 01.11.2026. |
 | **beim nächsten Abbruch** <!-- faellig: offen --> | **Beim nächsten Abbruch "kein Titel mit vollstaendiger Historie" die Zahlen-Meldung (PR #80) und die neuen Beleg-Zähler (`[daten]`-Zeile) auswerten.** | Ursache inzwischen per Diagnose belegt (§4 Punkt 16); die Meldung bestätigt sie im Einzelfall. |
 
 **Aus der letzten Vorlage-Liste erledigt, jetzt in §10:** der 31.08.-Monats-
@@ -319,7 +325,10 @@ Oktober-Stichtag (§10).
 
 **1. DE-Toleranz (`TOLERANZ = 0.010` in `kursvergleich.py`) — weiterhin
 nicht neu kalibriert, jetzt aber mit echten, aber noch dünnen Messdaten.**
-*(beobachten, nichts ändern)*
+*(**geparkt** seit 03.11.2026 — Grund: sechs Messtage, alle 0,00 %; aus
+lauter Nullen lässt sich keine engere Toleranz ableiten, und eine
+engere ohne Streuungsdaten wäre eine Setzung. Wieder aufnehmen, sobald
+ein Vertragsfenster echte Abweichungen > 0 zeigt.)*
 
 Das erste reale Vertragstest-Fenster (25.–31.08.2026) liegt vor. Bild
 uneinheitlich: am 28.08. lief der volle Vergleich sauber durch (102 von
@@ -348,41 +357,13 @@ Toleranz zu eng ist; ob sie zu weit ist (echte Abweichungen von 0,1–
 ablesen. **Weiterhin nichts ändern**, kein Anlass. *Ungeprüft:* warum an
 zwei Tagen 103 statt 102 Titel verglichen wurden (Universum: 102).
 
-**2. Der Vertragstest-Vorfall vom 31.08.2026 — untersucht, kein Bug,
-zwei belegte Befunde.** *(dokumentiert, nichts zu tun)*
-
-Der Vertragstest meldete an diesem Tag `Kursvergleich DE — nicht
-durchführbar: nur 0 von 102 Titeln waren vergleichbar (0 %, nötig 80 %)`
-(Actions-Run `33409297243`, Job-Log wörtlich). Das ist **kein Bruch**: das
-Verdikt lautete `[ok]`, kein Push ging raus („Alle 12 Verträge halten.
-Kein Push.") — `MIN_VERGLEICHSQUOTE = 0.80` in `kursvergleich.py`
-behandelt einen so gut wie unvergleichbaren Tag bewusst als „nicht
-durchführbar", nicht als Widerspruch zwischen den Quellen. Am selben Tag
-lief der US-Vergleich vollständig durch (501 von 504 verglichen, 0 über
-der Toleranz) — kein allgemeiner Quellenausfall, sondern etwas
-DE-Spezifisches an genau diesem Tag.
-
-Diagnose ergab zwei Befunde:
-- **Befund A, bewiesen:** `src/momentum/data.py` (`download_prices`,
-  Zeilen um 171–176) koppelt die Befüllung von `series_roh`/`close`
-  (der für den DE-Kursvergleich bestimmte, unbereinigte Kurs) an die
-  Gültigkeit von `Adj Close` am selben Tag — obwohl der Docstring des
-  Moduls `close` ausdrücklich als „von Yahoo vollständig unabhängig"
-  beschreibt. Ein Tag, an dem `Adj Close` für praktisch alle DE-Titel
-  gleichzeitig fehlschlägt, würde exakt das beobachtete Bild erzeugen.
-  **Code-bestätigt, seit PR #51 behoben:** die Prüfung `close_valid` wird
-  jetzt VOR und unabhängig von der Adj-Close-Prüfung ausgewertet;
-  `series_adj`/`series_turnover` (Score-Pfad) bleiben unverändert an die
-  adj-Prüfung gebunden.
-- **Befund B, unbestätigt und bleibt es dauerhaft:** dass Befund A
-  tatsächlich die Ursache des 31.08.-Vorfalls war. Das lässt sich nicht
-  mehr beweisen — die yfinance-Antwort von damals ist nicht
-  reproduzierbar, ein heutiger Abruf liefert den heutigen Stand. PR #51
-  ist deshalb eine eigenständige Härtung, keine bestätigte
-  Ursachenkorrektur (so auch im PR-Text festgehalten).
+**2. Vertragstest-Vorfall 31.08.2026 — geschlossen 03.11.2026, Volltext in §10 („Geschlossene Punkte aus §4“).** Beleg: Punkt selbst „dokumentiert, nichts zu tun“; Befund A durch PR #51 behoben (`2b648c3`); Befund B ist dauerhaft unbeweisbar, keine Handlung möglich.
 
 **3. Reparatur-Agent Stufe 3 — erste Ausbaustufe gebaut, keine
-automatische Fortsetzung.** *(siehe §3, Easys Entscheid nötig)*
+automatische Fortsetzung.** *(**geparkt** seit 03.11.2026 — Grund: die
+übrigen sechs Fehlerklassen brauchen Domänenurteil und sind nicht sicher
+automatisierbar; seit 08.09. kein einziger Fund der gebauten Klasse.
+Wieder aufnehmen nur auf Easys Entscheid, siehe §3.)*
 
 PR #49 deckt ausschließlich Datumsformat-Drift bei den drei
 DE-iShares-Bestandslisten ab — die einzige von sieben real aufgetretenen
@@ -401,29 +382,7 @@ Reihe an einem künftigen Stichtag nicht, greift der laute Abbruch
 Rückfall. Träte das ein, wäre die Frage: Kursindex als Notnagel (nein) oder
 Stichtag verschieben (ja).
 
-**5. Yahoo-Rate-Limit-Vorfall vom 01.10.2026 (Lauf 71) — untersucht,
-kein Bug, fail-soft bestätigt.** *(dokumentiert, nichts zu tun)*
-
-Der planmäßige Nacht-Lauf vom 01.10.2026, 00:49 UTC (Actions-Run
-`36798080643`, gedacht für den September-Monats-Stichtag) brach ab mit,
-wörtlich aus dem Job-Log: `['^SP500TR']: YFRateLimitError('Too Many
-Requests. Rate limited. Try after a while.')`, gefolgt von `LAUF
-ABGEBROCHEN: [us] Keine Indexdaten fuer ^SP500TR — ohne Handelskalender
-kein Stichtag.` Exit-Code 2, **kein** „Lauf 71"-Commit entstand (derselbe
-Mechanismus wie bei Lauf 1, siehe §8 Lesson 3). Fail-soft griff exakt wie
-vorgesehen: „Es wurde bewusst nichts veroeffentlicht und nichts
-eingefroren."
-
-Easy hat denselben Tag, 21:13 UTC, den Lauf von Hand erneut ausgelöst
-(`workflow_dispatch`, Actions-Run `36927209332`, Lauf-Nummer 72) — **das
-war ein manueller Nachlauf, keine automatische Wiederholung** durch den
-nächsten planmäßigen Zyklus (der wäre erst am 02.10., 01:04 UTC,
-gekommen, und hätte den dann bereits eingefrorenen September-Stichtag
-nicht erneut geschrieben). Lauf 72 lief vollständig durch und schrieb den
-September-Stichtag (`data/rankings/{de,us}_2026-09.json`, Commit
-`6de1fae`). Kein Code-Fix nötig oder vorgenommen — eine Yahoo-
-Ratenbegrenzung ist ein bekanntes, bereits per Fail-soft abgedecktes
-Risiko, kein neuer Fund.
+**5. Yahoo-Rate-Limit-Vorfall 01.10.2026 (Lauf 71) — geschlossen 03.11.2026, Volltext in §10 („Geschlossene Punkte aus §4“).** Beleg: „nichts zu tun“; September-Stichtag per Lauf 72 geschrieben (Run `36927209332`, Commit `6de1fae`); Ursache in der Diagnose 01.11. erneut bestätigt (`YFRateLimitError`, Run `36798080643`).
 
 **6. iShares-Totalausfall, zweite Welle (25.–30.09.2026) — untersucht,
 behoben, Wirksamkeit noch nicht real geprüft.** *(siehe §3, Termin
@@ -470,26 +429,7 @@ Bedingungen. PR #64 (Nachrichtenkürzung) wurde nicht gebraucht, weil
 kein Vertrag brach; seine Wirkung unter echter Last bleibt **ungeprüft**
 (nur durch Tests belegt).
 
-**7. Lit-Check Frog-in-the-Pan / Information Discreteness — geprüft,
-nicht eingebaut.** *(dokumentiert, nichts zu tun)*
-
-Wegwerf-Diagnose (PR #68, Rückbau PR #69) hat die Information
-Discreteness (ID, Da/Gurun/Warachka 2014 — misst, ob eine Kursbewegung
-in vielen kleinen, gleichgerichteten Schritten entstand ("kontinuierlich"/
-"frog in the pan", hohe ID) oder in wenigen großen Sprüngen
-("sprunghaft", niedrige ID)) für beide Universen über Juli/August/
-September 2026 nachgerechnet. Befund: Top-5 im Mittel ID-Perzentil ca.
-0,25 (0,5 = neutral, tendenziell Richtung "sprunghaft"), aber nur 1 von
-30 Top-5-Plätzen über die drei Monate tatsächlich im "sprunghaften
-Drittel" (DVA, Juli, 0,678). Eine Umsortierung der Top-15 nach ID ändert
-2–3 von 5 Plätzen — das ist aber überwiegend Rauschen: ein einzelner
-Handelstag verschiebt die ID bereits um ca. 0,009 ID-Einheiten, in der
-Größenordnung der beobachteten Unterschiede. **Entscheid: ID wird NICHT
-in den Score aufgenommen, kein Bau geplant** — die Literatur selbst
-(Frog-in-the-Pan) betrifft ohnehin eine andere Fragestellung
-(Kontinuität der Kursbildung) als die hier verwendeten Faktoren
-(Höhe der Rendite, Nähe zum Hoch), nicht nur die schwache Trennschärfe
-in den drei beobachteten Monaten.
+**7. Lit-Check Frog-in-the-Pan / Information Discreteness — geschlossen 03.11.2026, Volltext in §10 („Geschlossene Punkte aus §4“).** Beleg: Entscheid „nicht in den Score, kein Bau geplant“; Probe zurückgebaut (PR #69, `e4cfdee`).
 
 **8. Lit-Check 52-Wochen-Hoch bei Large Caps — entschieden 01.11.2026
 (Easy): US 100/0 ab Ranking 2026-11, DE 50/50.** *(Rechnung: PR #83,
@@ -607,34 +547,7 @@ tatsächlich verwendeten Gewichte in den vorhandenen Feldern
 `methode.gewicht_*` (kein neues Feld, Schema-Zahl unverändert 2). Belegt
 durch `tests/unit/test_gewichts_fahrplan.py`.
 
-**9. MNST-Split-Vorfall (US 2026-08) — Ursache geklärt, Ranking bleibt
-eingefroren, Split-Wächter gebaut (PR #70).** *(dokumentiert + behoben
-für künftige Fälle, nichts am August-Stand zu tun)*
-
-Split 2:1 am 11.08.2026, Stichtag 28.08.2026. Der Lauf vom 31.08.
-rechnete Momentum **-0,2278** statt der im Nachhinein rekonstruierten
-korrekten **+0,5443** (Rang 471 statt eines deutlich besseren Rangs).
-Rekonstruiert per Handrechnung in der Sitzung vom 09.10.2026 (nicht per
-Live-Abruf — Yahoo im Sandbox-Kontext nicht erreichbar): der M-12-Anker
-in `momentum_12_1` war **exakt Faktor 2 zu hoch**, weil Yahoo die
-Vorgeschichte zu diesem Zeitpunkt noch nicht auf den Split
-nachbereinigt hatte. Im September war die Reihe wieder normal. **Top-5
-vermutlich unberührt** (Schätzung ca. 80 Punkte gegen 91 bei Rang 5 —
-MNST selbst lag mit dem falschen Wert weit außerhalb der Top-15, ein
-korrigierter Wert hätte es nicht automatisch hineingehoben). Der
-eingefrorene August-Stand (`data/rankings/us_2026-08.json`) bleibt
-**unverändert eingefroren** — keine rückwirkende Korrektur, siehe das
-Einfrierungsprinzip in §7.2.
-
-Als Gegenmaßnahme für künftige Fälle: der **Split-Wächter**
-(`split_waechter.py`, PR #70) erkennt innerhalb der für
-`momentum_12_1`/`high_52w_ratio` genutzten Tagesreihe (`Adj Close`) eine
-Naht mit einem Kursverhältnis nahe einem gängigen Split-Verhältnis (2,
-3, 4, 5, 10 — bewusst ohne 3:2 wegen Fehlalarm-Risiko durch echte
-Kurseinbrüche, ±3 % Toleranz) und meldet den Fund (eine Zeile je Titel,
-ein gebündelter Push) — **nur Erkennen und Melden**, kein Eingriff in
-Score/Ranking. Erster echter Wirksamkeitstest: Stichtag 30.10.2026
-(siehe §3).
+**9. MNST-Split-Vorfall (US 2026-08) — geschlossen 03.11.2026, Volltext in §10 („Geschlossene Punkte aus §4“).** Beleg: Split-Wächter gebaut (PR #70, `c56dc64`); am ersten echten Stichtag 30.10. stumm, kein Fehlalarm (§10, Run `41187870579`); August-Stand bleibt bewusst eingefroren. Dass er einen echten Split erkennt, ist weiter nur per Test belegt — kein offener Auftrag.
 
 **10. AMCR, BNY, WBD — aus der ID-Diagnose offen geblieben, Ursache
 ungeklärt.** *(beobachten, ungeklärt)*
@@ -657,54 +570,9 @@ Keine dieser drei Beobachtungen hat bisher ein Ranking sichtbar
 verzerrt; alle drei bleiben als offene, unverifizierte Randnotizen
 stehen, keine davon rechtfertigt für sich allein einen eigenen Auftrag.
 
-**11. Sektor-Konzentration der Top-5 — Befund, Entscheid, gebaut (PR
-#72).** *(dokumentiert + gebaut, nichts weiter zu tun)*
+**11. Sektor-Konzentration der Top-5 — geschlossen 03.11.2026, Volltext in §10 („Geschlossene Punkte aus §4“).** Beleg: Variante (b) gebaut (PR #72, `0f94675`), am 30.10. real sichtbar (§10); Variante (c) bleibt als Roadmap §6 Punkt 4 erhalten.
 
-Diagnose (vor PR #72, read-only): US-Top-5 lag in allen drei bisherigen
-Stichtagen auffällig konzentriert — Juli 3/5 Health Care, August 3/5
-Energy, September **5/5 Information Technology**. DE lag in allen drei
-Monaten bei höchstens 2/5. Eingeordnet als **erwartbar, kein
-Konstruktionsfehler**: Momentum ist literaturbekannt sektor-korreliert
-(ein branchenweiter Trend bewegt mehrere Titel gleichzeitig), die
-September-IT-Konzentration passt sachlich zu einer Technologie-Rally.
-Wichtige Einschränkung: die Sektor-Zuordnung für Juli/August stammt aus
-der **heutigen** `ticker_meta_*.json` (Stand 03.08.2026), nicht aus
-einer historisch eingefrorenen Quelle — siehe `meta.py`-Docstring,
-Sektor ist bewusst nicht im Ranking-Schema, weil er sich ändern darf.
-Die Vergleichbarkeit von Wikipedias GICS-Sektoren (US) gegen die
-iShares-eigene Sektor-Spalte (DE) ist **nicht verifiziert** (gleiche
-Taxonomie nicht belegt, nur zufällig dieselbe Anzahl von elf Kategorien
-je Markt) — deshalb **keine Aggregation über beide Märkte**.
-
-**Entscheid:** Variante (b) gebaut — ein Hinweis bei ≥ 3 von 5 Top-5-
-Werten im selben Sektor, je Markt getrennt geprüft, reine Render-Zeit-
-Berechnung ohne neues Schema (siehe `render.py::_sektor_konzentration`/
-`_sektor_hinweis`, Platzierung direkt über dem Kartenraster). Variante
-(c) — eine dauerhafte Sektor-Historie in `data/evaluation/*.json` mit
-eigenem Schema-Feld — **zurückgestellt**: kein akuter Bedarf, würde ein
-additives Schema und damit Manual-Merge brauchen (siehe §6, Roadmap).
-
-**12. Automatisierte SESSION_HANDOVER.md-Pflege per Workflow — geprüft,
-nicht gebaut.** *(dokumentiert, kein Bau geplant)*
-
-Read-only-Diagnose (vor PR #72): geprüft, ob ein Workflow dieses
-Dokument automatisch nachführen könnte (mechanisch ableitbare Blöcke:
-PR-Nummer/Titel/Datum via `gh pr list`, Cron-Fahrplan via YAML-Parsing;
-NICHT mechanisch: Merge-Klasse — nur Freitext im PR-Titel, siehe
-`pr_verwaisung_waechter.py`-Docstring —, sowie sämtliche Urteils-Teile
-in §3/§4/§5/§6). **Kernbefund:** Jede Variante, die direkt in
-`SESSION_HANDOVER.md` schreibt (markierter AUTO-Bereich oder ein
-gemergter Auto-PR), würde den bestehenden Doku-Wächter
-(`handover_waechter.py`) **entwerten** — er misst ausschließlich das
-Committer-Datum des jüngsten Commits auf dieser Datei, ohne zwischen
-mechanischen und Urteils-Abschnitten zu unterscheiden, und ein
-automatischer Teil-Schreibvorgang würde seine Uhr auf null setzen, ohne
-dass die Urteils-Teile tatsächlich gepflegt wurden. **Entscheid: kein
-Bau.** Bei künftigem Bedarf wäre eine **getrennte, vollautomatische
-Protokolldatei** (Variante a, z. B. `data/pr_protokoll.json`, auf die
-`SESSION_HANDOVER.md` nur verlinkt) der einzige Weg, der den Doku-
-Wächter nicht berührt — das bliebe aber ein eigener, separat zu
-entscheidender Auftrag.
+**12. Automatisierte SESSION_HANDOVER.md-Pflege per Workflow — geschlossen 03.11.2026, Volltext in §10 („Geschlossene Punkte aus §4“).** Beleg: Entscheid „kein Bau“; kein offener Auftrag.
 
 **13. Scheduler-Drift bei `lauf.yml` — wachsend, Ursache für den
 Stichtag-Schutz behoben (PR #73).** *(beobachten läuft weiter, Fix
@@ -847,17 +715,27 @@ stellt sich nicht mehr, weil Agenten gar keine Merge-Rechte bekommen,
 mit oder ohne Abfrage. `schutz_sperre.py` bleibt eine reine Ampel fürs
 Easys eigene Entscheidung, kein serverseitiges Merge-Gatter.*
 
-- **(c) `lauf.yml` interpoliert `${{ inputs.datum }}` direkt in die
-  Shell** (Injektions-Muster) — heute harmlos (nur Easy löst das
-  manuell aus), aber unsauber. Fix bewusst zurückgestellt bis NACH dem
-  Stichtag 30.10.2026, weil er `lauf.yml` selbst berührt.
-- **(d) Folgeauftrag nach dem 30.10.2026-Stichtag, gebündelt:**
+- ~~**(c) `lauf.yml` interpoliert `${{ inputs.datum }}` direkt in die
+  Shell**~~ — **erledigt mit dem Merge von PR #87** (Workflow-Hygiene):
+  alle vier Dispatch-Eingaben von `lauf.yml` und `inputs.markt` in
+  `universum.yml` laufen nur noch über `env:`, `datum` wird streng
+  geprüft (leer oder JJJJ-MM-TT); statisch und durch echte Ausführung
+  belegt (`tests/unit/test_workflow_injektion.py`). Bis zum Merge gilt
+  der alte Stand.
+- **(d) — geparkt seit 03.11.2026.** Grund: berührt `run.py` (Lauf-Pfad)
+  und gehört zeitlich hinter V3 (§4 Punkt 16, ab 02.12.) und die
+  Lauf-Pfad-Ruhe vor dem 30.11.; vorher kein Bau. Inhalt unverändert:
+  **Folgeauftrag nach dem 30.10.2026-Stichtag, gebündelt:**
   **Elliott-Zähler** (Unterscheidung „Quelle unerreichbar" vs. „Quelle
   leer/veraltet", bewusst außerhalb von PR #74) UND **ein täglicher
   Kursvergleichs-Zähler im Lauf** (siehe Befund oben, macht Prüfung B
   erst wirksam) — beide berühren `run.py` und gehören deshalb in
   denselben, erst nach dem Stichtag angegangenen Auftrag.
-- **(e) Eine Wikipedia-Spaltenumbenennung bleibt bis zum nächsten
+- **(e) — geparkt seit 03.11.2026.** Grund: wirkt nur beim nächsten
+  Universum-Rebuild (manuell, kein Termin geplant), und der Rebuild
+  bricht bei unplausiblen Zahlen ohnehin laut ab
+  (`tools/build_universe.py`). Inhalt unverändert: **Eine
+  Wikipedia-Spaltenumbenennung bleibt bis zum nächsten
   Universum-Rebuild unbemerkt** — durch Prüfung C von PR #74
   (Universum-Alter) nur TEILWEISE abgedeckt: die Alters-Schwelle warnt
   irgendwann, erkennt aber keine Umbenennung selbst, nur das
@@ -1078,6 +956,32 @@ Beleg-Zähler auswerten, 01.12. Handlauf, ab 02.12. V3 bauen)*
   Rohkurs liefert. Für den 30.11.: manueller Lauf am 01.12. ab 09:30 UTC
   plus Stichtag-Prüfung (§3).
 
+*Erster Messpunkt des Beleg-Zählers (PR #86) — Lauf 97, 03.11.2026,
+Commit `32221f7`, 03:03 UTC (`data/status.json`):* **DE** 5 Zeilen
+verworfen, davon **0 mit / 5 ohne Rohkurs**, alle am **02.11.**; **US**
+0 verworfen (`kurse_vom` 02.11., aktuell). Damit ist die V3-Annahme
+(„Zeile mit Rohkurs, nur Adj Close fehlt") **für DE widerlegt — bei
+einem einzigen Messpunkt**; für US liegt noch kein Fall vor. Folge,
+falls sich das bestätigt: der Rohkurs-Teil von V3 erkennt die
+DE-Verzögerung nicht, es bleibt nur die Werktags-Wartezeit (V2-Anteil).
+Nebenbefund: DE `kurse_vom` stand damit auf 30.10. — einen Handelstag
+zurück (Mo 02.11. fehlte) — das bekannte Muster.
+
+*Auswertung 05.11.2026 (Läufe 97/98/99, `32221f7`, `ec8ba91`,
+`d6618ef`):* in 5 von 6 Markt-Läufen je 5 Zeilen des Vortags verworfen,
+alle **ohne** Rohkurs (0 mit); vollständig nur US im Lauf 97 (Handelstag
+02.11.). Die Annahme hinter V3 ist damit widerlegt. Grenze: der Zähler
+sieht nur die 5 Anzeige-Titel, nicht den Index und keinen Stichtagslauf.
+
+**Entscheidung Easy (05.11.2026): V2 statt V3** — Werktags-Wartezeit,
+kalenderbasiert (nur Wochentage, keine Feiertagsliste); greift auch,
+wenn dem **Index** der letzte Tag fehlt (der stille-Stichtag-Fall).
+**Bau ab 02.12.** (nach dem November-Stichtag), **Merge-Ziel vor dem
+31.12.2026** (DE-Feiertagsfall: Xetra 24./31.12. zu). Im selben Bau:
+die Absturzstelle `run.py:372` bei leerem `new_ranking` (§5 Punkt 4)
+und der Alarm ab Werktag 3 („bleibt dauerhaft unvollständig" → lauter
+Abbruch). Ersetzt die Entscheidung vom 01.11. (V3) oben.
+
 *Vorgeschichte (Stand 31.10., unverändert belassen):*
 
 Vier Läufe, alle per `gh api`/Job-Log gegengeprüft:
@@ -1141,7 +1045,11 @@ PR-Text für die Belege.
 
 Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
 
-1. **`Node.js 20 is deprecated`-Warnung** in jedem Lauf — **jetzt fällig**
+1. **`Node.js 20 is deprecated`-Warnung** in jedem Lauf — **Teil
+   `actions/checkout`/`actions/setup-python` erledigt mit dem Merge von PR
+   #87** (`checkout@v5`, `setup-python@v6`, je 16 Stellen in 15 Dateien).
+   Der Rest (Artefakt-Actions in `vertrag.yml`) steht jetzt als eigener
+   Punkt 5 unten. Ursprünglicher Text: **jetzt fällig**
    (die ursprüngliche Rücksicht „nicht vor dem 31.08." ist mit dem
    31.08. selbst erledigt): `actions/checkout@v4` und
    `actions/setup-python@v5` auf aktuelle Fassungen heben. Betrifft
@@ -1169,6 +1077,12 @@ Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
    Prüfung Monate still zurückhält (V3, §4 Punkt 16) — dann braucht es
    einen Rückfall auf `latest_ranking` wie im Anzeige-Zweig. Geschützte
    Zone (`process_market`), MANUAL; gehört in den V3-PR, nicht separat.
+5. **Node-20-Warnung durch `actions/upload-artifact@v4` und
+   `actions/download-artifact@v4` in `vertrag.yml`** *(offen)* — belegt
+   im Job-Log Run `41073466086` (Jobs `vertrag` und
+   `agent-datumsformat`); bewusst nicht in PR #87, weil nicht beauftragt.
+   **Vor der Umstellung die Änderungen der neuen Major-Versionen prüfen.**
+   Geschützte Zone (`.github/workflows/`), MANUAL.
 
 Erledigt und deshalb nicht mehr aufgeführt: Punkt „Testkontext auf
 default-deny umstellen" (#40, siehe §10), die Kosmetik-Punkte (tote
@@ -1193,10 +1107,12 @@ sinnvoll wären — in dieser Reihenfolge:
    blick zählt verschiedene Regeln nie zusammen, Methodenwechsel-Hinweis
    am ersten Monat je neuer Regel) ist **PR #85**, gebaut, Merge bei
    Easy. Fristen zum echten Dezember-Test: §3.
-1. **Ranking-Verlauf** (Herbst, ≥ 4 Stichtage — aktuell 2/4) — Anzeige der
-   bisherigen Monats-Ranglisten. Harte Grenze: keine Renditeberechnung,
-   keine Trefferquote, keine Performance-Kurve. Das Werkzeug misst keine
-   Ergebnisse, es zeigt eine Rangfolge.
+1. ~~**Ranking-Verlauf**~~ — **entschieden 03.11.2026 (Easy): NICHT
+   bauen.** Grund: geringer Nutzen für eine Kaufentscheidung, und der
+   Verlauf mischt seit November zwei Score-Regeln (US 50/50 bis Oktober,
+   100/0 ab November). Rückweg: jederzeit neu aufnehmen; die harte Grenze
+   bliebe dann dieselbe (keine Rendite, keine Trefferquote, keine
+   Performance-Kurve). Siehe §10.
 2. **Risikogesteuerte Varianten** (Daniel & Moskowitz 2016) — in `README`
    bereits als „dokumentiert, aber erst v1" geführt.
 3. **Reparatur-Agent, weitere Fehlerklassen** — offen, Easys Entscheid
@@ -1770,8 +1686,184 @@ hier, damit niemand sie erneut aufmacht.
 | **Sektor-Hinweis am ersten echten Stichtag (30.10.) sichtbar:** „Sektor-Häufung: 4 von 5 Top-5-Werten liegen im Sektor Energy." (US); DE ohne Hinweis | #72 | `docs/index.html` (`p.sektor-hinweis`) nach Lauf 96 |
 | **Oktober-Stichtag (30.10.2026) eingefroren**, beide Märkte — nach zwei fail-soft-Abbrüchen per manuellem Lauf 96 | `Momentum-Lauf` Lauf 96 | `8e29c5d`, `data/rankings/*_2026-10.json`, siehe §1, §4 Punkt 16 |
 | **Evaluation-Seite: Gesamtrückblick vor Monatsrückblick** | #81 | `0972fe7` |
+| **Wiedervorlage 05.11.2026 (Beleg-Zähler auswerten):** Läufe 97/98/99 (`32221f7`, `ec8ba91`, `d6618ef`): in 5 von 6 Markt-Läufen je 5 Zeilen des Vortags verworfen, alle **ohne** Rohkurs (0 mit); vollständig nur US im Lauf 97 vom 03.11. (Handelstag 02.11.). **Annahme hinter V3 widerlegt.** Grenze: der Zähler sieht nur die 5 Anzeige-Titel, nicht den Index und keinen Stichtagslauf | Auswertung 05.11.2026 | `data/status.json` → `daten` der drei Commits; siehe §4 Punkt 16 |
+| **Wiedervorlage 03.11.2026 (erster Monatsrundgang):** Rundgang lief am 03.11., Meldung kam per ntfy an, Befund sachlich korrekt (Läufe, Oktober-Ranking, erster Zählerwert, fällige Punkte); Grenze: sieht keine Workflow-Logs | Easy, Angabe vom 03.11. | aus dem Repo nicht belegbar, siehe §4 Punkt 15 |
+| **Wiedervorlage 02.11.2026 (erstes Montags-Lebenszeichen des Wächters über ntfy.sh direkt):** Lebenszeichen kam am 02.11. am iPhone an | Easy, Angabe vom 03.11. | aus dem Repo nicht belegbar, siehe §4 Punkt 15 |
+| **Ranking-Verlauf entschieden: nicht bauen** (ehem. Wiedervorlage 03.11., Roadmap §6 Punkt 1) — geringer Nutzen für die Kaufentscheidung, mischt seit November zwei Regeln; jederzeit neu aufnehmbar | Easy, 03.11.2026 | siehe §6 Punkt 1 |
 | **Wiedervorlage 01.11.2026 (erster Lit-Check nach Umstellung) ausgewertet:** Lauf korrekt, App-Push kam nicht an, Bericht von Easy kopiert → seither Zustellung direkt an ntfy.sh; Folge-Prüfung 08.11. in §3 | Easy, 01.11. | siehe §4 Punkt 15 (Nachtrag 01.11.) — Angaben aus Easys Bericht, aus dem Repo nicht belegbar |
 | **Wiedervorlage 25.11.2026 („PR 2 Methodik/Karten gemergt") — gebaut als PR #84**; der Merge selbst liegt bei Easy, deshalb fragt die 30.11.-Zeile in §3 ihn vorher ab | #84 | siehe §2, §6 Punkt 0 |
 | **PR 2 (Methodik/Karten) tatsächlich gemergt** (Merge-Commit `022c8ff`) | #84 | siehe §2, §4 Punkt 8, §6 Punkt 0 |
 | **Wiedervorlage 15.12.2026 („PR 3 Evaluation: Methodenwechsel sichtbar, Gesamtrückblick getrennt nach Regel") — gebaut als PR #85**; der Merge liegt bei Easy, die neue §3-Zeile (31.12.2026) prüft danach den ersten echten Dezember-Lauf | #85 | siehe §2, §4 Punkt 8, §6 Punkt 0 |
 | **Lit-Check 52-Wochen-Hoch entschieden:** US 100/0 ab Ranking 2026-11, DE 50/50 | Easy, 01.11.; Rechnung: #83 | siehe §4 Punkt 8, §7.6 |
+
+### Geschlossene Punkte aus §4 (Volltext, geschlossen 03.11.2026)
+
+Je Punkt: der Beleg, dass nichts mehr offen ist, dann der unveränderte Text, wie er in §4 stand.
+
+**§4 Punkt 2 — Vertragstest-Vorfall 31.08.2026.** Beleg: Punkt selbst „dokumentiert, nichts zu tun“; Befund A durch PR #51 behoben (`2b648c3`); Befund B ist dauerhaft unbeweisbar, keine Handlung möglich.
+
+> **2. Der Vertragstest-Vorfall vom 31.08.2026 — untersucht, kein Bug,
+> zwei belegte Befunde.** *(dokumentiert, nichts zu tun)*
+> 
+> Der Vertragstest meldete an diesem Tag `Kursvergleich DE — nicht
+> durchführbar: nur 0 von 102 Titeln waren vergleichbar (0 %, nötig 80 %)`
+> (Actions-Run `33409297243`, Job-Log wörtlich). Das ist **kein Bruch**: das
+> Verdikt lautete `[ok]`, kein Push ging raus („Alle 12 Verträge halten.
+> Kein Push.") — `MIN_VERGLEICHSQUOTE = 0.80` in `kursvergleich.py`
+> behandelt einen so gut wie unvergleichbaren Tag bewusst als „nicht
+> durchführbar", nicht als Widerspruch zwischen den Quellen. Am selben Tag
+> lief der US-Vergleich vollständig durch (501 von 504 verglichen, 0 über
+> der Toleranz) — kein allgemeiner Quellenausfall, sondern etwas
+> DE-Spezifisches an genau diesem Tag.
+> 
+> Diagnose ergab zwei Befunde:
+> - **Befund A, bewiesen:** `src/momentum/data.py` (`download_prices`,
+>   Zeilen um 171–176) koppelt die Befüllung von `series_roh`/`close`
+>   (der für den DE-Kursvergleich bestimmte, unbereinigte Kurs) an die
+>   Gültigkeit von `Adj Close` am selben Tag — obwohl der Docstring des
+>   Moduls `close` ausdrücklich als „von Yahoo vollständig unabhängig"
+>   beschreibt. Ein Tag, an dem `Adj Close` für praktisch alle DE-Titel
+>   gleichzeitig fehlschlägt, würde exakt das beobachtete Bild erzeugen.
+>   **Code-bestätigt, seit PR #51 behoben:** die Prüfung `close_valid` wird
+>   jetzt VOR und unabhängig von der Adj-Close-Prüfung ausgewertet;
+>   `series_adj`/`series_turnover` (Score-Pfad) bleiben unverändert an die
+>   adj-Prüfung gebunden.
+> - **Befund B, unbestätigt und bleibt es dauerhaft:** dass Befund A
+>   tatsächlich die Ursache des 31.08.-Vorfalls war. Das lässt sich nicht
+>   mehr beweisen — die yfinance-Antwort von damals ist nicht
+>   reproduzierbar, ein heutiger Abruf liefert den heutigen Stand. PR #51
+>   ist deshalb eine eigenständige Härtung, keine bestätigte
+>   Ursachenkorrektur (so auch im PR-Text festgehalten).
+
+**§4 Punkt 5 — Yahoo-Rate-Limit-Vorfall 01.10.2026 (Lauf 71).** Beleg: „nichts zu tun“; September-Stichtag per Lauf 72 geschrieben (Run `36927209332`, Commit `6de1fae`); Ursache in der Diagnose 01.11. erneut bestätigt (`YFRateLimitError`, Run `36798080643`).
+
+> **5. Yahoo-Rate-Limit-Vorfall vom 01.10.2026 (Lauf 71) — untersucht,
+> kein Bug, fail-soft bestätigt.** *(dokumentiert, nichts zu tun)*
+> 
+> Der planmäßige Nacht-Lauf vom 01.10.2026, 00:49 UTC (Actions-Run
+> `36798080643`, gedacht für den September-Monats-Stichtag) brach ab mit,
+> wörtlich aus dem Job-Log: `['^SP500TR']: YFRateLimitError('Too Many
+> Requests. Rate limited. Try after a while.')`, gefolgt von `LAUF
+> ABGEBROCHEN: [us] Keine Indexdaten fuer ^SP500TR — ohne Handelskalender
+> kein Stichtag.` Exit-Code 2, **kein** „Lauf 71"-Commit entstand (derselbe
+> Mechanismus wie bei Lauf 1, siehe §8 Lesson 3). Fail-soft griff exakt wie
+> vorgesehen: „Es wurde bewusst nichts veroeffentlicht und nichts
+> eingefroren."
+> 
+> Easy hat denselben Tag, 21:13 UTC, den Lauf von Hand erneut ausgelöst
+> (`workflow_dispatch`, Actions-Run `36927209332`, Lauf-Nummer 72) — **das
+> war ein manueller Nachlauf, keine automatische Wiederholung** durch den
+> nächsten planmäßigen Zyklus (der wäre erst am 02.10., 01:04 UTC,
+> gekommen, und hätte den dann bereits eingefrorenen September-Stichtag
+> nicht erneut geschrieben). Lauf 72 lief vollständig durch und schrieb den
+> September-Stichtag (`data/rankings/{de,us}_2026-09.json`, Commit
+> `6de1fae`). Kein Code-Fix nötig oder vorgenommen — eine Yahoo-
+> Ratenbegrenzung ist ein bekanntes, bereits per Fail-soft abgedecktes
+> Risiko, kein neuer Fund.
+
+**§4 Punkt 7 — Lit-Check Frog-in-the-Pan / Information Discreteness.** Beleg: Entscheid „nicht in den Score, kein Bau geplant“; Probe zurückgebaut (PR #69, `e4cfdee`).
+
+> **7. Lit-Check Frog-in-the-Pan / Information Discreteness — geprüft,
+> nicht eingebaut.** *(dokumentiert, nichts zu tun)*
+> 
+> Wegwerf-Diagnose (PR #68, Rückbau PR #69) hat die Information
+> Discreteness (ID, Da/Gurun/Warachka 2014 — misst, ob eine Kursbewegung
+> in vielen kleinen, gleichgerichteten Schritten entstand ("kontinuierlich"/
+> "frog in the pan", hohe ID) oder in wenigen großen Sprüngen
+> ("sprunghaft", niedrige ID)) für beide Universen über Juli/August/
+> September 2026 nachgerechnet. Befund: Top-5 im Mittel ID-Perzentil ca.
+> 0,25 (0,5 = neutral, tendenziell Richtung "sprunghaft"), aber nur 1 von
+> 30 Top-5-Plätzen über die drei Monate tatsächlich im "sprunghaften
+> Drittel" (DVA, Juli, 0,678). Eine Umsortierung der Top-15 nach ID ändert
+> 2–3 von 5 Plätzen — das ist aber überwiegend Rauschen: ein einzelner
+> Handelstag verschiebt die ID bereits um ca. 0,009 ID-Einheiten, in der
+> Größenordnung der beobachteten Unterschiede. **Entscheid: ID wird NICHT
+> in den Score aufgenommen, kein Bau geplant** — die Literatur selbst
+> (Frog-in-the-Pan) betrifft ohnehin eine andere Fragestellung
+> (Kontinuität der Kursbildung) als die hier verwendeten Faktoren
+> (Höhe der Rendite, Nähe zum Hoch), nicht nur die schwache Trennschärfe
+> in den drei beobachteten Monaten.
+
+**§4 Punkt 9 — MNST-Split-Vorfall (US 2026-08).** Beleg: Split-Wächter gebaut (PR #70, `c56dc64`); am ersten echten Stichtag 30.10. stumm, kein Fehlalarm (§10, Run `41187870579`); August-Stand bleibt bewusst eingefroren. Dass er einen echten Split erkennt, ist weiter nur per Test belegt — kein offener Auftrag.
+
+> **9. MNST-Split-Vorfall (US 2026-08) — Ursache geklärt, Ranking bleibt
+> eingefroren, Split-Wächter gebaut (PR #70).** *(dokumentiert + behoben
+> für künftige Fälle, nichts am August-Stand zu tun)*
+> 
+> Split 2:1 am 11.08.2026, Stichtag 28.08.2026. Der Lauf vom 31.08.
+> rechnete Momentum **-0,2278** statt der im Nachhinein rekonstruierten
+> korrekten **+0,5443** (Rang 471 statt eines deutlich besseren Rangs).
+> Rekonstruiert per Handrechnung in der Sitzung vom 09.10.2026 (nicht per
+> Live-Abruf — Yahoo im Sandbox-Kontext nicht erreichbar): der M-12-Anker
+> in `momentum_12_1` war **exakt Faktor 2 zu hoch**, weil Yahoo die
+> Vorgeschichte zu diesem Zeitpunkt noch nicht auf den Split
+> nachbereinigt hatte. Im September war die Reihe wieder normal. **Top-5
+> vermutlich unberührt** (Schätzung ca. 80 Punkte gegen 91 bei Rang 5 —
+> MNST selbst lag mit dem falschen Wert weit außerhalb der Top-15, ein
+> korrigierter Wert hätte es nicht automatisch hineingehoben). Der
+> eingefrorene August-Stand (`data/rankings/us_2026-08.json`) bleibt
+> **unverändert eingefroren** — keine rückwirkende Korrektur, siehe das
+> Einfrierungsprinzip in §7.2.
+> 
+> Als Gegenmaßnahme für künftige Fälle: der **Split-Wächter**
+> (`split_waechter.py`, PR #70) erkennt innerhalb der für
+> `momentum_12_1`/`high_52w_ratio` genutzten Tagesreihe (`Adj Close`) eine
+> Naht mit einem Kursverhältnis nahe einem gängigen Split-Verhältnis (2,
+> 3, 4, 5, 10 — bewusst ohne 3:2 wegen Fehlalarm-Risiko durch echte
+> Kurseinbrüche, ±3 % Toleranz) und meldet den Fund (eine Zeile je Titel,
+> ein gebündelter Push) — **nur Erkennen und Melden**, kein Eingriff in
+> Score/Ranking. Erster echter Wirksamkeitstest: Stichtag 30.10.2026
+> (siehe §3).
+
+**§4 Punkt 11 — Sektor-Konzentration der Top-5.** Beleg: Variante (b) gebaut (PR #72, `0f94675`), am 30.10. real sichtbar (§10); Variante (c) bleibt als Roadmap §6 Punkt 4 erhalten.
+
+> **11. Sektor-Konzentration der Top-5 — Befund, Entscheid, gebaut (PR
+> #72).** *(dokumentiert + gebaut, nichts weiter zu tun)*
+> 
+> Diagnose (vor PR #72, read-only): US-Top-5 lag in allen drei bisherigen
+> Stichtagen auffällig konzentriert — Juli 3/5 Health Care, August 3/5
+> Energy, September **5/5 Information Technology**. DE lag in allen drei
+> Monaten bei höchstens 2/5. Eingeordnet als **erwartbar, kein
+> Konstruktionsfehler**: Momentum ist literaturbekannt sektor-korreliert
+> (ein branchenweiter Trend bewegt mehrere Titel gleichzeitig), die
+> September-IT-Konzentration passt sachlich zu einer Technologie-Rally.
+> Wichtige Einschränkung: die Sektor-Zuordnung für Juli/August stammt aus
+> der **heutigen** `ticker_meta_*.json` (Stand 03.08.2026), nicht aus
+> einer historisch eingefrorenen Quelle — siehe `meta.py`-Docstring,
+> Sektor ist bewusst nicht im Ranking-Schema, weil er sich ändern darf.
+> Die Vergleichbarkeit von Wikipedias GICS-Sektoren (US) gegen die
+> iShares-eigene Sektor-Spalte (DE) ist **nicht verifiziert** (gleiche
+> Taxonomie nicht belegt, nur zufällig dieselbe Anzahl von elf Kategorien
+> je Markt) — deshalb **keine Aggregation über beide Märkte**.
+> 
+> **Entscheid:** Variante (b) gebaut — ein Hinweis bei ≥ 3 von 5 Top-5-
+> Werten im selben Sektor, je Markt getrennt geprüft, reine Render-Zeit-
+> Berechnung ohne neues Schema (siehe `render.py::_sektor_konzentration`/
+> `_sektor_hinweis`, Platzierung direkt über dem Kartenraster). Variante
+> (c) — eine dauerhafte Sektor-Historie in `data/evaluation/*.json` mit
+> eigenem Schema-Feld — **zurückgestellt**: kein akuter Bedarf, würde ein
+> additives Schema und damit Manual-Merge brauchen (siehe §6, Roadmap).
+
+**§4 Punkt 12 — Automatisierte SESSION_HANDOVER.md-Pflege per Workflow.** Beleg: Entscheid „kein Bau“; kein offener Auftrag.
+
+> **12. Automatisierte SESSION_HANDOVER.md-Pflege per Workflow — geprüft,
+> nicht gebaut.** *(dokumentiert, kein Bau geplant)*
+> 
+> Read-only-Diagnose (vor PR #72): geprüft, ob ein Workflow dieses
+> Dokument automatisch nachführen könnte (mechanisch ableitbare Blöcke:
+> PR-Nummer/Titel/Datum via `gh pr list`, Cron-Fahrplan via YAML-Parsing;
+> NICHT mechanisch: Merge-Klasse — nur Freitext im PR-Titel, siehe
+> `pr_verwaisung_waechter.py`-Docstring —, sowie sämtliche Urteils-Teile
+> in §3/§4/§5/§6). **Kernbefund:** Jede Variante, die direkt in
+> `SESSION_HANDOVER.md` schreibt (markierter AUTO-Bereich oder ein
+> gemergter Auto-PR), würde den bestehenden Doku-Wächter
+> (`handover_waechter.py`) **entwerten** — er misst ausschließlich das
+> Committer-Datum des jüngsten Commits auf dieser Datei, ohne zwischen
+> mechanischen und Urteils-Abschnitten zu unterscheiden, und ein
+> automatischer Teil-Schreibvorgang würde seine Uhr auf null setzen, ohne
+> dass die Urteils-Teile tatsächlich gepflegt wurden. **Entscheid: kein
+> Bau.** Bei künftigem Bedarf wäre eine **getrennte, vollautomatische
+> Protokolldatei** (Variante a, z. B. `data/pr_protokoll.json`, auf die
+> `SESSION_HANDOVER.md` nur verlinkt) der einzige Weg, der den Doku-
+> Wächter nicht berührt — das bliebe aber ein eigener, separat zu
+> entscheidender Auftrag.

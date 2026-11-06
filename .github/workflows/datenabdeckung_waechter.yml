@@ -64,12 +64,12 @@ jobs:
       # Ticker-Meta-Dateien, ein flacher Checkout haette keine Historie
       # dafuer.
       - name: Quelltext holen
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Python einrichten
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 

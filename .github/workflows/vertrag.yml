@@ -78,7 +78,7 @@ jobs:
       - name: Wochentag-Riegel
         id: riegel
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
             echo "Handstart — Riegel offen."
             echo "laufen=ja" >> "$GITHUB_OUTPUT"
             exit 0
@@ -96,11 +96,11 @@ jobs:
 
       - name: Quelltext holen
         if: steps.riegel.outputs.laufen == 'ja'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Python einrichten
         if: steps.riegel.outputs.laufen == 'ja'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -156,11 +156,11 @@ jobs:
 
       - name: Quelltext holen
         if: steps.artefakt.outcome == 'success'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Python einrichten
         if: steps.artefakt.outcome == 'success'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
