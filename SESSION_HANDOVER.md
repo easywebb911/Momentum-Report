@@ -257,8 +257,8 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #84 | `ff0190d`→`022c8ff` | 01.11. | **PR 2 von 3: Methodenwechsel US auf Methodik-Seite und Karten sichtbar** — Methodik erzeugt die Gewichte je Markt aus dem Fahrplan (beide US-Regeln mit Monat, DE getrennt), Score-Karte mit Begründung (Hou/Xue/Zhang tragend, Barroso/Wang, IMC samt Gegenzahl; DE: Burghof/Prothmann, Vorbehalt Franz/Regele); fünf neue Einträge in `sources.py`; Karte liest `ranking["methode"]` und zeigt bei 52W-Gewicht 0 „nur Info, zählt nicht im Score"; README nachgezogen. Keine Rechenänderung, Schutz-Sperre GRÜN erwartet. Neue Tests `tests/unit/test_methodik_gewichte.py`, 390-px-Test für den Hinweis | MANUAL |
 | #85 | `7ceee80`/`18bd7bc`→`d457924` | 01.11. | **PR 3 von 3: Evaluation-Seite zeigt den Methodenwechsel, zählt verschiedene Regeln nie zusammen** — `render_evaluation()` gruppiert den Gesamtrückblick je Markt nach den tatsächlichen Gewichten des zugehörigen Rankings (`methode.gewicht_*`, aus `data/rankings/*.json` gelesen, NICHT aus `config.py` — Zuordnung Evaluation→Ranking ist code-belegt: `ausgewerteter_monat` == `ranking_monat`, gleicher Dateiname). Kennt ein Markt nur eine Regel (heute überall so): Anzeige byte-genau wie vorher (echte `docs/evaluation.html`-Hashes vor/nach identisch, siehe PR-Text). Fehlt die Ranking-Datei/das Feld: fail-soft "Regel unbekannt", nie mit einer bekannten Gruppe zusammengezählt. Monatsrückblick/Details je Monat tragen bei mehreren Regeln eine Kennzeichnung, der erste Monat je neuer Regel einen "Methodenwechsel"-Hinweis. Kein neues Feld in `data/evaluation/*.json`, keine Änderung an `config.py`/`ranking.py`/`scoring.py`/`evaluation.py`-Rechnung/Workflows. Schutz-Sperre GRÜN (lokal geprüft). Neue Tests in `tests/unit/test_render.py` (Methodenwechsel-Gruppierung, Summen-Erhalt, Fail-soft, Byte-Identität bei einer Regel), 390-px-Fixture (`tests/design/conftest.py`) um einen zweiten Block erweitert | MANUAL |
 | #86 | `82549b0`/`251a107`→`5f6ccd8` | 01.11. | **Beleg-Zähler in `data.py`, keine Verhaltensänderung:** zählt von den wegen nicht-endlichem Adj Close verworfenen Zeilen, wie viele einen gültigen Rohkurs (Close) trugen und wie viele nicht, und je Tag die Anzahl (jüngste 3 Tage). Additiv in `status.json` → `daten` (`zeilen_verworfen_mit_rohkurs`, `zeilen_verworfen_ohne_rohkurs`, `verworfen_je_tag_juengste`) plus eine Job-Log-Zeile `[daten] …` je Abruf mit verworfenen Zeilen (Index und Titel getrennt). Welche Zeilen verworfen werden, bleibt unverändert; Rankings/Kurse/Seiten mit denselben Eingaben byte-gleich. Schutz-Sperre GRÜN. Tests `tests/unit/test_beleg_zaehler.py`. Zweck: Annahme hinter V3 belegen (§4 Punkt 16) | MANUAL |
-| #87 | (dieser PR, Merge-Commit folgt) | 03.11. | **Workflow-Hygiene:** Dispatch-Eingaben von `lauf.yml` (datum, ohne_push, testpush, ohne_kursvergleich) und `universum.yml` (markt) nur noch über `env:`, `datum` streng geprüft; `vertrag.yml` nutzt `$GITHUB_EVENT_NAME` statt `${{ github.event_name }}`; `actions/checkout@v4→v5`, `actions/setup-python@v5→v6` überall (Node 24). Keine Cron-, Rechte- oder Job-Änderung. Neuer Test `tests/unit/test_workflow_injektion.py` (statisch über alle Workflows + echte Ausführung mit bösartigem `datum`). Schließt §4 Punkt 14c, §5 Punkt 1 zum größten Teil. Dazu Handover-Aufräumen (§3/§4/§6/§10). Schutz-Sperre erwartet ROT (Workflow-Ordner) | MANUAL |
-| (dieser PR) | (Merge-Commit folgt) | 09.11. | SESSION_HANDOVER.md: Wiedervorlage Lit-Check 08.11. erledigt (alle drei Aufgaben auf dem direkten ntfy-Weg belegt); Lit-Check-Fund „Momentum-Wendepunkte“ (Goulding/Harvey/Mazzoleni 2023) als §4 Punkt 17, Verdikt Easy: nicht bauen | SELF |
+| #87 | `f578137`/`5a4f7f4`/`e6da726`/`53521d4`/`e716d09`/`ecfed34`→`f03c753` | 03.11., gemergt 06.11. | **Workflow-Hygiene:** Dispatch-Eingaben von `lauf.yml` (datum, ohne_push, testpush, ohne_kursvergleich) und `universum.yml` (markt) nur noch über `env:`, `datum` streng geprüft; `vertrag.yml` nutzt `$GITHUB_EVENT_NAME` statt `${{ github.event_name }}`; `actions/checkout@v4→v5`, `actions/setup-python@v5→v6` überall (Node 24). Keine Cron-, Rechte- oder Job-Änderung. Neuer Test `tests/unit/test_workflow_injektion.py` (statisch über alle Workflows + echte Ausführung mit bösartigem `datum`). Schließt §4 Punkt 14c, §5 Punkt 1 zum größten Teil. Dazu Handover-Aufräumen (§3/§4/§6/§10). Schutz-Sperre erwartet ROT (Workflow-Ordner) | MANUAL |
+| #88 | `46d7add`→`8cad8e0` | 09.11. | SESSION_HANDOVER.md: Wiedervorlage Lit-Check 08.11. erledigt (alle drei Aufgaben auf dem direkten ntfy-Weg belegt); Lit-Check-Fund „Momentum-Wendepunkte“ (Goulding/Harvey/Mazzoleni 2023) als §4 Punkt 17, Verdikt Easy: nicht bauen | SELF |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -716,12 +716,8 @@ mit oder ohne Abfrage. `schutz_sperre.py` bleibt eine reine Ampel fürs
 Easys eigene Entscheidung, kein serverseitiges Merge-Gatter.*
 
 - ~~**(c) `lauf.yml` interpoliert `${{ inputs.datum }}` direkt in die
-  Shell**~~ — **erledigt mit dem Merge von PR #87** (Workflow-Hygiene):
-  alle vier Dispatch-Eingaben von `lauf.yml` und `inputs.markt` in
-  `universum.yml` laufen nur noch über `env:`, `datum` wird streng
-  geprüft (leer oder JJJJ-MM-TT); statisch und durch echte Ausführung
-  belegt (`tests/unit/test_workflow_injektion.py`). Bis zum Merge gilt
-  der alte Stand.
+  Shell**~~ — **erledigt mit `f03c753` (Merge PR #87, 06.11.2026), siehe
+  §10.**
 - **(d) — geparkt seit 03.11.2026.** Grund: berührt `run.py` (Lauf-Pfad)
   und gehört zeitlich hinter V3 (§4 Punkt 16, ab 02.12.) und die
   Lauf-Pfad-Ruhe vor dem 30.11.; vorher kein Bau. Inhalt unverändert:
@@ -1064,18 +1060,10 @@ nicht belegbar).
 
 Kleinarbeit ohne Dringlichkeit — jeweils ein eigener kleiner PR.
 
-1. **`Node.js 20 is deprecated`-Warnung** in jedem Lauf — **Teil
-   `actions/checkout`/`actions/setup-python` erledigt mit dem Merge von PR
-   #87** (`checkout@v5`, `setup-python@v6`, je 16 Stellen in 15 Dateien).
-   Der Rest (Artefakt-Actions in `vertrag.yml`) steht jetzt als eigener
-   Punkt 5 unten. Ursprünglicher Text: **jetzt fällig**
-   (die ursprüngliche Rücksicht „nicht vor dem 31.08." ist mit dem
-   31.08. selbst erledigt): `actions/checkout@v4` und
-   `actions/setup-python@v5` auf aktuelle Fassungen heben. Betrifft
-   inzwischen **sieben** Stellen in sechs Workflow-Dateien (`lauf.yml`,
-   `datenquelle.yml`, `tests.yml`, `universum.yml`, `vertrag.yml` — dort
-   seit PR #49 in **beiden** Jobs, `waechter.yml`) — Beleg:
-   `grep -rn "actions/checkout@\|actions/setup-python@" .github/workflows/`.
+1. ~~**`Node.js 20 is deprecated`-Warnung (`actions/checkout`/
+   `actions/setup-python`)**~~ — **erledigt mit `f03c753` (Merge PR #87,
+   06.11.2026), siehe §10.** Der Rest (Artefakt-Actions in `vertrag.yml`)
+   bleibt offen als Punkt 5 unten.
 2. ~~**Wegwerf-Workflow `probe_ishares_neu.yml` (PR #62) noch nicht
    zurückgebaut**~~ — **erledigt durch PR #67 (06.10.2026, siehe §2,
    §10).** Datei und Eintrag im geschlossenen Workflow-Set
@@ -1705,6 +1693,8 @@ hier, damit niemand sie erneut aufmacht.
 | **Sektor-Hinweis am ersten echten Stichtag (30.10.) sichtbar:** „Sektor-Häufung: 4 von 5 Top-5-Werten liegen im Sektor Energy." (US); DE ohne Hinweis | #72 | `docs/index.html` (`p.sektor-hinweis`) nach Lauf 96 |
 | **Oktober-Stichtag (30.10.2026) eingefroren**, beide Märkte — nach zwei fail-soft-Abbrüchen per manuellem Lauf 96 | `Momentum-Lauf` Lauf 96 | `8e29c5d`, `data/rankings/*_2026-10.json`, siehe §1, §4 Punkt 16 |
 | **Evaluation-Seite: Gesamtrückblick vor Monatsrückblick** | #81 | `0972fe7` |
+| **Injektions-Fix `lauf.yml`/`universum.yml` (ehem. §4 Punkt 14c):** Dispatch-Eingaben nur noch über `env:`, `datum` streng geprüft (leer oder JJJJ-MM-TT); `vertrag.yml` nutzt `$GITHUB_EVENT_NAME` | #87, Merge `f03c753` (06.11.2026) | `tests/unit/test_workflow_injektion.py` (statisch + echte Ausführung mit bösartigem `datum`); Lauf 101 (`fc2026a`, 07.11.) lief nach dem Merge durch |
+| **Node-Update `actions/checkout@v5`, `actions/setup-python@v6` (ehem. §5 Punkt 1)** — je 16 Stellen in 15 Workflow-Dateien; Rest (`upload-`/`download-artifact@v4` in `vertrag.yml`) bleibt offen als §5 Punkt 5 | #87, Merge `f03c753` (06.11.2026) | Lauf 101 (`fc2026a`, 07.11.) lief nach dem Merge durch |
 | **Wiedervorlage 08.11.2026 (Lit-Check erstmals direkt an ntfy.sh):** Lit-Check kam am 08.11. per ntfy an. Damit alle drei geplanten Aufgaben (Wächter, Rundgang, Lit-Check) auf dem direkten ntfy-Weg belegt | Easy, Angabe vom 08.11. | aus dem Repo nicht belegbar, siehe §4 Punkt 15 |
 | **Wiedervorlage 05.11.2026 (Beleg-Zähler auswerten):** Läufe 97/98/99 (`32221f7`, `ec8ba91`, `d6618ef`): in 5 von 6 Markt-Läufen je 5 Zeilen des Vortags verworfen, alle **ohne** Rohkurs (0 mit); vollständig nur US im Lauf 97 vom 03.11. (Handelstag 02.11.). **Annahme hinter V3 widerlegt.** Grenze: der Zähler sieht nur die 5 Anzeige-Titel, nicht den Index und keinen Stichtagslauf | Auswertung 05.11.2026 | `data/status.json` → `daten` der drei Commits; siehe §4 Punkt 16 |
 | **Wiedervorlage 03.11.2026 (erster Monatsrundgang):** Rundgang lief am 03.11., Meldung kam per ntfy an, Befund sachlich korrekt (Läufe, Oktober-Ranking, erster Zählerwert, fällige Punkte); Grenze: sieht keine Workflow-Logs | Easy, Angabe vom 03.11. | aus dem Repo nicht belegbar, siehe §4 Punkt 15 |
