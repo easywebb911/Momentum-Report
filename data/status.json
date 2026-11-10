@@ -1,5 +1,5 @@
 {
-  "lauf_datum": "2026-11-07",
+  "lauf_datum": "2026-11-10",
   "maerkte": [
     {
       "daten": {
@@ -7,16 +7,14 @@
         "fehlgeschlagene_bloecke": [],
         "geliefert": 5,
         "ticker_ohne_daten": [],
-        "verworfen_je_tag_juengste": {
-          "2026-11-06": 5
-        },
+        "verworfen_je_tag_juengste": {},
         "zeilen_gesamt": 50,
         "zeilen_verworfen_mit_rohkurs": 0,
-        "zeilen_verworfen_nicht_endlich": 5,
-        "zeilen_verworfen_ohne_rohkurs": 5
+        "zeilen_verworfen_nicht_endlich": 0,
+        "zeilen_verworfen_ohne_rohkurs": 0
       },
       "faellige_monate_offen": [],
-      "kurse_vom": "2026-11-05",
+      "kurse_vom": "2026-11-09",
       "markt": "us"
     },
     {
@@ -26,7 +24,7 @@
         "geliefert": 5,
         "ticker_ohne_daten": [],
         "verworfen_je_tag_juengste": {
-          "2026-11-06": 5
+          "2026-11-09": 5
         },
         "zeilen_gesamt": 50,
         "zeilen_verworfen_mit_rohkurs": 0,
@@ -34,7 +32,7 @@
         "zeilen_verworfen_ohne_rohkurs": 5
       },
       "faellige_monate_offen": [],
-      "kurse_vom": "2026-11-05",
+      "kurse_vom": "2026-11-06",
       "markt": "de"
     }
   ]
