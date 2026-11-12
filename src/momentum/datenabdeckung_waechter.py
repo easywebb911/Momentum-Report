@@ -9,8 +9,10 @@ LEER bleibt, faellt heute NIEMANDEM auf, der nicht gezielt misst.
 DREI PRUEFUNGEN, nicht mehr (bewusst eng gehalten, Auftrag):
 
   A) KURSABRUF (yfinance): aus der Historie von data/status.json (je
-     Markt, Feld "daten") erkennen, ob in ALLEN Laeufen eines Fensters
-     KEINE oder PRAKTISCH KEINE Kursdaten ankamen.
+     Markt, Feld "daten") erkennen, ob in den LETZTEN
+     MINDEST_BEOBACHTUNGEN Lauf-Staenden KEINE oder PRAKTISCH KEINE
+     Kursdaten ankamen -- unabhaengig vom zeitlichen Abstand dieser
+     Laeufe (siehe "REGEL A" unten).
   B) ISHARES-KURSVERGLEICH: aus derselben Historie (Feld "kursvergleich")
      erkennen, ob in ALLEN Laeufen eines Fensters das Verdikt "entfallen"
      oder "verweigert" war.
@@ -87,6 +89,24 @@ Projekts nicht faelschlich zu alarmieren (heutiger Stand: 83 Kalendertage
 alt, WEIT unter der Schwelle), aber nicht so grosszuegig, dass eine
 jahrealte Liste unbemerkt bliebe.
 
+REGEL A, SEIT DER BASELINE-AUSWERTUNG 26.10.-12.11.2026 GEAENDERT: frueher
+verlangte Pruefung A mindestens MINDEST_BEOBACHTUNGEN (2) Laeufe
+innerhalb von 24 Stunden. Der Momentum-Lauf laeuft aber nur EINMAL je
+Werktag -- in 24 Stunden liegt hoechstens ein Lauf, Pruefung A war damit
+strukturell NIE auswertbar (nachgespielt: alle 17 Waechter-Laeufe
+26.10.-11.11. "nicht auswertbar"; Gegenprobe mit kuenstlich "0 Kurse
+geliefert" blieb stumm). JETZT: es zaehlen die letzten
+MINDEST_BEOBACHTUNGEN Lauf-Staende (Commits auf data/status.json mit
+einem "daten"-Eintrag fuer den Markt), egal wie weit sie auseinander-
+liegen -- ein Wochenende oder Feiertag dazwischen ist der Normalfall.
+Ausgewaehlt wird allein nach der Commit-Reihenfolge der Historie; `bezug`
+schneidet nur ab, was zu diesem Zeitpunkt schon existierte (noetig fuer
+den rueckwaertigen "wie lange schon"-Zaehler). Eine Altersgrenze fuer
+diese Laeufe gibt es BEWUSST nicht: bleiben Laeufe ganz aus, meldet das
+der Totmannschalter (waechter.yml), nicht dieses Modul; eine eigene
+Stunden-Grenze waere eine neue, unbelegte Zahl. Deshalb ist die fruehere
+Konstante FENSTER_STUNDEN_KURSABRUF entfernt, nicht nur ungenutzt.
+
 STATUS-GRENZE, ehrlich benannt (Kriterium 6): keiner der Commits in der
 beobachteten Historie zeigt ein `markt`-Eintrag ganz ohne "daten" (z. B.
 ein fruehzeitig abgebrochener Lauf) -- dieses Modul behandelt einen
@@ -151,9 +171,9 @@ MAERKTE = ("us", "de")
 
 # --------------------------------------------------------- Pruefung A: Kursabruf
 
-# Fenster, in dem ALLE Laeufe praktisch leer sein muessen, um als Warnung
-# zu zaehlen. Startwert, Feintuning nach ca. 10 Handelstagen Baseline.
-FENSTER_STUNDEN_KURSABRUF = 24.0
+# (Frueher hier: FENSTER_STUNDEN_KURSABRUF = 24.0 -- entfernt, siehe
+# "REGEL A" im Modul-Docstring. Pruefung A zaehlt jetzt die letzten
+# MINDEST_BEOBACHTUNGEN Lauf-Staende statt eines Stunden-Fensters.)
 
 # "Praktisch keine" Kursdaten: hoechstens dieser Anteil von "angefragt"
 # kam tatsaechlich an. Nicht exakt 0, damit ein einzelner uebrig
@@ -172,10 +192,11 @@ FENSTER_TAGE_KURSVERGLEICH = 7
 
 # --------------------------------------------- gemeinsam fuer Pruefung A und B
 
-# Mindestens so viele auswertbare Laeufe muessen im Fenster liegen, damit
-# ueberhaupt eine Warnung entstehen kann -- ein EINZELNER schlechter Lauf
-# allein ist noch kein Befund (Rauschen), sondern erst die WIEDERHOLUNG.
-# Startwert, Feintuning nach ca. 10 Handelstagen Baseline.
+# Pruefung A: so viele LETZTE Lauf-Staende muessen alle praktisch leer
+# sein. Pruefung B: so viele auswertbare Laeufe muessen im Fenster
+# liegen. In beiden Faellen gilt: ein EINZELNER schlechter Lauf allein ist
+# noch kein Befund (Rauschen), sondern erst die WIEDERHOLUNG. Startwert;
+# Baseline 26.10.-12.11.2026 ausgewertet, belassen.
 MINDEST_BEOBACHTUNGEN = 2
 
 # -------------------------------------- Pruefung C: Universum-Alter/Sektoren
@@ -342,24 +363,26 @@ def kursabruf_warnung_zum_zeitpunkt(
     bezug: DateTime,
     historie: list[tuple[DateTime, dict]],
     markt: str,
-    *,
-    fenster_stunden: float = FENSTER_STUNDEN_KURSABRUF,
 ) -> bool | None:
-    """True = Warnung (alle auswertbaren Laeufe im Fenster praktisch
-    leer), False = gesund, None = nicht auswertbar (weniger als
-    MINDEST_BEOBACHTUNGEN Laeufe im Fenster -- Historie zu kurz oder nur
-    ein einzelner Lauf, siehe Auftrag)."""
-    fenster_start = bezug - _dt.timedelta(hours=fenster_stunden)
+    """True = Warnung (die letzten MINDEST_BEOBACHTUNGEN Lauf-Staende
+    dieses Marktes waren ALLE praktisch leer), False = gesund, None =
+    nicht auswertbar (weniger als MINDEST_BEOBACHTUNGEN Lauf-Staende bis
+    `bezug` -- Historie zu kurz).
+
+    `historie` ist AELTESTER ZUERST (siehe _historie_json). Die "letzten"
+    Laeufe sind die letzten Eintraege dieser Reihenfolge, die am oder vor
+    `bezug` liegen -- der zeitliche Abstand zwischen ihnen spielt keine
+    Rolle (siehe "REGEL A" im Modul-Docstring)."""
     treffer: list[bool] = []
     for zeit, status in historie:
-        if not (fenster_start < zeit <= bezug):
+        if zeit > bezug:
             continue
         for eintrag in status.get("maerkte", []):
             if eintrag.get("markt") == markt and "daten" in eintrag:
                 treffer.append(kursabruf_ist_praktisch_leer(eintrag["daten"]))
     if len(treffer) < MINDEST_BEOBACHTUNGEN:
         return None
-    return all(treffer)
+    return all(treffer[-MINDEST_BEOBACHTUNGEN:])
 
 
 # ------------------------------------------------------------------- Pruefung B
@@ -476,9 +499,10 @@ def ermittle_signale(datenlage: Datenlage, bezug: DateTime) -> list[Signal]:
 
         def text(jetzt, anhaltend, markt=markt):
             return (
-                f"Kursabruf {markt.upper()}: seit {FENSTER_STUNDEN_KURSABRUF:.0f} Std. "
-                f"praktisch keine Kursdaten angekommen (<= {PRAKTISCH_KEINE_ANTEIL:.0%} "
-                f"von 'angefragt'), anhaltend {anhaltend + 1}. Tag."
+                f"Kursabruf {markt.upper()}: in den letzten {MINDEST_BEOBACHTUNGEN} "
+                f"Laeufen praktisch keine Kursdaten angekommen (<= "
+                f"{PRAKTISCH_KEINE_ANTEIL:.0%} von 'angefragt'), anhaltend "
+                f"{anhaltend + 1}. Tag."
             )
 
         signale.append(_signal(f"Kursabruf {markt.upper()}", ist_warnung, bezug, text))

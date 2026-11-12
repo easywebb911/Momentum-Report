@@ -2,9 +2,13 @@
 ohne echtes Git (die Test-Naht `laeufer`/`ermittle_datenlage` ersetzt
 jeden Zugriff), ohne Netz.
 
-Kernaussagen: (A) Kursabruf und (B) iShares-Kursvergleich warnen nur,
-wenn ALLE auswertbaren Laeufe eines Fensters schlecht waren UND
-mindestens MINDEST_BEOBACHTUNGEN davon vorliegen -- ein einzelner
+Kernaussagen: (A) Kursabruf warnt nur, wenn die LETZTEN
+MINDEST_BEOBACHTUNGEN Lauf-Staende alle praktisch leer waren -- egal wie
+weit sie auseinanderliegen (seit der Baseline-Auswertung 26.10.-12.11.
+2026; vorher ein 24-Std.-Fenster, das bei einem Lauf je Tag nie zwei
+Laeufe sah). (B) iShares-Kursvergleich warnt nur, wenn ALLE auswertbaren
+Laeufe eines 7-Tage-Fensters schlecht waren UND mindestens
+MINDEST_BEOBACHTUNGEN davon vorliegen. In beiden Faellen: ein einzelner
 schlechter Lauf allein ist noch kein Befund. (C) Universum-Alter und
 Sektor-Abdeckung werten den aktuellen Stand direkt aus. Der Push kommt
 AUSSCHLIESSLICH beim Uebergang gesund->Warnung oder bei einer faelligen
@@ -24,7 +28,6 @@ import yaml
 
 from momentum.datenabdeckung_waechter import (
     ERINNERUNG_TAGE,
-    FENSTER_STUNDEN_KURSABRUF,
     FENSTER_TAGE_KURSVERGLEICH,
     MINDEST_BEOBACHTUNGEN,
     PRAKTISCH_KEINE_ANTEIL,
@@ -118,13 +121,48 @@ def test_kursabruf_historie_zu_kurz_oder_datei_fehlt_ist_fail_soft():
     assert kursabruf_warnung_zum_zeitpunkt(bezug, [], "us") is None
 
 
-def test_kursabruf_laeufe_ausserhalb_des_fensters_zaehlen_nicht():
+def test_kursabruf_abstand_der_laeufe_spielt_keine_rolle():
+    """Neue Regel A: die letzten zwei Lauf-Staende zaehlen, auch wenn ein
+    Wochenende oder mehrere Tage dazwischen liegen. (Frueher: ausserhalb
+    eines 24-Std.-Fensters -> nicht auswertbar.)"""
     bezug = dt("2026-10-25T06:00:00")
     historie = [
         (dt("2026-10-20T06:00:00"), status("us", daten=daten(503, 0))),
         (dt("2026-10-21T06:00:00"), status("us", daten=daten(503, 0))),
     ]
-    assert kursabruf_warnung_zum_zeitpunkt(bezug, historie, "us") is None
+    assert kursabruf_warnung_zum_zeitpunkt(bezug, historie, "us") is True
+
+
+def test_kursabruf_laeufe_nach_dem_bezug_zaehlen_nicht():
+    """`bezug` schneidet ab, was zu diesem Zeitpunkt noch nicht existierte
+    (noetig fuer den rueckwaertigen Zaehler)."""
+    bezug = dt("2026-10-25T06:00:00")
+    historie = [
+        (dt("2026-10-24T05:00:00"), status("us", daten=daten(503, 503))),
+        (dt("2026-10-25T05:00:00"), status("us", daten=daten(503, 503))),
+        (dt("2026-10-26T05:00:00"), status("us", daten=daten(503, 0))),
+        (dt("2026-10-27T05:00:00"), status("us", daten=daten(503, 0))),
+    ]
+    assert kursabruf_warnung_zum_zeitpunkt(bezug, historie, "us") is False
+    assert kursabruf_warnung_zum_zeitpunkt(dt("2026-10-27T06:00:00"), historie, "us") is True
+
+
+def test_kursabruf_nur_die_letzten_zwei_entscheiden():
+    """Zwei leere Laeufe frueher, danach ein guter: gesund. Ein guter
+    frueher, danach zwei leere: Warnung."""
+    bezug = dt("2026-10-30T06:00:00")
+    frueh_leer = [
+        (dt("2026-10-26T02:00:00"), status("us", daten=daten(503, 0))),
+        (dt("2026-10-27T02:00:00"), status("us", daten=daten(503, 0))),
+        (dt("2026-10-28T02:00:00"), status("us", daten=daten(503, 503))),
+    ]
+    assert kursabruf_warnung_zum_zeitpunkt(bezug, frueh_leer, "us") is False
+    spaet_leer = [
+        (dt("2026-10-26T02:00:00"), status("us", daten=daten(503, 503))),
+        (dt("2026-10-27T02:00:00"), status("us", daten=daten(503, 0))),
+        (dt("2026-10-28T02:00:00"), status("us", daten=daten(503, 0))),
+    ]
+    assert kursabruf_warnung_zum_zeitpunkt(bezug, spaet_leer, "us") is True
 
 
 def test_kursabruf_ein_guter_lauf_unter_mehreren_schlechten_verhindert_warnung():
@@ -147,9 +185,14 @@ def test_kursabruf_andere_maerkte_werden_nicht_vermischt():
     assert kursabruf_warnung_zum_zeitpunkt(bezug, historie, "de") is True
 
 
-def test_fenster_stunden_kursabruf_startwert():
-    assert FENSTER_STUNDEN_KURSABRUF == 24.0
+def test_kursabruf_schwellen_startwerte():
+    """FENSTER_STUNDEN_KURSABRUF ist seit der Baseline-Auswertung entfernt
+    (Regel A zaehlt Lauf-Staende, keine Stunden); die Zahlen bleiben."""
+    import momentum.datenabdeckung_waechter as modul
+
+    assert not hasattr(modul, "FENSTER_STUNDEN_KURSABRUF")
     assert PRAKTISCH_KEINE_ANTEIL == 0.02
+    assert MINDEST_BEOBACHTUNGEN == 2
 
 
 # ------------------------------------------------ Pruefung B: Kursvergleich
@@ -339,10 +382,10 @@ def test_ermittle_signale_alles_gesund_ergibt_keine_faelligen_bloecke():
 
 def test_ermittle_signale_frischer_uebergang_erzeugt_einen_block_mit_zahlen():
     bezug = dt("2026-10-25T06:00:00")
-    # Beide schlechten Laeufe liegen bewusst INNERHALB der letzten 24
-    # Stunden vor bezug -- das Fenster einen Tag frueher (bezug - 1 Tag)
-    # sieht dagegen NULL Laeufe, ist also nicht auswertbar: genau der
-    # UEBERGANG, den dieser Test nachweisen soll.
+    # Beide schlechten Laeufe sind die letzten zwei vor bezug -- einen Tag
+    # frueher (bezug - 1 Tag) existierte nur der erste davon, Pruefung A
+    # war also nicht auswertbar: genau der UEBERGANG, den dieser Test
+    # nachweisen soll.
     historie = [
         (bezug - _dt.timedelta(hours=20), status("us", daten=daten(503, 0))),
         (bezug - _dt.timedelta(hours=4), status("us", daten=daten(503, 0))),
@@ -352,7 +395,9 @@ def test_ermittle_signale_frischer_uebergang_erzeugt_einen_block_mit_zahlen():
     bloecke = faellige_bloecke(signale)
     [(name, text)] = [b for b in bloecke if b[0] == "Kursabruf US"]
     assert "US" in text
-    assert "24" in text
+    # Seit der neuen Regel A nennt der Text die Zahl der Laeufe
+    # (MINDEST_BEOBACHTUNGEN) statt der frueheren 24 Stunden.
+    assert "in den letzten 2 Laeufen" in text
 
 
 def test_ermittle_signale_universum_alt_erzeugt_befund():
@@ -686,6 +731,5 @@ def test_der_workflow_laeuft_deutlich_nach_dem_spaetesten_beobachteten_lauf_ende
 
 
 def test_die_parameter_passen_zum_auftrag():
-    assert FENSTER_STUNDEN_KURSABRUF == 24.0
     assert FENSTER_TAGE_KURSVERGLEICH == 7
     assert ERINNERUNG_TAGE == 7
