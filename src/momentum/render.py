@@ -51,8 +51,10 @@ HONESTY = (
     (
         "momentum_crash",
         "Momentum kann abrupt einbrechen",
-        "Die schweren Einbrueche haeuften sich nach fallenden Maerkten. "
-        "Was die Trend-Ampel auf der Uebersicht je Markt bedeutet:",
+        "Die schweren Einbrueche trafen vor allem die schwaechsten Aktien, "
+        "die sich nach fallenden Maerkten ploetzlich stark erholten -- fuer "
+        "die Gewinner allein ist ein solcher Crash nicht belegt. Was die "
+        "Trend-Ampel auf der Uebersicht je Markt zeigt:",
         "#trend-ampel",
     ),
     (
@@ -1687,11 +1689,21 @@ war.</p>""",
         "<h2>Die Trend-Ampel</h2>",
         _method_card(
             "Warnanzeige je Markt",
-            ("trend_filter", "momentum_crash"),
+            ("trend_filter", "momentum_crash", "momentum_states_intl"),
             """<p>Bringt der Marktindex über die letzten zwölf Monate
 <strong>weniger als der Geldmarkt</strong>, erscheint eine deutliche
-Warnung. In genau solchen Phasen häuften sich historisch die schweren
-Momentum-Einbrüche.</p>
+Warnung. Die Ampel zeigt damit, ob der <strong>Gesamtmarkt</strong> in
+einem Abwärtstrend ist (Moskowitz, Ooi &amp; Pedersen 2012). Das betrifft
+auch die Top-5: Auch sie können in einem fallenden Gesamtmarkt
+mitfallen.</p>
+<p><strong>Was die Ampel nicht sagt:</strong> Die bekannten
+Momentum-Crashes – abrupte Einbrüche nach fallenden Märkten – trafen vor
+allem die <em>schwächsten</em> Aktien, die sich dann plötzlich stark
+erholten (Daniel &amp; Moskowitz 2016; Goyal, Jegadeesh &amp; Subrahmanyam
+2025). Für die Gewinner allein, also für eine Liste wie die Top-5, ist ein
+solcher Crash-Effekt nicht belegt. Die Warnung ist deshalb kein
+Crash-Schutz für die Top-5, sondern ein Hinweis auf die Lage des
+Gesamtmarkts.</p>
 <p><strong>Warum der Zins abgezogen wird:</strong> Die zugrunde liegende
 Arbeit misst nicht den Kursgewinn, sondern das, was <em>über</em> dem
 Geldmarkt übrig blieb. Ein Markt, der zwölf Monate lang 2&nbsp;% zulegt,

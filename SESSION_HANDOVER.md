@@ -261,6 +261,7 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #88 | `46d7add`→`8cad8e0` | 09.11. | SESSION_HANDOVER.md: Wiedervorlage Lit-Check 08.11. erledigt (alle drei Aufgaben auf dem direkten ntfy-Weg belegt); Lit-Check-Fund „Momentum-Wendepunkte“ (Goulding/Harvey/Mazzoleni 2023) als §4 Punkt 17, Verdikt Easy: nicht bauen | SELF |
 | #90 | `6075aa3` | 12.11. | **Daten-Abdeckungs-Wächter, Prüfung A:** zählt jetzt die letzten 2 Lauf-Stände je Markt (Commit-Reihenfolge, unabhängig vom Abstand) statt 2 Läufen in 24 Std. — vorher strukturell nie auswertbar. `FENSTER_STUNDEN_KURSABRUF` entfernt, Schwellen und Prüfung B unverändert. Nachspiel 18 echter Wächter-Läufe 26.10.–12.11.: 0 Meldungen. Neue Tests `tests/unit/test_datenabdeckung_regel_a.py` (echte Lauf-Stände). Schutz-Sperre GRÜN | MANUAL |
 | #91 | `6a9ea29` | 14.11. | SESSION_HANDOVER.md: §4 Punkt 18 Lit-Check 14.11.2026 (Edge-Suche) — Residual-Momentum (Blitz/Huij/Martens) NICHT umstellen, Momentum und Dividende (Cannon/Lynch) NICHT bauen, beides Verdikt Easy | SELF |
+| #92 | `c1592cb` | 14.11. | **Trend-Ampel ehrlich:** Methodik-Karte und Ehrlichkeits-Hinweis sagen jetzt, dass die Ampel die Lage des Gesamtmarkts zeigt (Moskowitz/Ooi/Pedersen 2012) und kein Crash-Schutz für die Top-5 ist — Momentum-Crashes gingen überwiegend auf die Verlierer zurück (Daniel & Moskowitz 2016, Aussage korrigiert; neue Quelle Goyal/Jegadeesh/Subrahmanyam 2025). Rechnung/Schwelle/Farben/Ranking unverändert, nur `docs/methodik.html` ändert sich. Dazu §4 Punkt 18 um Funde 3–5 und Fazit der Edge-Suche ergänzt. Test `tests/unit/test_ampel_text.py`. Schutz-Sperre GRÜN | MANUAL |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -1058,7 +1059,7 @@ Quelle der Bewertung: Easys Lit-Check-Bericht vom 08.11. (aus dem Repo
 nicht belegbar).
 
 
-**18. Lit-Check 14.11.2026 (Edge-Suche) — zwei Funde, geprüft, nicht
+**18. Lit-Check 14.11.2026 (Edge-Suche) — fünf Funde, geprüft, nicht
 gebaut.** *(entschieden, nichts zu tun)*
 
 **Fund 1: Residual-Momentum** — Blitz, Huij & Martens (2011), *Journal
@@ -1083,6 +1084,40 @@ Long-Short-Quintile). Nicht auf der Large-Cap-Gewinnerseite belegt; im
 S&P 500/HDAX zahlen die meisten Titel Dividende, ein Filter würde die
 Auswahl schrumpfen und Richtung Tech verschieben.
 **Verdikt Easy (14.11.2026): NICHT bauen.**
+
+**Fund 3: Marktschwankung** — Wang & Xu (2015), *Journal of Empirical
+Finance* 30, S. 79–91; Goyal, Jegadeesh & Subrahmanyam (2025), *Review of
+Finance* 29(1), S. 241–273. Messung bei Goyal u. a.: Schwankung der
+täglichen Marktrenditen über 12 Monate, „hoch“ = über der der
+vorangegangenen 36 Monate. Aber: Differenz hohe minus niedrige
+Schwankung bei den **Verlierern** 18,59 / 12,74 / 11,96 Prozentpunkte,
+bei den **Gewinnern** 2,01 / −0,02 / −4,22 (All ex-US / Developed ex-US /
+Emerging; Arbeitsfassung SSRN 4012902, S. 28) — „driven by losers“.
+Ebenso Marktrichtung: Unterschied nur bei den Verlierern signifikant
+(S. 27). Am Original geprüft im Sparring-Chat 14.11.2026 (aus dem Repo
+nicht belegbar). Für eine Top-5-Liste long-only also kein belegter
+Zusatz. Folge: Ampel-Text auf der Methodik-Seite ehrlich gemacht (PR #92,
+siehe §2).
+**Verdikt Easy (14.11.2026): NICHT bauen.**
+
+**Fund 4: Gewinn-Überraschung (PEAD)** — bei großen Aktien seit 2006
+nicht mehr vorhanden (Martineau, *Critical Finance Review* 11(3-4), 2022,
+S. 613–646); Nachprüfung 2001–2024 ohne Microcaps: t-Wert 1,43
+(Subrahmanyam 2025, SSRN 5930255).
+**Verdikt Easy (14.11.2026): NICHT bauen.**
+
+**Fund 5: Vorschau „bleibt / fällt raus“ je Top-5-Karte** (Diagnose
+14.11.2026): Vom nächsten 12-1-Fenster sind am Stichtag nicht 10, sondern
+**alle 11 Monate** bekannt (Kurs Ende M / Kurs Ende M-11, siehe
+`scoring.momentum_12_1`). Eine Vorschau hieße, einen Monat früher zu
+handeln — damit wäre der übersprungene Monat ausgehebelt (Beleg
+`skip_month`, Jegadeesh 1990). Treffsicherheit an den eigenen Rankings
+Juli–Oktober 2026: US (50/50) nur 5 von 15, DE 11 von 15; alle Fehler
+kamen aus der 52-Wochen-Hälfte.
+**Verdikt Easy (14.11.2026): NICHT bauen.**
+
+**Fazit: Edge-Suche 14.11.: bei Large Caps long-only keine belegte
+Ergänzung zu 12-1-Momentum gefunden.**
 ---
 
 ## 5. Hygiene-Backlog
