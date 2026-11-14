@@ -568,7 +568,11 @@ def ampel_wert(ampel: dict) -> tuple[float, bool]:
 def _trend_banner(view: MarketView) -> str:
     ampel = view.ranking["trend_ampel"]
     wert, mit_zins = ampel_wert(ampel)
-    src = source("momentum_crash")
+    # Hauptbeleg der Warnung ist der Gesamtmarkt-Trend (trend_filter,
+    # Moskowitz/Ooi/Pedersen 2012). Daniel & Moskowitz (momentum_crash)
+    # traegt KEINE Top-5-Aussage: die Crashes betrafen vor allem die
+    # Verlierer (siehe Methodik-Karte "Die Trend-Ampel", PR #92).
+    src = source("trend_filter")
     tacho = _trend_tacho(
         view.market.key, ampel["index_name"], wert, ampel["warnung"], mit_zins=mit_zins
     )
@@ -577,13 +581,13 @@ def _trend_banner(view: MarketView) -> str:
     hinweis = "" if text is None else f'\n    <span class="ampel-hinweis">{e(text)}</span>'
     if ampel["warnung"]:
         lage = (
-            "Markt unter dem Geldmarkt" if mit_zins else "Markt im 12-Monats-Minus"
+            "12 Monate unter Geldmarktzins" if mit_zins else "12 Monate im Minus"
         )
         return f"""  <div class="ampel ampel--warn" role="status">
 {tacho}
-    <span class="ampel-body"><strong>Momentum-Gefahrenlage:</strong> {lage}
-    ({e(ampel["index_name"])} {de_pct(wert)}{ueber}) — in solchen Phasen häufen sich historisch die
-    Momentum-Einbrüche. <a href="methodik.html#trend-ampel">Was das heißt →</a>
+    <span class="ampel-body"><strong>{e(ampel["index_name"])} im Abwärtstrend</strong>
+    ({lage}: {de_pct(wert)}{ueber}). Auch die Top-5 können mit dem
+    Gesamtmarkt fallen. Reine Anzeige. <a href="methodik.html#trend-ampel">Was das heißt →</a>
     <span class="ampel-src">{e(src.short)}</span>{hinweis}</span>
   </div>"""
     return f"""  <div class="ampel ampel--ok" role="status">

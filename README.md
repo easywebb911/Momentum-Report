@@ -45,7 +45,11 @@ Info, zählt nicht im Score“.
 
 Dazu je Markt eine **Trend-Ampel** (Moskowitz/Ooi/Pedersen 2012): brachte
 der Index über zwölf Monate **weniger als der Geldmarkt**, erscheint eine
-Warnung (Daniel & Moskowitz 2016). Gemessen wird die Rendite *über* dem
+Warnung — der **Gesamtmarkt** ist im Abwärtstrend, und auch die Top-5 können
+mit ihm fallen. Sie ist **kein Crash-Schutz für die Top-5**: Die bekannten
+Momentum-Crashes betrafen vor allem die Verlierer (Daniel & Moskowitz 2016;
+Goyal, Jegadeesh & Subrahmanyam 2025), für die Gewinner allein ist ein
+Crash-Effekt nicht belegt. Gemessen wird die Rendite *über* dem
 kurzfristigen Zins — für den Dollar aus `^IRX`, für den Euro aus dem
 €STR-Datenportal der EZB; das Tagesmittel über die zwölf Monate ist eine
 ausdrücklich benannte Näherung. Ist eine Zinsquelle nicht erreichbar,

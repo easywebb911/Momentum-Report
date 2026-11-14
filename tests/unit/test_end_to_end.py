@@ -97,7 +97,7 @@ def test_kompletter_lauf_erzeugt_alles(welt, monkeypatch):
     index = (tmp_path / "docs/index.html").read_text(encoding="utf-8")
     assert "Momentum-Report" in index
     assert "Ranking vom 31.07." in index
-    assert "Momentum-Gefahrenlage:" in index, "die DE-Warnlage muss sichtbar sein"
+    assert "DAX im Abwärtstrend" in index, "die DE-Warnlage muss sichtbar sein"
     # Der fehlende Euro-Zins steht sichtbar auf der Seite, nicht nur im Log.
     assert "ohne Zins-Abzug — Zinsquelle nicht erreichbar" in index
     assert (tmp_path / "docs/methodik.html").exists()
