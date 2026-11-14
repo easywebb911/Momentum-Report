@@ -116,9 +116,26 @@ _ALL = [
         journal="Journal of Financial Economics",
         title="Momentum Crashes",
         claim=(
-            "Die schweren Einbrueche von Momentum-Strategien haeuften sich in "
-            "Phasen, in denen der Gesamtmarkt zuvor gefallen war und die "
-            "Schwankung hoch lag. Genau davor warnt die Trend-Ampel."
+            "Die schweren Einbrueche von Momentum-Strategien (Gewinner minus "
+            "Verlierer) haeuften sich in Phasen, in denen der Gesamtmarkt "
+            "zuvor gefallen war und die Schwankung hoch lag. Sie gingen "
+            "ueberwiegend auf die Verlierer-Seite zurueck: Die schwaechsten "
+            "Aktien erholten sich dann ploetzlich stark. Fuer die Gewinner "
+            "allein ist ein solcher Crash damit nicht belegt."
+        ),
+    ),
+    Source(
+        key="momentum_states_intl",
+        authors="Goyal, Jegadeesh & Subrahmanyam",
+        year=2025,
+        journal="Review of Finance 29(1), 2025",
+        title="Empirical determinants of momentum: a perspective using international data",
+        claim=(
+            "Mit internationalen Daten: Momentum war nach steigenden Märkten "
+            "und in ruhigen Märkten stärker als nach fallenden bzw. in "
+            "unruhigen. Der Unterschied ging fast ganz auf die Verlierer "
+            "zurück; bei den Gewinnern war er klein, nicht deutlich oder "
+            "sogar umgekehrt."
         ),
     ),
     Source(
