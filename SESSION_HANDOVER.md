@@ -260,6 +260,7 @@ volle Liste braucht: `git log --oneline --merges main`.
 | #87 | `f578137`/`5a4f7f4`/`e6da726`/`53521d4`/`e716d09`/`ecfed34`→`f03c753` | 03.11., gemergt 06.11. | **Workflow-Hygiene:** Dispatch-Eingaben von `lauf.yml` (datum, ohne_push, testpush, ohne_kursvergleich) und `universum.yml` (markt) nur noch über `env:`, `datum` streng geprüft; `vertrag.yml` nutzt `$GITHUB_EVENT_NAME` statt `${{ github.event_name }}`; `actions/checkout@v4→v5`, `actions/setup-python@v5→v6` überall (Node 24). Keine Cron-, Rechte- oder Job-Änderung. Neuer Test `tests/unit/test_workflow_injektion.py` (statisch über alle Workflows + echte Ausführung mit bösartigem `datum`). Schließt §4 Punkt 14c, §5 Punkt 1 zum größten Teil. Dazu Handover-Aufräumen (§3/§4/§6/§10). Schutz-Sperre erwartet ROT (Workflow-Ordner) | MANUAL |
 | #88 | `46d7add`→`8cad8e0` | 09.11. | SESSION_HANDOVER.md: Wiedervorlage Lit-Check 08.11. erledigt (alle drei Aufgaben auf dem direkten ntfy-Weg belegt); Lit-Check-Fund „Momentum-Wendepunkte“ (Goulding/Harvey/Mazzoleni 2023) als §4 Punkt 17, Verdikt Easy: nicht bauen | SELF |
 | #90 | `6075aa3` | 12.11. | **Daten-Abdeckungs-Wächter, Prüfung A:** zählt jetzt die letzten 2 Lauf-Stände je Markt (Commit-Reihenfolge, unabhängig vom Abstand) statt 2 Läufen in 24 Std. — vorher strukturell nie auswertbar. `FENSTER_STUNDEN_KURSABRUF` entfernt, Schwellen und Prüfung B unverändert. Nachspiel 18 echter Wächter-Läufe 26.10.–12.11.: 0 Meldungen. Neue Tests `tests/unit/test_datenabdeckung_regel_a.py` (echte Lauf-Stände). Schutz-Sperre GRÜN | MANUAL |
+| #91 | `6a9ea29` | 14.11. | SESSION_HANDOVER.md: §4 Punkt 18 Lit-Check 14.11.2026 (Edge-Suche) — Residual-Momentum (Blitz/Huij/Martens) NICHT umstellen, Momentum und Dividende (Cannon/Lynch) NICHT bauen, beides Verdikt Easy | SELF |
 
 Bei PRs mit zwei Hashes ist der erste der Inhalts-Commit (der, den ein
 `git revert` tatsächlich braucht), der zweite der GitHub-Merge-Commit.
@@ -1055,6 +1056,33 @@ belegt, nicht für Einzelaktien-Ranglisten. Zweiter Teil desselben
 Lit-Checks (Europa/DE neu, Datenqualität Yahoo): **Nullbefund**.
 Quelle der Bewertung: Easys Lit-Check-Bericht vom 08.11. (aus dem Repo
 nicht belegbar).
+
+
+**18. Lit-Check 14.11.2026 (Edge-Suche) — zwei Funde, geprüft, nicht
+gebaut.** *(entschieden, nichts zu tun)*
+
+**Fund 1: Residual-Momentum** — Blitz, Huij & Martens (2011), *Journal
+of Empirical Finance* 18, S. 506–521. Behauptung: risikobereinigt ca.
+doppelt so gut wie normales Momentum. Gegenprüfung an Hou, Xue & Zhang
+(2020), *Review of Financial Studies* 33, Table 3, NYSE-VW
+(wertgewichtet, große Firmen dominieren), 1 Monat Haltedauer:
+Residual-Momentum ε11 1 = **0,61 %/Monat (t 3,72)** gegenüber
+12-1-Momentum R11 1 = **1,16 %/Monat (t 3,99)** — am Original-PDF geprüft
+im Sparring-Chat 14.11.2026 (aus dem Repo nicht belegbar). Der Vorteil
+bei Blitz/Huij/Martens gilt für das Faktor-Alpha, nicht für die
+Rohrendite. Weitere Vorsicht: Autoren bei Robeco (Eigeninteresse
+möglich); Japan-Nachprüfung (2024) nach Kontrolle kurz- und
+langfristiger Umkehr nicht signifikant. Grenze: Die Tabelle misst
+Long-Short-Dezile, nicht Top-5 long-only.
+**Verdikt Easy (14.11.2026): NICHT umstellen.**
+
+**Fund 2: Momentum und Dividende** — Cannon & Lynch (2025), *Review of
+Finance* 29(4), S. 1009–1042. Momentum bei Aktien ohne Dividende ca.
+doppelt so stark (1,417 gegenüber 0,684 %/Monat; alle US-Aktien,
+Long-Short-Quintile). Nicht auf der Large-Cap-Gewinnerseite belegt; im
+S&P 500/HDAX zahlen die meisten Titel Dividende, ein Filter würde die
+Auswahl schrumpfen und Richtung Tech verschieben.
+**Verdikt Easy (14.11.2026): NICHT bauen.**
 ---
 
 ## 5. Hygiene-Backlog
