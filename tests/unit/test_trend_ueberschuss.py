@@ -351,7 +351,7 @@ def test_die_box_zeigt_die_ueberschussrendite():
 
 def test_die_warnbox_nennt_den_geldmarkt():
     html = flach(_trend_banner(ansicht(ampel_dict(ueberschuss_12m=-0.021, warnung=True))))
-    assert "Markt unter dem Geldmarkt" in html
+    assert "12 Monate unter Geldmarktzins" in html
     assert "2,1 % über Geldmarkt" in html
 
 

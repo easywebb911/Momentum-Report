@@ -1051,8 +1051,11 @@ Zeitreihen-Momentum in vier Phasen ein (Bull, Correction, Bear, Rebound)
 
 **Verdikt Easy (08.11.2026): NICHT bauen.** Begründung: Der
 Rebound-Fall (12 Monate negativ, 1 Monat positiv) ist durch die
-bestehende Trend-Ampel abgedeckt (12-Monats-Index, Warnlage nach
-Daniel & Moskowitz). Der neue Korrektur-Fall ist nur für Index-Timing
+bestehende Trend-Ampel abgedeckt (12-Monats-Index; Stand seit PR #92 und
+Folge-PR: die Ampel zeigt den Gesamtmarkt-Trend nach Moskowitz/Ooi/Pedersen
+2012 — die Momentum-Crashes nach Daniel & Moskowitz betrafen vor allem die
+Verlierer, für die Top-5 ist die Ampel kein Crash-Schutz, siehe §4 Punkt
+18). Der neue Korrektur-Fall ist nur für Index-Timing
 belegt, nicht für Einzelaktien-Ranglisten. Zweiter Teil desselben
 Lit-Checks (Europa/DE neu, Datenqualität Yahoo): **Nullbefund**.
 Quelle der Bewertung: Easys Lit-Check-Bericht vom 08.11. (aus dem Repo

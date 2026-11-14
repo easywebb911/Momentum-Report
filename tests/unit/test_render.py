@@ -245,12 +245,22 @@ def test_die_methodik_sagt_die_beiden_haerten_nur_einmal():
 
 
 def test_trend_ampel_warnung_traegt_den_beauftragten_wortlaut():
+    """Wortlaut seit dem Folge-PR zu #92 BEWUSST geaendert: die Ampel zeigt
+    den Gesamtmarkt-Trend (Moskowitz/Ooi/Pedersen 2012), sie ist kein
+    Crash-Schutz fuer die Top-5 -- die Momentum-Crashes betrafen vor allem
+    die Verlierer (siehe test_ampel_text.py)."""
     html = render_index([_view(warnung=True)], Date(2026, 8, 3))
-    assert "Momentum-Gefahrenlage:" in html
-    assert "Markt im 12-Monats-Minus" in html
-    assert "Momentum-Einbrüche" in html
+    text = re.sub(r"\s+", " ", html)
+    assert "S&amp;P 500 im Abwärtstrend</strong> (12 Monate im Minus:" in text
+    assert "Auch die Top-5 können mit dem Gesamtmarkt fallen. Reine Anzeige." in text
     assert "ampel--warn" in html
-    assert "Daniel &amp; Moskowitz (2016)" in html
+    assert "Moskowitz, Ooi &amp; Pedersen (2012)" in html
+    # Der alte Wortlaut ist weg -- keine Crash-/Einbruch-Aussage im Banner
+    assert "Momentum-Gefahrenlage" not in html
+    assert "Momentum-Einbrüche" not in html
+    assert "Daniel &amp; Moskowitz (2016)" not in html
+    banner = re.search(r'<div class="ampel ampel--warn".*?</div>', html, re.S).group(0)
+    assert "Crash" not in banner and "Einbr" not in banner
 
 
 def test_ohne_warnung_dezente_ok_zeile():
