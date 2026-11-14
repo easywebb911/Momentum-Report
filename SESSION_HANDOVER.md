@@ -1055,6 +1055,33 @@ belegt, nicht für Einzelaktien-Ranglisten. Zweiter Teil desselben
 Lit-Checks (Europa/DE neu, Datenqualität Yahoo): **Nullbefund**.
 Quelle der Bewertung: Easys Lit-Check-Bericht vom 08.11. (aus dem Repo
 nicht belegbar).
+
+
+**18. Lit-Check 14.11.2026 (Edge-Suche) — zwei Funde, geprüft, nicht
+gebaut.** *(entschieden, nichts zu tun)*
+
+**Fund 1: Residual-Momentum** — Blitz, Huij & Martens (2011), *Journal
+of Empirical Finance* 18, S. 506–521. Behauptung: risikobereinigt ca.
+doppelt so gut wie normales Momentum. Gegenprüfung an Hou, Xue & Zhang
+(2020), *Review of Financial Studies* 33, Table 3, NYSE-VW
+(wertgewichtet, große Firmen dominieren), 1 Monat Haltedauer:
+Residual-Momentum ε11 1 = **0,61 %/Monat (t 3,72)** gegenüber
+12-1-Momentum R11 1 = **1,16 %/Monat (t 3,99)** — am Original-PDF geprüft
+im Sparring-Chat 14.11.2026 (aus dem Repo nicht belegbar). Der Vorteil
+bei Blitz/Huij/Martens gilt für das Faktor-Alpha, nicht für die
+Rohrendite. Weitere Vorsicht: Autoren bei Robeco (Eigeninteresse
+möglich); Japan-Nachprüfung (2024) nach Kontrolle kurz- und
+langfristiger Umkehr nicht signifikant. Grenze: Die Tabelle misst
+Long-Short-Dezile, nicht Top-5 long-only.
+**Verdikt Easy (14.11.2026): NICHT umstellen.**
+
+**Fund 2: Momentum und Dividende** — Cannon & Lynch (2025), *Review of
+Finance* 29(4), S. 1009–1042. Momentum bei Aktien ohne Dividende ca.
+doppelt so stark (1,417 gegenüber 0,684 %/Monat; alle US-Aktien,
+Long-Short-Quintile). Nicht auf der Large-Cap-Gewinnerseite belegt; im
+S&P 500/HDAX zahlen die meisten Titel Dividende, ein Filter würde die
+Auswahl schrumpfen und Richtung Tech verschieben.
+**Verdikt Easy (14.11.2026): NICHT bauen.**
 ---
 
 ## 5. Hygiene-Backlog
