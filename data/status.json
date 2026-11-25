@@ -1,20 +1,26 @@
 {
-  "lauf_datum": "2026-11-24",
+  "lauf_datum": "2026-11-25",
   "maerkte": [
     {
       "daten": {
         "angefragt": 5,
         "fehlgeschlagene_bloecke": [],
-        "geliefert": 5,
-        "ticker_ohne_daten": [],
-        "verworfen_je_tag_juengste": {},
+        "geliefert": 4,
+        "ticker_ohne_daten": [
+          "VTRS"
+        ],
+        "verworfen_je_tag_juengste": {
+          "2026-11-20": 1,
+          "2026-11-23": 1,
+          "2026-11-24": 1
+        },
         "zeilen_gesamt": 50,
         "zeilen_verworfen_mit_rohkurs": 0,
-        "zeilen_verworfen_nicht_endlich": 0,
-        "zeilen_verworfen_ohne_rohkurs": 0
+        "zeilen_verworfen_nicht_endlich": 10,
+        "zeilen_verworfen_ohne_rohkurs": 10
       },
       "faellige_monate_offen": [],
-      "kurse_vom": "2026-11-23",
+      "kurse_vom": null,
       "markt": "us"
     },
     {
@@ -24,7 +30,7 @@
         "geliefert": 5,
         "ticker_ohne_daten": [],
         "verworfen_je_tag_juengste": {
-          "2026-11-23": 5
+          "2026-11-24": 5
         },
         "zeilen_gesamt": 50,
         "zeilen_verworfen_mit_rohkurs": 0,
@@ -32,7 +38,7 @@
         "zeilen_verworfen_ohne_rohkurs": 5
       },
       "faellige_monate_offen": [],
-      "kurse_vom": "2026-11-20",
+      "kurse_vom": "2026-11-23",
       "markt": "de"
     }
   ]
